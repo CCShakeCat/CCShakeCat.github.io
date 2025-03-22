@@ -39,24 +39,41 @@ function formatTime(ms) {
 
 document.addEventListener("DOMContentLoaded", () => {
     const settingsButton = document.getElementById("settingsButton");
-    const settingsFrame = document.getElementById("settingsFrame");
+    const settingsModal = document.getElementById("settingsModal");
+    const fontToggle = document.getElementById("fontToggle");
+    const msDropdown = document.getElementById("msDropdown");
     const clockDisplay = document.getElementById("display");
 
-    settingsButton.addEventListener("click", () => {
-        settingsFrame.style.display = "block";
-        settingsFrame.style.width = "320px";
-        settingsFrame.style.height = "200px";
-    });
+    // Load settings from localStorage
+    fontToggle.checked = localStorage.getItem("useSegoeUI") === "true";
+    msDropdown.value = localStorage.getItem("msPerSecond") || "40";
 
-    window.closeSettingsModal = () => {
-        settingsFrame.style.display = "none";
-    };
-
-    // Apply saved settings
-    if (localStorage.getItem("useSegoeUI") === "true") {
+    // Apply settings
+    if (fontToggle.checked) {
         clockDisplay.style.fontFamily = "'Segoe UI', sans-serif";
     }
 
-    let intervalRate = parseInt(localStorage.getItem("msPerSecond") || "40");
-    setInterval(updateClock, intervalRate);
+    // Open settings modal
+    settingsButton.addEventListener("click", () => {
+        settingsModal.style.display = "block";
+    });
+
+    // Save settings
+    window.saveSettings = () => {
+        localStorage.setItem("useSegoeUI", fontToggle.checked);
+        localStorage.setItem("msPerSecond", msDropdown.value);
+
+        if (fontToggle.checked) {
+            clockDisplay.style.fontFamily = "'Segoe UI', sans-serif";
+        } else {
+            clockDisplay.style.fontFamily = ""; // Reset to default
+        }
+
+        alert("Settings saved!");
+    };
+
+    // Close modal
+    window.closeSettings = () => {
+        settingsModal.style.display = "none";
+    };
 });
