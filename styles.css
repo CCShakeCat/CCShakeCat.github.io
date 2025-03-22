@@ -1,23 +1,21 @@
 @font-face {
-    font-family: 'FancyCatPX';
+    font-family: 'FancyCatPX'; /* Custom name */
     src: url('Font.ttf') format('truetype');
-    /* Add more formats if necessary */
-    font-weight: normal;
-    font-style: normal;
 }
-
 
 body {
-    font-family: Font.ttf, sans-serif;
+    background-color: #220022; /* Dark purple */
+    color: #ffaaff; /* Neon pink */
+    font-family: 'FancyCatPX', sans-serif; /* Use the custom font */
     text-align: center;
     margin-top: 50px;
-    background: #550055;
 }
 
-/* Stopwatch styling */
 .stopwatch {
-    font-size: 2em;
-    margin-bottom: 20px;
+    font-size: 2.5em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(255, 102, 255, 0.5); /* Glow */
 }
 
 /* Position the keybind settings in the top-right corner */
