@@ -28,7 +28,8 @@ function startStop() {
 }
 
 function reset() {
-    cancelAnimationFrame(timer);
+    console.log("Reset button clicked!");
+    clearInterval(timer);
     isRunning = false;
     elapsedTime = 0;
     updateDisplay();
