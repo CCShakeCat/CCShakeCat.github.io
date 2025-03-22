@@ -3,10 +3,11 @@ let startTime;
 let elapsedTime = 0;
 let isRunning = false;
 
-// Load saved keybinds from localStorage
-let startStopKey = localStorage.getItem('startStopKey') || 'S';
-let resetKey = localStorage.getItem('resetKey') || 'R';
+// Load saved keybinds from localStorage (default to 'KeyS' and 'KeyR')
+let startStopKey = localStorage.getItem('startStopKey') || 'KeyS';
+let resetKey = localStorage.getItem('resetKey') || 'KeyR';
 
+// Display the saved keybinds in the input fields
 document.getElementById('startStopKey').value = startStopKey;
 document.getElementById('resetKey').value = resetKey;
 
@@ -16,7 +17,7 @@ function startStop() {
         isRunning = false;
     } else {
         startTime = Date.now() - elapsedTime;
-        timer = setInterval(updateDisplay, 25); // Updating every 25ms
+        timer = setInterval(updateDisplay, 25); // Updates every 25ms
         isRunning = true;
     }
 }
@@ -41,20 +42,40 @@ function updateDisplay() {
 
 // Save keybinds to localStorage
 function saveKeybinds() {
-    startStopKey = document.getElementById('startStopKey').value.toUpperCase();
-    resetKey = document.getElementById('resetKey').value.toUpperCase();
-    
-    localStorage.setItem('startStopKey', startStopKey);
-    localStorage.setItem('resetKey', resetKey);
+    let startInput = document.getElementById('startStopKey').value.trim();
+    let resetInput = document.getElementById('resetKey').value.trim();
 
-    alert(`Keybinds saved!\nStart/Stop: ${startStopKey}\nReset: ${resetKey}`);
+    if (startInput && resetInput) {
+        startStopKey = startInput;
+        resetKey = resetInput;
+        
+        localStorage.setItem('startStopKey', startStopKey);
+        localStorage.setItem('resetKey', resetKey);
+
+        alert(`Keybinds saved!\nStart/Stop: ${startStopKey}\nReset: ${resetKey}`);
+    } else {
+        alert("Please enter valid key codes.");
+    }
 }
 
 // Listen for keypresses
 document.addEventListener('keydown', function(event) {
-    if (event.key.toUpperCase() === startStopKey) {
+    const keyCode = event.code; // Detects numpad and special keys uniquely
+
+    if (keyCode === startStopKey) {
         startStop();
-    } else if (event.key.toUpperCase() === resetKey) {
+    } else if (keyCode === resetKey) {
         reset();
     }
+});
+
+// Allow users to capture key codes for custom keybinds
+document.getElementById('startStopKey').addEventListener('keydown', function(event) {
+    event.preventDefault(); // Prevent typing in the input field
+    this.value = event.code; // Store key as event.code
+});
+
+document.getElementById('resetKey').addEventListener('keydown', function(event) {
+    event.preventDefault(); // Prevent typing in the input field
+    this.value = event.code; // Store key as event.code
 });
