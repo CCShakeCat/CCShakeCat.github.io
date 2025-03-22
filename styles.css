@@ -1,5 +1,5 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: Font.ttf, sans-serif;
     text-align: center;
     margin-top: 50px;
     background-color: #550055;
@@ -13,6 +13,7 @@ body {
 
 /* Position the keybind settings in the top-right corner */
 .keybinds {
+    font-family: sans-serif;
     position: absolute;
     top: 10px;
     right: 10px;
