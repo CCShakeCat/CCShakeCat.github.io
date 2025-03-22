@@ -55,8 +55,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Open settings modal
     settingsButton.addEventListener("click", () => {
-        settingsModal.style.display = "block";
-    });
+    settingsModal.style.display = "block";
+});
+
+// Close modal when tapping outside it (for mobile usability)
+window.onclick = (event) => {
+    if (event.target === settingsModal) {
+        closeSettings();
+    }
+};
 
     // Save settings
     window.saveSettings = () => {
