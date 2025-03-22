@@ -34,3 +34,29 @@ function formatTime(ms) {
     const formattedMilliseconds = Math.floor((ms % 1000) / (1000 / millisecondsSteps)).toString().padStart(2, '0'); // Display only two digits up to milliseconds steps
     return `${hours}:${minutes}:${seconds}.${formattedMilliseconds}`;
 }
+
+//settings popup
+
+document.addEventListener("DOMContentLoaded", () => {
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsFrame = document.getElementById("settingsFrame");
+    const clockDisplay = document.getElementById("display");
+
+    settingsButton.addEventListener("click", () => {
+        settingsFrame.style.display = "block";
+        settingsFrame.style.width = "320px";
+        settingsFrame.style.height = "200px";
+    });
+
+    window.closeSettingsModal = () => {
+        settingsFrame.style.display = "none";
+    };
+
+    // Apply saved settings
+    if (localStorage.getItem("useSegoeUI") === "true") {
+        clockDisplay.style.fontFamily = "'Segoe UI', sans-serif";
+    }
+
+    let intervalRate = parseInt(localStorage.getItem("msPerSecond") || "40");
+    setInterval(updateClock, intervalRate);
+});
