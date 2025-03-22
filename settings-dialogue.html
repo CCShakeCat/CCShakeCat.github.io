@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+        .modal.active {
+            display: block;
+        }
+        .modal h2 {
+            margin: 0 0 15px;
+        }
+        label, select {
+            display: block;
+            margin: 10px 0;
+        }
+        button {
+            margin-top: 15px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal" id="settingsModal">
+        <h2>Settings</h2>
+        <label>
+            <input type="checkbox" id="fontToggle"> Use <span class="segoe-font">Segoe UI</span> for clock instead
+        </label>
+        <label>
+            Use <select id="msDropdown">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40" selected>40</option>
+                <option value="50">50</option>
+                <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
+                <option value="90">90</option>
+                <option value="100">100</option>
+            </select> ms per second
+        </label>
+        <button onclick="saveSettings()">Save</button>
+        <button onclick="closeSettings()">Close</button>
+    </div>
+</body>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Load saved settings
+        const fontToggle = document.getElementById("fontToggle");
+        const msDropdown = document.getElementById("msDropdown");
+
+        fontToggle.checked = localStorage.getItem("useSegoeUI") === "true";
+        msDropdown.value = localStorage.getItem("msPerSecond") || "40";
+    });
+
+    function saveSettings() {
+        const fontToggle = document.getElementById("fontToggle").checked;
+        const msDropdown = document.getElementById("msDropdown").value;
+
+        localStorage.setItem("useSegoeUI", fontToggle);
+        localStorage.setItem("msPerSecond", msDropdown);
+
+        alert("Settings saved!");
+    }
+
+    function closeSettings() {
+        window.parent.closeSettingsModal();
+    }
+</script>
+</html>
