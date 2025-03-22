@@ -7,17 +7,17 @@ function startStop() {
     if (isRunning) {
         clearInterval(timer);
     } else {
-        timer = setInterval(updateDisplay, timerInterval); // Use dynamic interval
+        timer = setInterval(updateDisplay, millisecondsSteps); // Use millisecondsSteps
     }
     isRunning = !isRunning;
 }
 
 document.getElementById('msDropdown').addEventListener('change', function () {
-    timerInterval = parseInt(this.value);
+    millisecondsSteps = parseInt(this.value);
     
     if (isRunning) { 
         clearInterval(timer); 
-        timer = setInterval(updateDisplay, timerInterval); // Restart with new interval
+        timer = setInterval(updateDisplay, millisecondsSteps); // Restart with new interval
     }
 });
 
