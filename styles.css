@@ -6,7 +6,7 @@
 body {
     background-color: #220022; /* Dark purple */
     color: #ffaaff; /* Neon pink */
-    font-family: 'FancyCatPX', sans-serif; /* Use the custom font */
+    font-family: 'FancyCatPX'; /* Use the custom font */
     text-align: center;
     margin-top: 50px;
 }
