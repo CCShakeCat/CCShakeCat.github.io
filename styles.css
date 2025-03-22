@@ -1,12 +1,16 @@
 @font-face {
-    font-family: 'FancyCatPX'; /* Custom name */
-    src: url('Font.ttf') format('truetype');
+    font-family: 'FancyCatPX';
+    src: url('./Font.ttf') format('truetype'); /* Explicit path */
+    font-family: 'SegoeUIVariable';
+    src: url('./Segoe-UI-Variable.ttf') format('truetype');
+    font-display: swap;
 }
+
 
 body {
     background-color: #220022; /* Dark purple */
     color: #ffaaff; /* Neon pink */
-    font-family: Font.ttf; /* Use the custom font */
+    font-family: 'FancyCatPX', sans-serif; /* Use the custom font */
     text-align: center;
     margin-top: 50px;
 }
@@ -20,7 +24,7 @@ body {
 
 /* Position the keybind settings in the top-right corner */
 .keybinds {
-    font-family: Segoe-UI-Variable.ttf;
+    font-family: 'SegoeUIVariable', sans-serif;
     position: absolute;
     top: 10px;
     right: 10px;
