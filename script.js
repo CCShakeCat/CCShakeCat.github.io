@@ -13,20 +13,22 @@ document.getElementById('resetKey').value = resetKey;
 
 function startStop() {
     if (isRunning) {
-        clearInterval(timer);
+        cancelAnimationFrame(timer);
+        isRunning = false;
     } else {
         const startTime = Date.now() - elapsedTime;
-        timer = setInterval(() => {
+        function update() {
             elapsedTime = Date.now() - startTime;
             updateDisplay();
-        }, 10); // Update every 10 milliseconds
+            timer = requestAnimationFrame(update);
+        }
+        timer = requestAnimationFrame(update);
+        isRunning = true;
     }
-    isRunning = !isRunning;
 }
 
-
 function reset() {
-    clearInterval(timer);
+    cancelAnimationFrame(timer);
     isRunning = false;
     elapsedTime = 0;
     updateDisplay();
