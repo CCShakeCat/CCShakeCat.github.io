@@ -40,10 +40,17 @@ function formatTime(ms) {
 document.addEventListener("DOMContentLoaded", () => {
     const settingsButton = document.getElementById("settingsButton");
     const settingsModal = document.getElementById("settingsModal");
-    const fontToggle = document.getElementById("fontToggle");
     const msDropdown = document.getElementById("msDropdown");
-    const clockDisplay = document.getElementById("display");
+    const fontCheckbox = document.getElementById('fontCheckbox'); // Assuming this is your checkbox ID
+    const clockDisplay = document.getElementById('display'); // Ensure this is the correct ID for the clock
 
+fontCheckbox.addEventListener('change', () => {
+    if (fontCheckbox.checked) {
+        clockDisplay.classList.add('segoe-font');
+    } else {
+        clockDisplay.classList.remove('segoe-font');
+    }
+});
     // Load settings from localStorage
     fontToggle.checked = localStorage.getItem("useSegoeUI") === "true";
     msDropdown.value = localStorage.getItem("msPerSecond") || "40";
