@@ -40,17 +40,10 @@ function formatTime(ms) {
 document.addEventListener("DOMContentLoaded", () => {
     const settingsButton = document.getElementById("settingsButton");
     const settingsModal = document.getElementById("settingsModal");
+    const fontToggle = document.getElementById("fontToggle");
     const msDropdown = document.getElementById("msDropdown");
-    const fontCheckbox = document.getElementById('fontCheckbox'); // Assuming this is your checkbox ID
-    const clockDisplay = document.getElementById('display'); // Ensure this is the correct ID for the clock
+    const clockDisplay = document.getElementById("display");
 
-fontCheckbox.addEventListener('change', () => {
-    if (fontCheckbox.checked) {
-        clockDisplay.classList.add('segoe-font');
-    } else {
-        clockDisplay.classList.remove('segoe-font');
-    }
-});
     // Load settings from localStorage
     fontToggle.checked = localStorage.getItem("useSegoeUI") === "true";
     msDropdown.value = localStorage.getItem("msPerSecond") || "40";
@@ -62,15 +55,8 @@ fontCheckbox.addEventListener('change', () => {
 
     // Open settings modal
     settingsButton.addEventListener("click", () => {
-    settingsModal.style.display = "block";
-});
-
-// Close modal when tapping outside it (for mobile usability)
-window.onclick = (event) => {
-    if (event.target === settingsModal) {
-        closeSettings();
-    }
-};
+        settingsModal.style.display = "block";
+    });
 
     // Save settings
     window.saveSettings = () => {
