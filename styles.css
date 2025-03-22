@@ -6,7 +6,7 @@
 body {
     background-color: #220022; /* Dark purple */
     color: #ffaaff; /* Neon pink */
-    font-family: 'FancyCatPX'; /* Use the custom font */
+    font-family: Font.ttf; /* Use the custom font */
     text-align: center;
     margin-top: 50px;
 }
@@ -20,7 +20,7 @@ body {
 
 /* Position the keybind settings in the top-right corner */
 .keybinds {
-    font-family: sans-serif;
+    font-family: Segoe-UI-Variable.ttf;
     position: absolute;
     top: 10px;
     right: 10px;
