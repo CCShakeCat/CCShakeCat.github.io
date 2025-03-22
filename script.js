@@ -36,14 +36,14 @@ function reset() {
 }
 
 function updateDisplay() {
-    console.log(elapsedTime);
-    const milliseconds = Math.floor((elapsedTime % 1000) / 10);
-    const seconds = Math.floor((elapsedTime / 1000) % 60);
-    const minutes = Math.floor((elapsedTime / (1000 * 60)) % 60);
-    const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+    elapsedTime = Date.now() - startTime;
+    
+    let totalSeconds = Math.floor(elapsedTime / 1000);
+    let minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    let seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    let milliseconds = Math.floor((elapsedTime % 1000) / 25).toString().padStart(2, '0'); // 0 to 39
 
-    document.getElementById('display').textContent =
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}`;
+    document.getElementById('display').innerText = `${minutes}:${seconds}.${milliseconds}`;
 }
 
 // Save keybinds to localStorage
