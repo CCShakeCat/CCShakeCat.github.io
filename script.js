@@ -7,10 +7,19 @@ function startStop() {
     if (isRunning) {
         clearInterval(timer);
     } else {
-        timer = setInterval(updateDisplay, 40); // Update every 40 milliseconds
+        timer = setInterval(updateDisplay, timerInterval); // Use dynamic interval
     }
     isRunning = !isRunning;
 }
+
+document.getElementById('msDropdown').addEventListener('change', function () {
+    timerInterval = parseInt(this.value);
+    
+    if (isRunning) { 
+        clearInterval(timer); 
+        timer = setInterval(updateDisplay, timerInterval); // Restart with new interval
+    }
+});
 
 function reset() {
     clearInterval(timer);
