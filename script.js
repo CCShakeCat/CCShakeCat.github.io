@@ -6,12 +6,14 @@ let millisecondsSteps = 40;
 function startStop() {
     if (isRunning) {
         clearInterval(timer);
+        timer = null;
     } else {
         timer = setInterval(updateDisplay, millisecondsSteps); // Use millisecondsSteps
     }
-    isRunning = !isRunning;
+    isRunning = !isRunning; // Toggle the state properly
 }
 
+// Update milliseconds when dropdown changes
 document.getElementById('msDropdown').addEventListener('change', function () {
     millisecondsSteps = parseInt(this.value);
     
@@ -20,6 +22,7 @@ document.getElementById('msDropdown').addEventListener('change', function () {
         timer = setInterval(updateDisplay, millisecondsSteps); // Restart with new interval
     }
 });
+
 
 function reset() {
     clearInterval(timer);
