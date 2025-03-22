@@ -1,8 +1,17 @@
+@font-face {
+    font-family: 'FancyCatPX';
+    src: url('Font.ttf') format('truetype');
+    /* Add more formats if necessary */
+    font-weight: normal;
+    font-style: normal;
+}
+
+
 body {
     font-family: Font.ttf, sans-serif;
     text-align: center;
     margin-top: 50px;
-    background-color: #550055;
+    background: #550055;
 }
 
 /* Stopwatch styling */
