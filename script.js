@@ -82,4 +82,15 @@ window.onclick = (event) => {
     window.closeSettings = () => {
         settingsModal.style.display = "none";
     };
+    
 });
+function applyClockFont() {
+    const clockDisplay = document.getElementById("display");
+    const useSegoe = localStorage.getItem("useSegoeUI") === "true";
+
+    if (useSegoe) {
+        clockDisplay.style.fontFamily = "'Segoe UI Custom', sans-serif";
+    } else {
+        clockDisplay.style.fontFamily = "'FancyCat', sans-serif";
+    }
+}
