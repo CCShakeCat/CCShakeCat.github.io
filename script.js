@@ -14,19 +14,22 @@ document.getElementById('resetKey').value = resetKey;
 function startStop() {
     if (isRunning) {
         clearInterval(timer);
-        isRunning = false;
     } else {
-        startTime = Date.now() - elapsedTime;
-        timer = setInterval(updateDisplay, 25); // Updates every 25ms
-        isRunning = true;
+        const startTime = Date.now() - elapsedTime;
+        timer = setInterval(() => {
+            elapsedTime = Date.now() - startTime;
+            updateDisplay();
+        }, 10); // Update every 10 milliseconds
     }
+    isRunning = !isRunning;
 }
 
+
 function reset() {
-    clearInterval(timer); // Stop the timer
-    isRunning = false;    // Ensure it is stopped
-    elapsedTime = 0;      // Reset elapsed time
-    updateDisplay();      // Immediately update the UI
+    clearInterval(timer);
+    isRunning = false;
+    elapsedTime = 0;
+    updateDisplay();
 }
 
 function updateDisplay() {
