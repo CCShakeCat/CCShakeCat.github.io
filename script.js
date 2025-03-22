@@ -23,10 +23,10 @@ function startStop() {
 }
 
 function reset() {
-    clearInterval(timer);
-    isRunning = false;
-    elapsedTime = 0;
-    updateDisplay();
+    clearInterval(timer); // Stop the timer
+    isRunning = false;    // Ensure it is stopped
+    elapsedTime = 0;      // Reset elapsed time
+    updateDisplay();      // Immediately update the UI
 }
 
 function updateDisplay() {
