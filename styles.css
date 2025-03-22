@@ -1,22 +1,13 @@
-@font-face {
-    font-family: 'FancyCatPX';
-    src: url('Font.ttf') format('truetype');
-    /* Add more formats if necessary */
-    font-weight: normal;
-    font-style: normal;
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
 }
 
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-        font-family: 'FancyCatPX', sans-serif; /* Use your font with a fallback */
-        color: #ff55ff;
-        background-color: #250025
-        text-align: center;
-        margin-top: 50px;
+/* Stopwatch styling */
+.stopwatch {
+    font-size: 2em;
+    margin-bottom: 20px;
 }
 
 /* Position the keybind settings in the top-right corner */
@@ -58,25 +49,3 @@ body {
 .keybinds button:hover {
     background: #45a049;
 }
-
-input {
-    text-transform: uppercase;
-    width: 40px;
-    text-align: center;
-}
-
-.stopwatch {
-    text-align: center;
-}
-
-#display {
-    font-size: 2em;
-}
-
-/* Responsive Styles */
-@media (max-width: 1000px) {
-    #display {
-        font-size: 1.5em;
-    }
-}
-
