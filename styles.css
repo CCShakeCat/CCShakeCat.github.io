@@ -1,12 +1,11 @@
 @font-face {
     font-family: 'FancyCatPX';
     src: url('Font.ttf') format('truetype');
+    font-family: 'Segoe UI Variable';
+    src: url('Segoe-UI-Variable.ttf') format('truetype');
     /* Add more formats if necessary */
     font-weight: normal;
     font-style: normal;
-    font-family: 'Segoe UI Variable';
-    src: url('Segoe-UI-Variable.ttf') format('truetype');
-
 }
 
 segoe-font {
