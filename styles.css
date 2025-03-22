@@ -15,6 +15,18 @@ body {
         font-family: 'FancyCatPX', sans-serif; /* Use your font with a fallback */
         color: #ff55ff;
         background-color: #250025
+        text-align: center;
+        margin-top: 50px;
+}
+
+.keybinds {
+    margin-top: 20px;
+}
+
+input {
+    text-transform: uppercase;
+    width: 40px;
+    text-align: center;
 }
 
 .stopwatch {
