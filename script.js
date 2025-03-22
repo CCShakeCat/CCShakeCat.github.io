@@ -36,6 +36,7 @@ function reset() {
 }
 
 function updateDisplay() {
+    console.log(elapsedTime);
     const milliseconds = Math.floor((elapsedTime % 1000) / 10);
     const seconds = Math.floor((elapsedTime / 1000) % 60);
     const minutes = Math.floor((elapsedTime / (1000 * 60)) % 60);
