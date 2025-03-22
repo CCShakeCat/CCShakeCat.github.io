@@ -43,6 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const msDropdown = document.getElementById("msDropdown");
     const fontCheckbox = document.getElementById('fontCheckbox'); // Assuming this is your checkbox ID
     const clockDisplay = document.getElementById('display'); // Ensure this is the correct ID for the clock
+const font = new FontFace('Segoe UI Variable', 'url("./Segoe-UI-Variable.ttf")');
+font.load().then((loadedFont) => {
+    document.fonts.add(loadedFont);
+    document.body.style.fontFamily = '"Segoe UI Variable", sans-serif';
+}).catch(err => console.error('Font failed to load:', err));
 
 fontCheckbox.addEventListener('change', () => {
     if (fontCheckbox.checked) {
