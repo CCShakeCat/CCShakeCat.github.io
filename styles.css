@@ -1,0 +1,34 @@
+@font-face {
+    font-family: 'FancyCatPX';
+    src: url('Font.ttf') format('truetype');
+    /* Add more formats if necessary */
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+        font-family: 'FancyCatPX', sans-serif; /* Use your font with a fallback */
+        color: #ff55ff;
+        background-color: #250025
+}
+
+.stopwatch {
+    text-align: center;
+}
+
+#display {
+    font-size: 2em;
+}
+
+/* Responsive Styles */
+@media (max-width: 1000px) {
+    #display {
+        font-size: 1.5em;
+    }
+}
+
