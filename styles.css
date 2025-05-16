@@ -1,7 +1,6 @@
 @font-face {
-    font-family: 'FancyCatPX';
-    src: url('Font.ttf') format('truetype');
-    /* Add more formats if necessary */
+    font-family: 'DefaultFont';
+    src: url('fonts/Font.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
@@ -12,10 +11,11 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-        font-family: 'FancyCatPX', sans-serif; /* Use your font with a fallback */
-        color: #ffffff;
-        background-color: #000000
+    font-family: 'DefaultFont', sans-serif;
+    color: #ffffff;
+    background-color: #000000;
 }
+
 
 .stopwatch {
     text-align: center;
