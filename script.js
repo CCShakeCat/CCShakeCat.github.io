@@ -1,3 +1,5 @@
+// Defensive version of script.js: all DOM lookups are checked before use.
+
 const fontFaces = {
   default: "fonts/FancyCatPX.ttf",
   system: {
@@ -24,7 +26,8 @@ function formatTime(ms) {
 }
 
 function updateDisplay() {
-    document.getElementById('display').textContent = formatTime(elapsed);
+    const display = document.getElementById('display');
+    if (display) display.textContent = formatTime(elapsed);
 }
 
 function startStop() {
@@ -50,64 +53,83 @@ function reset() {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Modal open/close logic
-  document.getElementById('settingsBtn').onclick = () => {
-    document.getElementById('settingsModal').classList.add('show');
-    document.getElementById('msDropdown').value = localStorage.getItem('msPerSecond') || "40";
-    const font = localStorage.getItem('stopwatchFontType') || "default";
-    document.getElementById('fontSelect').value = font;
-    document.getElementById('customFontName').textContent = '';
-  };
-  document.getElementById('closeSettings').onclick = () => {
-    document.getElementById('settingsModal').classList.remove('show');
-  };
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const msDropdown = document.getElementById('msDropdown');
+  const fontSelect = document.getElementById('fontSelect');
+  const closeSettings = document.getElementById('closeSettings');
+  const importCustomFont = document.getElementById('importCustomFont');
+  const customFontFile = document.getElementById('customFontFile');
+  const customFontName = document.getElementById('customFontName');
 
-  // Import Custom Font link
-  document.getElementById('importCustomFont').onclick = () => {
-    document.getElementById('customFontFile').click();
-  };
+  // Debug: Log the DOM elements (optional, can remove after testing)
+  console.log({
+    settingsBtn, settingsModal, msDropdown, fontSelect, closeSettings, importCustomFont, customFontFile, customFontName
+  });
 
-  document.getElementById('customFontFile').onchange = function() {
-    const file = this.files[0];
-    document.getElementById('customFontName').textContent = file ? file.name : '';
-    if (file) {
-      // Save font selection as 'custom'
-      localStorage.setItem('stopwatchFontType', 'custom');
-      // Actually load and apply the custom font
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const fontData = e.target.result;
-        const fontName = file.name.replace(/\.[^/.]+$/, "");
-        const style = document.createElement('style');
-        style.innerHTML = `
-          @font-face {
-            font-family: '${fontName}';
-            src: url(${fontData});
-          }
-        `;
-        document.head.appendChild(style);
-        localStorage.setItem('stopwatchFont', fontName);
-        applyFontFamily(fontName);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  document.getElementById('fontSelect').onchange = function() {
-    if (this.value !== 'custom') {
-      document.getElementById('customFontName').textContent = '';
-    }
-    applyAndSaveFont(this.value);
-  };
-
-  document.getElementById('msDropdown').onchange = function() {
-    localStorage.setItem('msPerSecond', this.value);
-    msPerSecond = parseInt(this.value);
-    if (running) {
-      clearInterval(stopwatchInterval);
-      running = false;
-      startStop();
-    }
-  };
+  if (settingsBtn && settingsModal && msDropdown && fontSelect && closeSettings && importCustomFont && customFontFile && customFontName) {
+    settingsBtn.onclick = () => {
+      settingsModal.classList.add('show');
+      msDropdown.value = localStorage.getItem('msPerSecond') || "40";
+      const font = localStorage.getItem('stopwatchFontType') || "default";
+      fontSelect.value = font;
+      customFontName.textContent = '';
+    };
+    closeSettings.onclick = () => {
+      settingsModal.classList.remove('show');
+    };
+    importCustomFont.onclick = () => {
+      customFontFile.click();
+    };
+    customFontFile.onchange = function() {
+      const file = this.files[0];
+      customFontName.textContent = file ? file.name : '';
+      if (file) {
+        localStorage.setItem('stopwatchFontType', 'custom');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const fontData = e.target.result;
+          const fontName = file.name.replace(/\.[^/.]+$/, "");
+          const style = document.createElement('style');
+          style.innerHTML = `
+            @font-face {
+              font-family: '${fontName}';
+              src: url(${fontData});
+            }
+          `;
+          document.head.appendChild(style);
+          localStorage.setItem('stopwatchFont', fontName);
+          applyFontFamily(fontName);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    fontSelect.onchange = function() {
+      if (this.value !== 'custom') {
+        customFontName.textContent = '';
+      }
+      applyAndSaveFont(this.value);
+    };
+    msDropdown.onchange = function() {
+      localStorage.setItem('msPerSecond', this.value);
+      msPerSecond = parseInt(this.value);
+      if (running) {
+        clearInterval(stopwatchInterval);
+        running = false;
+        startStop();
+      }
+    };
+  } else {
+    // Log what is missing for easier debugging
+    if (!settingsBtn) console.error("settingsBtn not found");
+    if (!settingsModal) console.error("settingsModal not found");
+    if (!msDropdown) console.error("msDropdown not found");
+    if (!fontSelect) console.error("fontSelect not found");
+    if (!closeSettings) console.error("closeSettings not found");
+    if (!importCustomFont) console.error("importCustomFont not found");
+    if (!customFontFile) console.error("customFontFile not found");
+    if (!customFontName) console.error("customFontName not found");
+  }
 });
 
 function detectOS() {
@@ -119,7 +141,8 @@ function detectOS() {
 }
 
 function applyFontFamily(fontFamily) {
-  document.querySelector('.stopwatch').style.fontFamily = `'${fontFamily}', sans-serif`;
+  const sw = document.querySelector('.stopwatch');
+  if (sw) sw.style.fontFamily = `'${fontFamily}', sans-serif`;
 }
 
 function applyAndSaveFont(type) {
