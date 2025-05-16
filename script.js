@@ -1,10 +1,11 @@
-// Set default msPerSecond if not set
-if (!localStorage.getItem('msPerSecond')) {
-  localStorage.setItem('msPerSecond', '40');
-}
-let msPerSecond = parseInt(localStorage.getItem('msPerSecond')) || 40;
+// Remove msPerSecond customization; always use 40ms per tick
+let msPerSecond = 40;
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 applyFontFamily(savedFont);
+
+let elapsed = 0;
+let running = false;
+let stopwatchInterval = null;
 
 function formatTime(ms) {
     let milliseconds = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
@@ -24,7 +25,6 @@ function startStop() {
         clearInterval(stopwatchInterval);
         running = false;
     } else {
-        msPerSecond = parseInt(localStorage.getItem('msPerSecond')) || 40;
         stopwatchInterval = setInterval(() => {
             elapsed += msPerSecond;
             updateDisplay();
@@ -43,17 +43,14 @@ function reset() {
 document.addEventListener("DOMContentLoaded", () => {
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsModal = document.getElementById('settingsModal');
-  const msDropdown = document.getElementById('msDropdown');
   const fontSelect = document.getElementById('fontSelect');
   const closeSettings = document.getElementById('closeSettings');
   const importCustomFont = document.getElementById('importCustomFont');
   const customFontFile = document.getElementById('customFontFile');
   const customFontName = document.getElementById('customFontName');
 
-  if (settingsBtn && settingsModal && msDropdown && fontSelect && closeSettings && importCustomFont && customFontFile && customFontName) {
+  if (settingsBtn && settingsModal && fontSelect && closeSettings && importCustomFont && customFontFile && customFontName) {
     settingsBtn.onclick = () => {
-      // Always update msDropdown with current value or 40
-      msDropdown.value = localStorage.getItem('msPerSecond') || "40";
       const font = localStorage.getItem('stopwatchFontType') || "default";
       fontSelect.value = font;
       customFontName.textContent = '';
@@ -93,15 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
         customFontName.textContent = '';
       }
       applyAndSaveFont(this.value);
-    };
-    msDropdown.onchange = function() {
-      localStorage.setItem('msPerSecond', this.value);
-      msPerSecond = parseInt(this.value);
-      if (running) {
-        clearInterval(stopwatchInterval);
-        running = false;
-        startStop();
-      }
     };
   }
 });
