@@ -13,8 +13,8 @@ body {
     height: 100vh;
     margin: 0;
         font-family: 'FancyCatPX', sans-serif; /* Use your font with a fallback */
-        color: #ff55ff;
-        background-color: #250025
+        color: #ffffff;
+        background-color: #000000
 }
 
 .stopwatch {
