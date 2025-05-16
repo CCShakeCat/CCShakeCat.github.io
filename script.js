@@ -49,6 +49,7 @@ function reset() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Modal open/close logic
   document.getElementById('settingsBtn').onclick = () => {
     document.getElementById('settingsModal').classList.add('show');
     document.getElementById('msDropdown').value = localStorage.getItem('msPerSecond') || "40";
