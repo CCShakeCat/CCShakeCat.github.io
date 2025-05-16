@@ -1,3 +1,5 @@
+// Wall-clock stopwatch: accurate even if backgrounded or throttled
+
 let msPerTick = 25; // 40 ticks per second: shows .00 - .39
 let running = false;
 let intervalId = null;
@@ -23,6 +25,7 @@ function formatTime(ms) {
     const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
     const minutes = Math.floor((ms / (1000 * 60)) % 60).toString().padStart(2, '0');
     const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
+    // Each char is a span for fixed width (monospaced space)
     return [
         ...hours, ':', ...minutes, ':', ...seconds, '.', ...msString
     ].map(ch => `<span class="monochar">${ch}</span>`).join('');
@@ -31,14 +34,6 @@ function formatTime(ms) {
 function updateDisplay() {
     const display = document.getElementById('display');
     if (display) display.innerHTML = formatTime(getElapsed());
-}
-
-function updateStartStopButton() {
-    const btn = document.getElementById('startStopBtn');
-    if (btn) {
-        btn.textContent = running ? "Stop" : "Start";
-        btn.classList.toggle('running', running); // Optional for styling
-    }
 }
 
 function startStop() {
@@ -51,7 +46,6 @@ function startStop() {
         intervalId = setInterval(updateDisplay, msPerTick);
         running = true;
     }
-    updateStartStopButton();
 }
 
 function reset() {
@@ -60,16 +54,130 @@ function reset() {
     startTimestamp = null;
     elapsedBefore = 0;
     updateDisplay();
-    updateStartStopButton();
 }
 
-// ... rest of your code unchanged ...
-// (font functions and DOMContentLoaded as before, just add a call to updateStartStopButton() after updateDisplay() in the setup)
+function detectOS() {
+    const ua = navigator.userAgent;
+    if (/Windows/i.test(ua)) return "windows";
+    if (/Android/i.test(ua)) return "android";
+    if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
+    return "windows";
+}
+function applyFontFamily(fontType) {
+    const sw = document.querySelector('.stopwatch');
+    let fontStack;
+    if (fontType === 'custom') {
+        const fontData = localStorage.getItem('customFontData');
+        const fontName = (localStorage.getItem('customFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
+        if (fontData && fontName) {
+            if (!document.getElementById('customFontStyle')) {
+                const style = document.createElement('style');
+                style.id = 'customFontStyle';
+                style.innerHTML = `
+                  @font-face {
+                    font-family: '${fontName}';
+                    src: url(${fontData});
+                  }
+                `;
+                document.head.appendChild(style);
+            }
+            fontStack = `'${fontName}', sans-serif`;
+        } else {
+            fontStack = "'FancyCatPX', sans-serif";
+        }
+    } else if (fontType === 'system') {
+        const os = detectOS();
+        if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
+        else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
+        else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+    } else {
+        fontStack = "'FancyCatPX', sans-serif";
+    }
+    if (sw) sw.style.fontFamily = fontStack;
+    localStorage.setItem('stopwatchFont', fontStack);
+}
+function applyAndSaveFont(type) {
+    if (type === 'system') {
+        applyFontFamily('system');
+        localStorage.setItem('stopwatchFont', 'system');
+    } else {
+        applyFontFamily('default');
+        localStorage.setItem('stopwatchFont', 'FancyCatPX');
+    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
-    // ... all your existing setup code ...
-    // (omitted for brevity, see previous script.js)
-    // Add this at the end:
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const fontSelect = document.getElementById('fontSelect');
+    const closeSettings = document.getElementById('closeSettings');
+    const importCustomFont = document.getElementById('importCustomFont');
+    const customFontFile = document.getElementById('customFontFile');
+    const customFontNameElem = document.getElementById('customFontName');
+    const customFontNotice = document.getElementById('customFontNotice');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    startStopBtn.addEventListener('click', startStop);
+    resetBtn.addEventListener('click', reset);
+
+    settingsBtn.addEventListener('click', () => {
+        fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
+        customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
+        settingsModal.classList.add('show');
+        updateCustomFontNotice();
+    });
+    closeSettings.addEventListener('click', () => {
+        settingsModal.classList.remove('show');
+    });
+
+    importCustomFont.addEventListener('click', () => {
+        customFontFile.value = '';
+        customFontFile.click();
+    });
+    customFontFile.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        customFontNameElem.textContent = file.name;
+        localStorage.setItem('stopwatchFontType', 'custom');
+        localStorage.setItem('customFontName', file.name);
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const fontData = e.target.result;
+            localStorage.setItem('customFontData', fontData);
+            localStorage.setItem('stopwatchFont', file.name.replace(/\.[^/.]+$/, ""));
+            applyFontFamily('custom');
+        };
+        reader.readAsDataURL(file);
+        fontSelect.value = 'custom';
+        updateCustomFontNotice();
+    });
+    fontSelect.addEventListener('change', function() {
+        localStorage.setItem('stopwatchFontType', this.value);
+        if (this.value === 'custom') {
+            applyFontFamily('custom');
+            customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
+        } else {
+            customFontNameElem.textContent = '';
+            applyAndSaveFont(this.value);
+        }
+        updateCustomFontNotice();
+    });
+
+    function updateCustomFontNotice() {
+        if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
+            customFontNotice.style.display = '';
+        } else {
+            customFontNotice.style.display = 'none';
+        }
+    }
+
+    if (savedFontType === 'custom') {
+        applyFontFamily('custom');
+    } else {
+        applyFontFamily(savedFontType);
+    }
+
     updateDisplay();
-    updateStartStopButton();
 });
