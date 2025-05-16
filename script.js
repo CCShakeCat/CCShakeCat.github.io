@@ -1,18 +1,7 @@
-// Defensive version of script.js: all DOM lookups are checked before use.
-
-const fontFaces = {
-  default: "fonts/FancyCatPX.ttf",
-  system: {
-    windows: "fonts/SegoeUI regular.ttf",
-    android: "fonts/Roboto-Regular.ttf",
-    apple: "fonts/SanFranciscoDisplay-Regular.ttf"
-  }
-};
-
-let stopwatchInterval = null;
-let elapsed = 0;
-let running = false;
-
+// Set default msPerSecond if not set
+if (!localStorage.getItem('msPerSecond')) {
+  localStorage.setItem('msPerSecond', '40');
+}
 let msPerSecond = parseInt(localStorage.getItem('msPerSecond')) || 40;
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 applyFontFamily(savedFont);
@@ -52,7 +41,6 @@ function reset() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Modal open/close logic
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsModal = document.getElementById('settingsModal');
   const msDropdown = document.getElementById('msDropdown');
@@ -62,18 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const customFontFile = document.getElementById('customFontFile');
   const customFontName = document.getElementById('customFontName');
 
-  // Debug: Log the DOM elements (optional, can remove after testing)
-  console.log({
-    settingsBtn, settingsModal, msDropdown, fontSelect, closeSettings, importCustomFont, customFontFile, customFontName
-  });
-
   if (settingsBtn && settingsModal && msDropdown && fontSelect && closeSettings && importCustomFont && customFontFile && customFontName) {
     settingsBtn.onclick = () => {
-      settingsModal.classList.add('show');
+      // Always update msDropdown with current value or 40
       msDropdown.value = localStorage.getItem('msPerSecond') || "40";
       const font = localStorage.getItem('stopwatchFontType') || "default";
       fontSelect.value = font;
       customFontName.textContent = '';
+      settingsModal.classList.add('show');
     };
     closeSettings.onclick = () => {
       settingsModal.classList.remove('show');
@@ -119,16 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
         startStop();
       }
     };
-  } else {
-    // Log what is missing for easier debugging
-    if (!settingsBtn) console.error("settingsBtn not found");
-    if (!settingsModal) console.error("settingsModal not found");
-    if (!msDropdown) console.error("msDropdown not found");
-    if (!fontSelect) console.error("fontSelect not found");
-    if (!closeSettings) console.error("closeSettings not found");
-    if (!importCustomFont) console.error("importCustomFont not found");
-    if (!customFontFile) console.error("customFontFile not found");
-    if (!customFontName) console.error("customFontName not found");
   }
 });
 
@@ -140,52 +114,35 @@ function detectOS() {
   return "windows"; // fallback
 }
 
-function applyFontFamily(fontFamily) {
+function applyFontFamily(fontType) {
   const sw = document.querySelector('.stopwatch');
-  if (sw) sw.style.fontFamily = `'${fontFamily}', sans-serif`;
+  let fontStack;
+  if (fontType === 'system') {
+    const os = detectOS();
+    if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
+    else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
+    else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  } else if (fontType === 'system') {
+    fontStack = "'Segoe UI', Arial, sans-serif"; // fallback
+  } else {
+    fontStack = `'${fontType}', sans-serif`;
+  }
+  if (sw) sw.style.fontFamily = fontStack;
 }
 
 function applyAndSaveFont(type) {
   localStorage.setItem('stopwatchFontType', type);
-  let fontFamily = 'FancyCatPX';
-  let fontFaceRule = null;
-
-  if (type === 'default') {
-    fontFamily = 'FancyCatPX';
-    fontFaceRule = `
-      @font-face {
-        font-family: 'FancyCatPX';
-        src: url('${fontFaces.default}');
-      }
-    `;
-    localStorage.setItem('stopwatchFont', fontFamily);
-  } else if (type === 'system') {
-    const os = detectOS();
-    let fontName = '';
-    if (os === 'windows') fontName = 'SegoeUI';
-    else if (os === 'android') fontName = 'Roboto';
-    else fontName = 'SanFrancisco';
-    fontFamily = fontName;
-    fontFaceRule = `
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${fontFaces.system[os]}');
-      }
-    `;
-    localStorage.setItem('stopwatchFont', fontFamily);
-  } else if (type === 'custom') {
-    // Handled via file input
+  if (type === 'system') {
+    applyFontFamily('system');
+    localStorage.setItem('stopwatchFont', 'system');
     return;
   }
-  if (fontFaceRule) {
-    let oldStyle = document.getElementById('dynamicFontStyle');
-    if (oldStyle) oldStyle.remove();
-    const style = document.createElement('style');
-    style.id = 'dynamicFontStyle';
-    style.innerHTML = fontFaceRule;
-    document.head.appendChild(style);
+  if (type === 'default') {
+    applyFontFamily('FancyCatPX');
+    localStorage.setItem('stopwatchFont', 'FancyCatPX');
+    return;
   }
-  applyFontFamily(fontFamily);
+  // Custom handled on file upload
 }
 
 // Initial display
