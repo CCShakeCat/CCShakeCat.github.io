@@ -10,40 +10,58 @@
     <button id="settingsBtn" title="Settings">⚙️</button>
     <div class="stopwatch">
         <p id="display">00:00:00.00</p>
-        <button onclick="startStop()">Start/Stop</button>
-        <button onclick="reset()">Reset</button>
+        <button id="startStopBtn">START</button>
+        <button id="resetBtn">Reset</button>
     </div>
 
     <div id="settingsModal" class="modal">
-      <div class="modal-content">
-        <button id="closeSettings" title="Close">&times;</button>
-        <h2>Settings</h2>
-        <div class="setting-row">
-            <span class="setting-label">Font:</span>
-            <select id="fontSelect" class="setting-input">
-              <option value="default">Default</option>
-              <option value="system">System</option>
-            </select>
-            <button id="importCustomFont">Import Custom Font...</button>
-            <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
-            <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
+        <div class="modal-content">
+            <button id="closeSettings" title="Close">&times;</button>
+            <h2>Settings</h2>
+            <div class="setting-row">
+                <span class="setting-label">Font:</span>
+                <select id="fontSelect" class="setting-input">
+                  <option value="default">Default</option>
+                  <option value="system">System</option>
+                </select>
+                <button id="importCustomFont">Import Custom Font...</button>
+                <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
+                <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Milliseconds Per Second:</span>
+                <select id="msDropdown">
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="40" selected>40</option>
+                  <option value="50">50</option>
+                  <option value="60">60</option>
+                  <option value="70">70</option>
+                  <option value="80">80</option>
+                  <option value="90">90</option>
+                  <option value="100">100</option>
+                </select>
+            </div>
+            <div class="setting-row keybinds-section">
+                <span class="setting-label">Keybinds:</span>
+                <div class="keybind-fields">
+                    <div class="keybind-row">
+                        <span class="keybind-label">Start/Stop:</span>
+                        <div class="keybind-input" id="keybind-startstop" tabindex="0"></div>
+                    </div>
+                    <div class="keybind-row">
+                        <span class="keybind-label">Reset:</span>
+                        <div class="keybind-input" id="keybind-reset" tabindex="0"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="setting-row">
-            <span class="setting-label">Milliseconds Per Second:</span>
-            <select id="msDropdown">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-              <option value="40" selected>40</option>
-              <option value="50">50</option>
-              <option value="60">60</option>
-              <option value="70">70</option>
-              <option value="80">80</option>
-              <option value="90">90</option>
-              <option value="100">100</option>
-            </select>
-        </div>
-      </div>
+    </div>
+    <!-- Keybind Overlay -->
+    <div id="keybindOverlay" class="keybind-overlay" style="display:none;">
+        <div class="overlay-instruction" id="keybindOverlayInstruction"></div>
+        <div class="overlay-countdown" id="keybindOverlayCountdown"></div>
     </div>
     <script src="script.js"></script>
 </body>
