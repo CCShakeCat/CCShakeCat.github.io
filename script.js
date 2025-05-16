@@ -37,11 +37,11 @@ function formatTime(ms) {
 
 // Font paths
 const fontFaces = {
-  default: "fonts/YourDefaultFont.ttf", // Replace with your font file name
+  default: "fonts/FancyCatPX.ttf", // Replace with your font file name
   system: {
-    windows: "fonts/SegoeUI.ttf",
-    android: "fonts/Roboto.ttf",
-    apple: "fonts/SanFrancisco.ttf"
+    windows: "fonts/SegoeUI regular.ttf",
+    android: "fonts/Roboto-Regular.ttf",
+    apple: "fonts/SanFranciscoDisplay-Regular.ttf"
   }
 };
 
