@@ -37,11 +37,11 @@ body {
     user-select: none;
     /* fallback monospace just in case */
 }
-#display .mono {
+#display .monospace {
     font-family: 'JetBrains Mono', 'Fira Mono', 'SFMono-Regular', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', 'Courier New', monospace !important;
-    /* The !important ensures monospace is forced even on custom fonts */
-    display: inline-block;
-    min-width: 0.6em; /* Ensures even proportional digits are equal width */
+    letter-spacing: 0.06em;
+    /* Ensures all characters take up the exact same width */
+    /* You may adjust min-width/em if needed for each char */
 }
 
 @media (max-width: 1000px) {
