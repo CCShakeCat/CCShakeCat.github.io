@@ -1,5 +1,5 @@
 // Stopwatch state (global)
-let msPerSecond = 40; // 25 "ticks" per second
+let msPerTick = 40; // 40ms per tick
 let elapsed = 0;
 let running = false;
 let stopwatchInterval = null;
@@ -12,27 +12,20 @@ let customFontName = localStorage.getItem('customFontName') || '';
 
 // --- Stopwatch Functions ---
 function formatTime(ms) {
-    // Milliseconds: 0..24, two digits
-    const msTick = Math.floor((ms % 1000) / msPerSecond); // 0..24
+    // Milliseconds: 0..24, two digits (for 40ms per tick, 25 per second)
+    const msTick = Math.floor((ms % 1000) / msPerTick); // 0..24
     const msString = msTick.toString().padStart(2, '0');
     const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
     const minutes = Math.floor((ms / (1000 * 60)) % 60).toString().padStart(2, '0');
     const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
-    // Wrap each char in span.mono for monospace
+    // Display always uses monospace for spacing
     return (
-        wrapMono(hours) + ':' +
-        wrapMono(minutes) + ':' +
-        wrapMono(seconds) + '.' +
-        wrapMono(msString)
+        `<span class="monospace">${hours}:${minutes}:${seconds}.${msString}</span>`
     );
-}
-function wrapMono(str) {
-    // Each char (even colon/dot) gets its own <span class="mono">
-    return [...str].map(ch => `<span class="mono">${ch}</span>`).join('');
 }
 function updateDisplay() {
     const display = document.getElementById('display');
-    if (display) display.innerHTML = formatTime(elapsed); // note innerHTML for spans!
+    if (display) display.innerHTML = formatTime(elapsed);
 }
 function startStop() {
     if (running) {
@@ -41,9 +34,9 @@ function startStop() {
     } else {
         clearInterval(stopwatchInterval);
         stopwatchInterval = setInterval(() => {
-            elapsed += msPerSecond;
+            elapsed += msPerTick;
             updateDisplay();
-        }, msPerSecond);
+        }, msPerTick);
         running = true;
     }
 }
