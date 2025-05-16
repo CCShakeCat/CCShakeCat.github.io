@@ -9,11 +9,10 @@
 <body>
     <button id="settingsBtn" title="Settings">⚙️</button>
     <div class="stopwatch">
-        <p id="display">00:00:00.00</p>
+        <p id="display"><span class="monospace">00:00:00.00</span></p>
         <button id="startStopBtn">Start/Stop</button>
         <button id="resetBtn">Reset</button>
     </div>
-
     <div id="settingsModal" class="modal">
       <div class="modal-content">
         <button id="closeSettings" title="Close">&times;</button>
@@ -27,11 +26,11 @@
             </select>
             <button id="importCustomFont">Import Custom Font...</button>
             <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
-            <span id="customFontName" style="font-size:1.1em; color:#55ff55;"></span>
+            <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
         </div>
-        <div style="display:none;font-size:0.9em;color:#ffff55;margin-left:410px;margin-top:4px;">
-            * If the font doesn't apply right away, try refreshing the page
-        </div>
+          <div style="display:none;font-size:0.9em;color:#ffff55;margin-left:410px;margin-top:4px;">
+              * If the font doesn't apply right away, try refreshing the page
+          </div>
       </div>
     </div>
     <script src="script.js"></script>
