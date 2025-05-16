@@ -1,12 +1,23 @@
-let msPerTick = 25; // 40 ticks per second: 0-39
-let elapsed = 0;
+// Wall-clock stopwatch: accurate even if backgrounded or throttled
+
+let msPerTick = 25; // 40 ticks per second: shows .00 - .39
 let running = false;
-let stopwatchInterval = null;
+let intervalId = null;
+let startTimestamp = null;
+let elapsedBefore = 0; // ms accumulated before current run
 
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 let savedFontType = localStorage.getItem('stopwatchFontType') || 'default';
 let customFontData = localStorage.getItem('customFontData') || null;
 let customFontName = localStorage.getItem('customFontName') || '';
+
+function getElapsed() {
+    if (running) {
+        return elapsedBefore + (Date.now() - startTimestamp);
+    } else {
+        return elapsedBefore;
+    }
+}
 
 function formatTime(ms) {
     const msTick = Math.floor((ms % 1000) / msPerTick); // 0..39
@@ -19,27 +30,29 @@ function formatTime(ms) {
         ...hours, ':', ...minutes, ':', ...seconds, '.', ...msString
     ].map(ch => `<span class="monochar">${ch}</span>`).join('');
 }
+
 function updateDisplay() {
     const display = document.getElementById('display');
-    if (display) display.innerHTML = formatTime(elapsed);
+    if (display) display.innerHTML = formatTime(getElapsed());
 }
+
 function startStop() {
     if (running) {
-        clearInterval(stopwatchInterval);
+        clearInterval(intervalId);
+        elapsedBefore += Date.now() - startTimestamp;
         running = false;
     } else {
-        clearInterval(stopwatchInterval);
-        stopwatchInterval = setInterval(() => {
-            elapsed += msPerTick;
-            updateDisplay();
-        }, msPerTick);
+        startTimestamp = Date.now();
+        intervalId = setInterval(updateDisplay, msPerTick);
         running = true;
     }
 }
+
 function reset() {
-    clearInterval(stopwatchInterval);
+    clearInterval(intervalId);
     running = false;
-    elapsed = 0;
+    startTimestamp = null;
+    elapsedBefore = 0;
     updateDisplay();
 }
 
