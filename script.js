@@ -50,14 +50,14 @@ function reset() {
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('settingsBtn').onclick = () => {
-    document.getElementById('settingsModal').style.display = 'flex';
+    document.getElementById('settingsModal').classList.add('show');
     document.getElementById('msDropdown').value = localStorage.getItem('msPerSecond') || "40";
     const font = localStorage.getItem('stopwatchFontType') || "default";
     document.getElementById('fontSelect').value = font;
     document.getElementById('customFontName').textContent = '';
   };
   document.getElementById('closeSettings').onclick = () => {
-    document.getElementById('settingsModal').style.display = 'none';
+    document.getElementById('settingsModal').classList.remove('show');
   };
 
   // Import Custom Font link
