@@ -1,124 +1,160 @@
 @font-face {
-  font-family: 'SegoeUI';
-  src: url('fonts/SegoeUI regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
+    font-family: 'FancyCatPX';
+    src: url('fonts/FancyCatPX.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'SegoeUI';
+    src: url('fonts/SegoeUI regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('fonts/Roboto-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'SanFrancisco';
+    src: url('fonts/SanFranciscoDisplay-Regular.ttf') format('truetype');
 }
 
-/* Modal styling -- original style */
+body {
+    font-family: 'FancyCatPX', sans-serif;
+    color: #fff;
+    background: #000;
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+}
+
+.stopwatch {
+    text-align: center;
+    margin-top: 60px;
+}
+
+#display {
+    font-size: 7em;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+    margin: 0.4em 0 1em 0;
+}
+
+@media (max-width: 1000px) {
+    #display {
+        font-size: 4em;
+    }
+}
+@media (max-width: 600px) {
+    #display {
+        font-size: 2.2em;
+    }
+}
+
+#settingsBtn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 2001;
+    background: #222;
+    color: #fff;
+    border: 2.5px solid #888;
+    border-radius: 50%;
+    font-size: 2em;
+    width: 52px;
+    height: 52px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px #000a;
+}
+
 .modal {
-  display: none;
-  position: fixed;
-  z-index: 1001;
-  left: 0; top: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.4);
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
 }
 .modal.show {
-  display: block;
+    display: flex;
 }
+
 .modal-content {
-  background: #23262b;
-  color: #eee;
-  border-radius: 12px;
-  max-width: 480px;
-  margin: 80px auto 0 auto;
-  padding: 28px 32px 22px 32px;
-  position: relative;
-  box-shadow: 0 0 30px #000c;
+    background: #000;
+    color: #fff;
+    border: 12px solid #888;
+    border-radius: 40px;
+    padding: 32px 48px;
+    min-width: 660px;
+    min-height: 360px;
+    box-shadow: 0 0 32px #000c;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
 }
+
 #closeSettings {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  font-size: 1.4em;
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  padding: 0;
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    font-size: 2em;
+    color: #fff;
+    cursor: pointer;
+    background: none;
+    border: none;
 }
+
+.modal-content h2 {
+    font-size: 4em;
+    margin: 0 0 36px 0;
+    text-align: center;
+}
+
 .setting-row {
-  display: flex;
-  align-items: center;
-  margin: 22px 0 0 0;
+    display: flex;
+    align-items: center;
+    margin: 36px 0 0 0;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 32px;
 }
+
 .setting-label {
-  min-width: 120px;
-  font-weight: bold;
-  margin-right: 18px;
+    font-size: 2.6em;
+    width: 380px;
+    text-align: right;
 }
+
 .setting-input {
-  min-width: 110px;
-  padding: 3px 6px;
-  border-radius: 5px;
+    font-size: 2.4em;
+    padding: 6px 16px;
+    border: 7px solid #888;
+    border-radius: 6px;
+    width: 210px;
+    background: #fff;
+    color: #000;
+    font-family: inherit;
 }
 
-.keybinds-section {
-  flex-direction: column;
-  align-items: flex-start;
-}
-.keybind-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.keybind-row {
-  display: flex;
-  align-items: center;
-  margin-top: 6px;
-}
-.keybind-label {
-  min-width: 80px;
-}
-.keybind-input {
-  min-width: 120px;
-  background: #444;
-  color: #fff;
-  padding: 10px 18px;
-  border-radius: 18px;
-  border: 2px solid #888;
-  font-size: 1.1em;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  outline: none;
-  cursor: pointer;
-  text-align: center;
-  transition: border 0.15s;
-  margin-left: 8px;
-  user-select: none;
-}
-.keybind-input:focus, .keybind-input.listening {
-  border: 2px solid #76baff;
-  background: #2c2e37;
+#importCustomFont {
+    font-size: 1.8em;
+    color: #00f;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 18px;
 }
 
-.keybind-capture-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(20,20,30,0.92);
-  border-radius: 12px;
-  z-index: 10;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-}
-.keybind-capture-overlay.show {
-  display: flex;
-}
-.keybind-capture-instruction {
-  font-size: 1.5em;
-  margin-bottom: 20px;
-  color: #fff;
-  text-align: center;
-  font-family: 'Segoe UI', Arial, sans-serif;
-}
-.keybind-capture-countdown {
-  font-family: 'SegoeUI', 'Segoe UI', Arial, sans-serif;
-  font-size: 1.1em;
-  color: #b5befa;
-  margin-top: 16px;
-  text-align: center;
+#msDropdown {
+    font-size: 2.4em;
+    padding: 6px 16px;
+    border: 7px solid #888;
+    border-radius: 6px;
+    width: 110px;
+    background: #fff;
+    color: #000;
+    font-family: inherit;
 }
