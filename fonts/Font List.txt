@@ -1,0 +1,4 @@
+Apple = San Francisco
+Google = Roboto
+Windows = Segoe UI
+Other = Default Sans Serif
