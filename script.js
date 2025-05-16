@@ -1,27 +1,23 @@
-// Stopwatch state (global)
-let msPerTick = 40; // 40ms per tick
+let msPerTick = 25; // 40 ticks per second: 0-39
 let elapsed = 0;
 let running = false;
 let stopwatchInterval = null;
 
-// Font state (global)
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 let savedFontType = localStorage.getItem('stopwatchFontType') || 'default';
 let customFontData = localStorage.getItem('customFontData') || null;
 let customFontName = localStorage.getItem('customFontName') || '';
 
-// --- Stopwatch Functions ---
 function formatTime(ms) {
-    // Milliseconds: 0..24, two digits (for 40ms per tick, 25 per second)
-    const msTick = Math.floor((ms % 1000) / msPerTick); // 0..24
+    const msTick = Math.floor((ms % 1000) / msPerTick); // 0..39
     const msString = msTick.toString().padStart(2, '0');
     const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
     const minutes = Math.floor((ms / (1000 * 60)) % 60).toString().padStart(2, '0');
     const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
-    // Display always uses monospace for spacing
-    return (
-        `<span class="monospace">${hours}:${minutes}:${seconds}.${msString}</span>`
-    );
+    // Each char is a span for fixed width (monospaced space)
+    return [
+        ...hours, ':', ...minutes, ':', ...seconds, '.', ...msString
+    ].map(ch => `<span class="monochar">${ch}</span>`).join('');
 }
 function updateDisplay() {
     const display = document.getElementById('display');
@@ -47,7 +43,6 @@ function reset() {
     updateDisplay();
 }
 
-// --- Font Logic ---
 function detectOS() {
     const ua = navigator.userAgent;
     if (/Windows/i.test(ua)) return "windows";
@@ -98,9 +93,7 @@ function applyAndSaveFont(type) {
     }
 }
 
-// --- DOMContentLoaded for UI Logic ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Button and modal elements
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsModal = document.getElementById('settingsModal');
     const fontSelect = document.getElementById('fontSelect');
@@ -112,11 +105,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const startStopBtn = document.getElementById('startStopBtn');
     const resetBtn = document.getElementById('resetBtn');
 
-    // Stopwatch button events
     startStopBtn.addEventListener('click', startStop);
     resetBtn.addEventListener('click', reset);
 
-    // Settings modal logic
     settingsBtn.addEventListener('click', () => {
         fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
         customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
@@ -127,7 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
         settingsModal.classList.remove('show');
     });
 
-    // Font import & selection logic
     importCustomFont.addEventListener('click', () => {
         customFontFile.value = '';
         customFontFile.click();
@@ -170,13 +160,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Initial font application
     if (savedFontType === 'custom') {
         applyFontFamily('custom');
     } else {
         applyFontFamily(savedFontType);
     }
 
-    // Initial display
     updateDisplay();
 });
