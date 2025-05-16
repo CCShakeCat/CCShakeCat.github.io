@@ -1,4 +1,3 @@
-// Font paths - matches actual font files in fonts/
 const fontFaces = {
   default: "fonts/FancyCatPX.ttf",
   system: {
@@ -12,7 +11,6 @@ let stopwatchInterval = null;
 let elapsed = 0;
 let running = false;
 
-// Try to restore msPerSecond and font from storage:
 let msPerSecond = parseInt(localStorage.getItem('msPerSecond')) || 40;
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 applyFontFamily(savedFont);
@@ -51,97 +49,63 @@ function reset() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Modal open/close
-  document.getElementById('openSettings').onclick = () => {
+  document.getElementById('settingsBtn').onclick = () => {
     document.getElementById('settingsModal').style.display = 'flex';
-    // Restore previous settings
     document.getElementById('msDropdown').value = localStorage.getItem('msPerSecond') || "40";
     const font = localStorage.getItem('stopwatchFontType') || "default";
     document.getElementById('fontSelect').value = font;
+    document.getElementById('customFontName').textContent = '';
   };
   document.getElementById('closeSettings').onclick = () => {
     document.getElementById('settingsModal').style.display = 'none';
   };
 
-  // Font selector logic
-  document.getElementById('fontSelect').onchange = function() {
-    document.getElementById('customFontDiv').style.display = this.value === 'custom' ? 'block' : 'none';
+  // Import Custom Font link
+  document.getElementById('importCustomFont').onclick = () => {
+    document.getElementById('customFontFile').click();
   };
 
   document.getElementById('customFontFile').onchange = function() {
     const file = this.files[0];
     document.getElementById('customFontName').textContent = file ? file.name : '';
+    if (file) {
+      // Save font selection as 'custom'
+      localStorage.setItem('stopwatchFontType', 'custom');
+      // Actually load and apply the custom font
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const fontData = e.target.result;
+        const fontName = file.name.replace(/\.[^/.]+$/, "");
+        const style = document.createElement('style');
+        style.innerHTML = `
+          @font-face {
+            font-family: '${fontName}';
+            src: url(${fontData});
+          }
+        `;
+        document.head.appendChild(style);
+        localStorage.setItem('stopwatchFont', fontName);
+        applyFontFamily(fontName);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  document.getElementById('saveSettings').onclick = async function() {
-    // Save ms-per-second
-    const msValue = document.getElementById('msDropdown').value;
-    localStorage.setItem('msPerSecond', msValue);
-    msPerSecond = parseInt(msValue);
-
-    // Font logic
-    const fontSelect = document.getElementById('fontSelect').value;
-    localStorage.setItem('stopwatchFontType', fontSelect);
-
-    let fontFamily = 'inherit';
-    let fontFaceRule = null;
-
-    if (fontSelect === 'default') {
-      fontFamily = 'FancyCatPX';
-      fontFaceRule = `
-        @font-face {
-          font-family: 'FancyCatPX';
-          src: url('${fontFaces.default}');
-        }
-      `;
-      localStorage.setItem('stopwatchFont', fontFamily);
-    } else if (fontSelect === 'system') {
-      const os = detectOS();
-      let fontName = '';
-      if (os === 'windows') fontName = 'SegoeUI';
-      else if (os === 'android') fontName = 'Roboto';
-      else fontName = 'SanFrancisco';
-      fontFamily = fontName;
-      fontFaceRule = `
-        @font-face {
-          font-family: '${fontName}';
-          src: url('${fontFaces.system[os]}');
-        }
-      `;
-      localStorage.setItem('stopwatchFont', fontFamily);
-    } else if (fontSelect === 'custom') {
-      const file = document.getElementById('customFontFile').files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const fontData = e.target.result;
-          const fontName = file.name.replace(/\.[^/.]+$/, "");
-          const style = document.createElement('style');
-          style.innerHTML = `
-            @font-face {
-              font-family: '${fontName}';
-              src: url(${fontData});
-            }
-          `;
-          document.head.appendChild(style);
-          localStorage.setItem('stopwatchFont', fontName);
-          applyFontFamily(fontName);
-        };
-        reader.readAsDataURL(file);
-        document.getElementById('settingsModal').style.display = 'none';
-        return;
-      }
+  document.getElementById('fontSelect').onchange = function() {
+    if (this.value !== 'custom') {
+      document.getElementById('customFontName').textContent = '';
     }
-    if (fontFaceRule) {
-      let oldStyle = document.getElementById('dynamicFontStyle');
-      if (oldStyle) oldStyle.remove();
-      const style = document.createElement('style');
-      style.id = 'dynamicFontStyle';
-      style.innerHTML = fontFaceRule;
-      document.head.appendChild(style);
+    applyAndSaveFont(this.value);
+  };
+
+  document.getElementById('msDropdown').onchange = function() {
+    localStorage.setItem('msPerSecond', this.value);
+    msPerSecond = parseInt(this.value);
+    if (running) {
+      clearInterval(stopwatchInterval);
+      running = false;
+      startStop();
     }
-    applyFontFamily(fontFamily);
-    document.getElementById('settingsModal').style.display = 'none';
   };
 });
 
@@ -155,6 +119,49 @@ function detectOS() {
 
 function applyFontFamily(fontFamily) {
   document.querySelector('.stopwatch').style.fontFamily = `'${fontFamily}', sans-serif`;
+}
+
+function applyAndSaveFont(type) {
+  localStorage.setItem('stopwatchFontType', type);
+  let fontFamily = 'FancyCatPX';
+  let fontFaceRule = null;
+
+  if (type === 'default') {
+    fontFamily = 'FancyCatPX';
+    fontFaceRule = `
+      @font-face {
+        font-family: 'FancyCatPX';
+        src: url('${fontFaces.default}');
+      }
+    `;
+    localStorage.setItem('stopwatchFont', fontFamily);
+  } else if (type === 'system') {
+    const os = detectOS();
+    let fontName = '';
+    if (os === 'windows') fontName = 'SegoeUI';
+    else if (os === 'android') fontName = 'Roboto';
+    else fontName = 'SanFrancisco';
+    fontFamily = fontName;
+    fontFaceRule = `
+      @font-face {
+        font-family: '${fontName}';
+        src: url('${fontFaces.system[os]}');
+      }
+    `;
+    localStorage.setItem('stopwatchFont', fontFamily);
+  } else if (type === 'custom') {
+    // Handled via file input
+    return;
+  }
+  if (fontFaceRule) {
+    let oldStyle = document.getElementById('dynamicFontStyle');
+    if (oldStyle) oldStyle.remove();
+    const style = document.createElement('style');
+    style.id = 'dynamicFontStyle';
+    style.innerHTML = fontFaceRule;
+    document.head.appendChild(style);
+  }
+  applyFontFamily(fontFamily);
 }
 
 // Initial display
