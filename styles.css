@@ -34,6 +34,14 @@ body {
     font-family: inherit;
     letter-spacing: 0.05em;
     margin: 0.4em 0 1em 0;
+    user-select: none;
+    /* fallback monospace just in case */
+}
+#display .mono {
+    font-family: 'JetBrains Mono', 'Fira Mono', 'SFMono-Regular', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', 'Courier New', monospace !important;
+    /* The !important ensures monospace is forced even on custom fonts */
+    display: inline-block;
+    min-width: 0.6em; /* Ensures even proportional digits are equal width */
 }
 
 @media (max-width: 1000px) {
@@ -147,5 +155,3 @@ body {
     cursor: pointer;
     margin-left: 18px;
 }
-
-/* msDropdown style removed since dropdown is removed */
