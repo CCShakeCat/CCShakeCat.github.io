@@ -1,5 +1,5 @@
 // Stopwatch state (global)
-let msPerSecond = 40;
+let msPerSecond = 40; // 25 "ticks" per second
 let elapsed = 0;
 let running = false;
 let stopwatchInterval = null;
@@ -12,15 +12,27 @@ let customFontName = localStorage.getItem('customFontName') || '';
 
 // --- Stopwatch Functions ---
 function formatTime(ms) {
-    let milliseconds = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
-    let seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
-    let minutes = Math.floor((ms / (1000 * 60)) % 60).toString().padStart(2, '0');
-    let hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+    // Milliseconds: 0..24, two digits
+    const msTick = Math.floor((ms % 1000) / msPerSecond); // 0..24
+    const msString = msTick.toString().padStart(2, '0');
+    const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
+    const minutes = Math.floor((ms / (1000 * 60)) % 60).toString().padStart(2, '0');
+    const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
+    // Wrap each char in span.mono for monospace
+    return (
+        wrapMono(hours) + ':' +
+        wrapMono(minutes) + ':' +
+        wrapMono(seconds) + '.' +
+        wrapMono(msString)
+    );
+}
+function wrapMono(str) {
+    // Each char (even colon/dot) gets its own <span class="mono">
+    return [...str].map(ch => `<span class="mono">${ch}</span>`).join('');
 }
 function updateDisplay() {
     const display = document.getElementById('display');
-    if (display) display.textContent = formatTime(elapsed);
+    if (display) display.innerHTML = formatTime(elapsed); // note innerHTML for spans!
 }
 function startStop() {
     if (running) {
@@ -48,7 +60,7 @@ function detectOS() {
     if (/Windows/i.test(ua)) return "windows";
     if (/Android/i.test(ua)) return "android";
     if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
-    return "windows"; // fallback
+    return "windows";
 }
 function applyFontFamily(fontType) {
     const sw = document.querySelector('.stopwatch');
@@ -103,10 +115,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const importCustomFont = document.getElementById('importCustomFont');
     const customFontFile = document.getElementById('customFontFile');
     const customFontNameElem = document.getElementById('customFontName');
+    const customFontNotice = document.getElementById('customFontNotice');
     const startStopBtn = document.getElementById('startStopBtn');
     const resetBtn = document.getElementById('resetBtn');
 
-    // Stopwatch button events (using addEventListener ensures scoping works)
+    // Stopwatch button events
     startStopBtn.addEventListener('click', startStop);
     resetBtn.addEventListener('click', reset);
 
@@ -115,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
         customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
         settingsModal.classList.add('show');
+        updateCustomFontNotice();
     });
     closeSettings.addEventListener('click', () => {
         settingsModal.classList.remove('show');
@@ -141,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         reader.readAsDataURL(file);
         fontSelect.value = 'custom';
+        updateCustomFontNotice();
     });
     fontSelect.addEventListener('change', function() {
         localStorage.setItem('stopwatchFontType', this.value);
@@ -151,7 +166,16 @@ document.addEventListener("DOMContentLoaded", () => {
             customFontNameElem.textContent = '';
             applyAndSaveFont(this.value);
         }
+        updateCustomFontNotice();
     });
+
+    function updateCustomFontNotice() {
+        if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
+            customFontNotice.style.display = '';
+        } else {
+            customFontNotice.style.display = 'none';
+        }
+    }
 
     // Initial font application
     if (savedFontType === 'custom') {
