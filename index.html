@@ -2,27 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stopwatch</title>
-    <meta name="viewport" content="width=480, initial-scale=1">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Settings Button -->
     <button id="settingsBtn" title="Settings">⚙️</button>
-
-    <!-- Stopwatch Display -->
     <div class="stopwatch">
         <p id="display">00:00:00.00</p>
         <button id="startStopBtn">START</button>
         <button id="resetBtn">Reset</button>
     </div>
 
-    <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
             <button id="closeSettings" title="Close">&times;</button>
             <h2>Settings</h2>
-            <!-- Font Selector -->
             <div class="setting-row">
                 <span class="setting-label">Font:</span>
                 <select id="fontSelect" class="setting-input">
@@ -33,7 +28,6 @@
                 <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
                 <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
             </div>
-            <!-- Milliseconds Selector -->
             <div class="setting-row">
                 <span class="setting-label">Milliseconds Per Second:</span>
                 <select id="msDropdown">
@@ -49,7 +43,6 @@
                   <option value="100">100</option>
                 </select>
             </div>
-            <!-- Keybinds Section -->
             <div class="setting-row keybinds-section">
                 <span class="setting-label">Keybinds:</span>
                 <div class="keybind-fields">
@@ -63,14 +56,13 @@
                     </div>
                 </div>
             </div>
-            <!-- Keybind Capture Popup (inside modal-content, hidden by default) -->
-            <div id="keybindCaptureOverlay" class="keybind-capture-overlay">
-                <div class="keybind-capture-instruction" id="keybindCaptureInstruction"></div>
-                <div class="keybind-capture-countdown" id="keybindCaptureCountdown"></div>
-            </div>
         </div>
     </div>
-
+    <!-- Keybind Overlay -->
+    <div id="keybindOverlay" class="keybind-overlay" style="display:none;">
+        <div class="overlay-instruction" id="keybindOverlayInstruction"></div>
+        <div class="overlay-countdown" id="keybindOverlayCountdown"></div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
