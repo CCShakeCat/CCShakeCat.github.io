@@ -39,7 +39,7 @@ body {
 
 #display .monochar {
     display: inline-block;
-    width: 1.25ch; /* adjust for best look in your font */
+    width: 1.0ch; /* adjust for best look in your font */
     text-align: center;
     /* inherit font from parent, don't set font-family here! */
 }
