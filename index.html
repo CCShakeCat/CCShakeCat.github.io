@@ -13,25 +13,26 @@
         <button onclick="reset()">Reset</button>
     </div>
 
-    <script src="script.js"></script>
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" id="closeSettings">&times;</span>
-    <h2>Settings</h2>
-    <label for="fontSelect">Font:</label>
-    <select id="fontSelect">
-      <option value="default">Default</option>
-      <option value="system">System</option>
-      <option value="custom">Import Custom Font</option>
-    </select>
-    <div id="customFontDiv" style="display:none; margin-top:10px;">
-      <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2"/>
-      <span id="customFontName"></span>
+    <button id="openSettings">Settings</button>
+
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeSettings">&times;</span>
+        <h2>Settings</h2>
+        <label for="fontSelect">Font:</label>
+        <select id="fontSelect">
+          <option value="default">Default (FancyCatPX)</option>
+          <option value="system">System (OS Dependent)</option>
+          <option value="custom">Import Custom Font</option>
+        </select>
+        <div id="customFontDiv" style="display:none; margin-top:10px;">
+          <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2"/>
+          <span id="customFontName"></span>
+        </div>
+        <button id="saveSettings">Save</button>
+      </div>
     </div>
-    <button id="saveSettings">Save</button>
-  </div>
-</div>
-<button id="openSettings">Settings</button>
+
+    <script src="script.js"></script>
 </body>
 </html>
