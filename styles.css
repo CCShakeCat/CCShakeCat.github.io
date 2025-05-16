@@ -7,21 +7,21 @@
 
 @font-face {
     font-family: 'SegoeUI';
-    src: url('fonts/SegoeUI.ttf') format('truetype');
+    src: url('fonts/SegoeUI regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Roboto';
-    src: url('fonts/Roboto.ttf') format('truetype');
+    src: url('fonts/Roboto-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'SanFrancisco';
-    src: url('fonts/SanFrancisco.ttf') format('truetype');
+    src: url('fonts/SanFranciscoDisplay-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
