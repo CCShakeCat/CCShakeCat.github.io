@@ -1,6 +1,27 @@
 @font-face {
-    font-family: 'DefaultFont';
-    src: url('fonts/Font.ttf') format('truetype');
+    font-family: 'FancyCatPX';
+    src: url('fonts/FancyCatPX.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SegoeUI';
+    src: url('fonts/SegoeUI.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('fonts/Roboto.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SanFrancisco';
+    src: url('fonts/SanFrancisco.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
@@ -11,11 +32,10 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    font-family: 'DefaultFont', sans-serif;
+    font-family: 'FancyCatPX', sans-serif;
     color: #ffffff;
     background-color: #000000;
 }
-
 
 .stopwatch {
     text-align: center;
@@ -25,29 +45,33 @@ body {
     font-size: 2em;
 }
 
-/* Responsive Styles */
 @media (max-width: 1000px) {
     #display {
         font-size: 1.5em;
     }
 }
 
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <span class="close" id="closeSettings">&times;</span>
-    <h2>Settings</h2>
-    <label for="fontSelect">Font:</label>
-    <select id="fontSelect">
-      <option value="default">Default</option>
-      <option value="system">System</option>
-      <option value="custom">Import Custom Font</option>
-    </select>
-    <div id="customFontDiv" style="display:none; margin-top:10px;">
-      <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2"/>
-      <span id="customFontName"></span>
-    </div>
-    <button id="saveSettings">Save</button>
-  </div>
-</div>
-<button id="openSettings">Settings</button>
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    align-items: center; justify-content: center;
+    z-index: 1000;
+}
+.modal-content {
+    background: #222;
+    padding: 20px;
+    border-radius: 8px;
+    min-width: 300px;
+    position: relative;
+    color: #fff;
+}
+.close {
+    position: absolute;
+    top: 10px; right: 20px;
+    cursor: pointer;
+    font-size: 24px;
+}
