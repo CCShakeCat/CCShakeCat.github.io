@@ -35,13 +35,13 @@ body {
     letter-spacing: 0.05em;
     margin: 0.4em 0 1em 0;
     user-select: none;
-    /* fallback monospace just in case */
 }
-#display .monospace {
-    font-family: 'JetBrains Mono', 'Fira Mono', 'SFMono-Regular', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', 'Courier New', monospace !important;
-    letter-spacing: 0.06em;
-    /* Ensures all characters take up the exact same width */
-    /* You may adjust min-width/em if needed for each char */
+
+#display .monochar {
+    display: inline-block;
+    width: 0.85ch; /* adjust for best look in your font */
+    text-align: center;
+    /* inherit font from parent, don't set font-family here! */
 }
 
 @media (max-width: 1000px) {
