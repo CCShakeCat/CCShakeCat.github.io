@@ -12,7 +12,8 @@ A stopwatch timer that was inspired off of [Jcog](https://twitch.tv/jcog)'s time
 ### Changelog
 v1.0 - Original Release, Barebones, One font\
 ~~v1.1 - "Readability" font setting, Dropdown for ms customization~~ **SCRAPPED**\
-v1.2 - `#FFFFFF` White text on `#000000` black background (easier for colour change editing)\
+v1.2 - Slight revamp of the clock and code
+- ⚪ White text on ⬛ black background (easier for colour change editing)
 - New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read, and better on the eyes
   - **Default** - Fancy Cat PX. A tabular font suitable for a clock!
   - **System** - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI
