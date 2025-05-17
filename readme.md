@@ -12,7 +12,7 @@ A stopwatch timer that was inspired off of [Jcog](https://twitch.tv/jcog)'s time
 ### Features:
 40s tps, custom fonts, and more!
 ### Changelog
-v1.0 - Original Release, Barebones, One font
+v1.0 - Original Release, Barebones, One font\
 ~~v1.1 - "Readability" font setting, Dropdown for ms customization~~ **SCRAPPED**
 v1.2 - White text on black background (easier for colour change editing)
        New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read, and better in the eyes
