@@ -1,160 +1,241 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
 @font-face {
   font-family: 'CocoGothicPro';
-  src: url('fonts/CocoGothicPro-HvIt.otf') format('opentype');
+  src: url('CocoGothicPro-HvIt.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
-body, html, .center-content, .main-title, .clock-link, .clock-info-section, .clock-link-row, .clock-links {
-  font-family: 'CocoGothicPro', Arial, sans-serif !important;
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
+  background: #181818;
+  color: #fff;
+  min-height: 100%;
+  height: 100%;
+}
+
+.center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 32px 12px 18px 12px;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
   font-weight: normal !important;
   font-style: normal !important;
 }
-body {
-  min-height: 100vh;
-  background: #222222;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.center-content {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  margin-left: 5vw;
-}
+
 .main-title {
-  text-align: left;
-  font-size: 3em;
-  font-weight: bold;
-  margin-bottom: 1.5em;
-  line-height: 1.13;
-  letter-spacing: 1px;
-  font-style: italic;
-  text-shadow:
-    3px 3px 0 #000,
-    0 6px 24px #000a;
+  text-align: center;
+  margin: 28px 0 30px 0;
+  font-size: 2.5rem;
+  letter-spacing: 2px;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
+
 .clock-links {
   display: flex;
   flex-direction: column;
-  gap: 1.2em;
+  gap: 16px;
+  margin: 0 auto 30px auto;
+  width: 320px;
+  max-width: 95vw;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
+
 .clock-link-row {
   display: flex;
   align-items: center;
-  gap: 0.7em;
-  margin-bottom: 0.12em;
+  gap: 18px;
+  margin-bottom: 0;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
+
 .clock-icon {
-  width: 2.7em;
-  height: 2.7em;
-  vertical-align: middle;
-  filter: drop-shadow(1px 2px 0 #111a);
-  background: transparent;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px #0008);
+  background: #232323;
+  border-radius: 10px;
+  padding: 4px;
 }
-.clock-link {
-  font-size: 2.7em;
-  font-style: italic;
-  font-weight: bold;
-  letter-spacing: 1px;
-  color: #5eb3ff;
-  -webkit-text-stroke: 2px #222;
-  text-shadow:
-    2px 2px 0 #222,
-    0 4px 12px #000a,
-    0 0 8px #5eb3ff77;
-  transition: color 0.2s, text-shadow 0.2s;
-  cursor: pointer;
-}
+
+.clock-link,
+.clock-link.not-available,
 .clock-link:visited {
-  color: #5eb3ff;
-}
-.clock-link:hover:not(.not-available) {
   color: #fff;
-  text-shadow:
-    2px 2px 0 #222,
-    0 4px 18px #44aaff,
-    0 0 24px #fff3;
+  text-decoration: none;
+  font-size: 1.4em;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  transition: color 0.2s;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
-.not-available {
+
+.clock-link:hover {
+  color: #f7d774;
+}
+
+.clock-link.not-available {
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.7;
-  pointer-events: auto;
-  text-decoration: none;
-}
-a.clock-link {
-  text-decoration: none;
-  outline: none;
+  pointer-events: none;
 }
 
-.footnote {
+.clock-info-section {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #232323;
+  border-radius: 14px;
+  padding: 36px 22px 32px 22px;
+  box-shadow: 0 3px 24px #0005;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
+
+.clock-info-section h2,
+.clock-info-section h3,
+.clock-info-section h4 {
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
+  color: #f7d774;
+  letter-spacing: 1.2px;
+}
+
+.clock-info-section h2 {
+  font-size: 1.6em;
+}
+
+.clock-info-section h3 {
+  font-size: 1.25em;
+}
+
+.clock-info-section h4 {
+  font-size: 1.12em;
+}
+
+.clock-info-section p,
+.clock-info-section ul,
+.clock-info-section li,
+.clock-info-section a {
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 1.06em;
   color: #fff;
-  font-size: 1.3em;
-  font-style: italic;
-  margin-top: 2em;
-  margin-bottom: 2em;
-  text-align: left;
-  width: 100%;
-  max-width: 620px;
-  margin-left: 5vw;
-  text-shadow: 1px 2px 0 #111a, 0 4px 12px #000a;
-}
-.footnote p {
-  margin: 0;
+  line-height: 1.6;
 }
 
-@media (max-width: 900px) {
-  .main-title { font-size: 2em; }
-  .clock-link { font-size: 1.3em; }
-  .clock-icon { width: 1.5em; height: 1.5em; }
-  .clock-links { gap: 0.7em; }
-  .footnote { font-size: 1em; }
+.clock-info-section ul {
+  padding-left: 1.4em;
+  margin: 0.4em 0 1em 0;
+}
+
+.clock-info-section li {
+  margin-bottom: 0.35em;
+}
+
+.clock-info-section a {
+  color: #b6d7ff;
+  text-decoration: underline;
+  transition: color 0.2s;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
+
+.clock-info-section a:hover {
+  color: #f7d774;
+}
+
+.clock-info-section del {
+  text-decoration: line-through;
+  opacity: 0.7;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
 
 .modal {
-  display: none;
   position: fixed;
-  z-index: 1000;
-  left: 0; top: 0;
-  width: 100vw; height: 100vh;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
   overflow: auto;
-  background-color: rgba(0,0,0,0.25);
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .modal-content {
-  background-color: #fff;
-  margin: 15% auto;
-  padding: 2em 2.5em;
-  border: 1px solid #888;
+  background: #232323;
+  color: #fff;
+  margin: auto;
+  padding: 26px 32px 24px 32px;
+  border: 1px solid #444;
+  border-radius: 12px;
   width: 90%;
   max-width: 420px;
-  border-radius: 10px;
-  box-shadow: 0 6px 32px #0002;
-  text-align: center;
-  position: relative;
-  color: #111;
-  font-size: 1.1em;
+  box-shadow: 0 2px 12px #0006;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-weight: normal !important;
+  font-style: normal !important;
 }
+
 .close {
-  color: #aaa;
-  position: absolute;
-  top: 10px; right: 16px;
-  font-size: 1.5em;
-  font-weight: bold;
+  color: #f7d774;
+  float: right;
+  font-size: 2rem;
+  font-weight: normal !important;
+  font-style: normal !important;
   cursor: pointer;
+  margin-left: 8px;
 }
-.close:hover, .close:focus {
-  color: #3a4ad9;
+
+@media (max-width: 700px) {
+  .clock-info-section {
+    padding: 18px 4vw 18px 4vw;
+    max-width: 99vw;
+  }
+  .main-title {
+    font-size: 2em;
+  }
+  .clock-links {
+    width: 98vw;
+    max-width: 99vw;
+  }
+  .clock-link {
+    font-size: 1.06em;
+  }
+  .clock-icon {
+    width: 34px;
+    height: 34px;
+    padding: 2px;
+  }
 }
-#modal-message {
-  padding: 0.8em 0 0.3em 0;
-  word-break: break-word;
+
+::-webkit-scrollbar {
+  width: 12px;
+  background: #181818;
+}
+::-webkit-scrollbar-thumb {
+  background: #232323;
+  border-radius: 6px;
 }
