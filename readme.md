@@ -19,7 +19,7 @@ v1.2 - Slight revamp of the clock and code
   - **System** - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI
   - **Custom** - Upload your own TTF, OTF, or WOFF. **Note- You may need to refresh the page once you've uploaded a file!**
 - The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether
-v1.2.10 - Added icons to the files and reworked the settings button / modal text
+**v1.2.10 - Added icons to the files and reworked the settings button / modal text**
 
 ### -TO-DO- (Top = most priority)
 - Add a Keybind section to change how the START/STOP and RESET buttons work
