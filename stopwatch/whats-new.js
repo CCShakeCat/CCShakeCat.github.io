@@ -1,9 +1,13 @@
-// --- Version Dialog Data ---
-const STOPWATCH_VERSION = "v1.2.10";
-const STOPWATCH_WHATS_NEW = "Added icons to the files and reworked the settings button / modal text";
+// --- Version and Changelog Data as JSON ---
+const WHATS_NEW_DATA = {
+  version: "1.2.10",
+  changelog: [
+    "Added icons to the files and reworked the settings button / modal text"
+  ]
+};
 
-// --- LocalStorage Key ---
-const DIALOG_SHOWN_KEY = "stopwatchVersionDialog_shown_1.2.10";
+// --- LocalStorage Key (update if version changes) ---
+const DIALOG_SHOWN_KEY = `stopwatchVersionDialog_shown_${WHATS_NEW_DATA.version}`;
 
 // --- Create Dialog Element with system font ---
 function createVersionDialog() {
@@ -11,9 +15,11 @@ function createVersionDialog() {
   dialog.id = "stopwatch-version-dialog";
   dialog.innerHTML = `
     <form method="dialog" class="whats-new-modal-content" style="min-width:300px">
-      <h2>Stopwatch ${STOPWATCH_VERSION}</h2>
+      <h2>Stopwatch v${WHATS_NEW_DATA.version}</h2>
       <h3>What’s New</h3>
-      <ul><li>${STOPWATCH_WHATS_NEW}</li></ul>
+      <ul>
+        ${WHATS_NEW_DATA.changelog.map(item => `<li>${item}</li>`).join("\n")}
+      </ul>
       <button id="close-version-dialog" autofocus>Close</button>
     </form>
   `;
@@ -27,7 +33,6 @@ function createVersionDialog() {
 
 // Apply system font stack based on OS, matching the settings modal
 function applySystemFontToWhatsNew(modal) {
-  // Get OS from body data attribute set by script.js
   const os = document.body.getAttribute('data-os');
   if (!modal) return;
   if (os === 'windows') {
