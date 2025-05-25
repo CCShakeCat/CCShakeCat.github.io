@@ -5,12 +5,12 @@ const STOPWATCH_WHATS_NEW = "Added icons to the files and reworked the settings 
 // --- LocalStorage Key ---
 const DIALOG_SHOWN_KEY = "stopwatchVersionDialog_shown_1.2.10";
 
-// --- Create Dialog Element ---
+// --- Create Dialog Element with system font ---
 function createVersionDialog() {
   let dialog = document.createElement('dialog');
   dialog.id = "stopwatch-version-dialog";
   dialog.innerHTML = `
-    <form method="dialog" style="min-width:300px">
+    <form method="dialog" class="whats-new-modal-content" style="min-width:300px">
       <h2>Stopwatch ${STOPWATCH_VERSION}</h2>
       <h3>What’s New</h3>
       <ul><li>${STOPWATCH_WHATS_NEW}</li></ul>
@@ -18,7 +18,27 @@ function createVersionDialog() {
     </form>
   `;
   document.body.appendChild(dialog);
+
+  // Apply system font stack to match settings modal
+  applySystemFontToWhatsNew(dialog.querySelector('.whats-new-modal-content'));
+
   return dialog;
+}
+
+// Apply system font stack based on OS, matching the settings modal
+function applySystemFontToWhatsNew(modal) {
+  // Get OS from body data attribute set by script.js
+  const os = document.body.getAttribute('data-os');
+  if (!modal) return;
+  if (os === 'windows') {
+    modal.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+  } else if (os === 'android') {
+    modal.style.fontFamily = "Roboto, Arial, sans-serif";
+  } else if (os === 'apple') {
+    modal.style.fontFamily = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  } else {
+    modal.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+  }
 }
 
 // --- Show Dialog Logic ---
