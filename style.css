@@ -1,0 +1,101 @@
+body {
+  background: #f8f9fa;
+  color: #222;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0 0 3em 0;
+}
+main {
+  max-width: 700px;
+  margin: 2em auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px #0001;
+  padding: 2.2em 2em 2em 2em;
+}
+h1, h2, h3 {
+  margin-top: 1.5em;
+  color: #2e3c47;
+}
+h1 { font-size: 2.1em; }
+h2 { font-size: 1.4em; }
+h3 { font-size: 1.1em; }
+ul, ol { margin-left: 1.4em; }
+pre, code {
+  background: #f0f0f0;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-family: "Fira Mono", "Consolas", "Monaco", monospace;
+  font-size: 1em;
+}
+.strike { text-decoration: line-through; opacity: 0.7; }
+.small { font-size: 0.97em; color: #666; }
+a {
+  color: #3a4ad9;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.section {
+  margin-bottom: 2.2em;
+}
+.todo-list li {
+  margin-bottom: 0.4em;
+}
+.changelog-list {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+.null-note {
+  color: #bbb;
+  font-style: italic;
+  margin-left: 0.5em;
+}
+
+/* Navbar styles */
+.navbar {
+  width: 100vw;
+  background: #222c33;
+  color: #fff;
+  box-shadow: 0 2px 8px #0002;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0.6em 2em;
+}
+.navbar-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.navbar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: #fff;
+  background: none;
+  border: none;
+  text-decoration: none;
+  font-size: 1em;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.navbar-link:hover {
+  color: #3a4ad9;
+}
+.navbar-icon {
+  width: 1.3em;
+  height: 1.3em;
+  display: inline-block;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 1px #0008);
+  margin-right: 0.1em;
+}
