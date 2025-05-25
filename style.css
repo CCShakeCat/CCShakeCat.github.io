@@ -1,64 +1,199 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Clock Info</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <main class="center-content">
-    <h1 class="main-title">CLOCK INFO</h1>
-    <section class="clock-info-section">
-      <p>This is a page for Mimi's clock-related stuff</p>
-      <h2>CURRENT PROJECTS</h2>
+@font-face {
+  font-family: 'CocoGothicPro';
+  src: url('CocoGothicPro-HvIt.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
 
-      <h3>Real Time Clock (RTC)</h3>
-      <p><em>(null)</em></p>
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-width: 100vw;
+  background: #2d2d2d;
+  color: #fff;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+}
 
-      <h3>Countdown Timer</h3>
-      <p><em>(null)</em></p>
+.clock-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 48px 0 0 56px;
+}
 
-      <h3>Stopwatch - v1.2</h3>
-      <p>
-        A stopwatch timer that was inspired off of
-        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness. I just wanted it to be custom :)
-      </p>
-      <h4>Changelog</h4>
-      <ul>
-        <li>v1.0 - Original Release, Barebones, One font</li>
-        <li><del>v1.1 - "Readability" font setting, Dropdown for ms customization</del> <strong>SCRAPPED</strong></li>
-        <li>
-          v1.2 - Slight revamp of the clock and code
-          <ul>
-            <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
-            <li>
-              New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read, and better on the eyes.
-              <ul>
-                <li><strong>Default</strong> - Fancy Cat PX. A tabular font suitable for a clock!</li>
-                <li><strong>System</strong> - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI</li>
-                <li><strong>Custom</strong> - Upload your own TTF, OTF, or WOFF. <strong>Note</strong>: You may need to refresh the page once you've uploaded a file!</li>
-              </ul>
-            </li>
-            <li>
-              The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether.
-            </li>
-            <li><strong>v1.2.10 - Added icons to the files and reworked the settings button / modal text</strong></li>
-          </ul>
-        </li>
-      </ul>
-      <h4>-TO-DO- (Top = most priority)</h4>
-      <ul>
-        <li>Add a Keybind section to change how the START/STOP and RESET buttons work</li>
-        <li>Make the START/STOP button change from START to STOP when started or stopped</li>
-        <li><strong>KNOWN ISSUE</strong> Apple devices use Helvetica when using the System font setting</li>
-        <li>Add the ability to change the "Milliseconds" to a value between 10-100. Due to current difficulties, 40 is the hardcoded value</li>
-        <li>Add a colour customizer with a colour picker and HEX value support</li>
-      </ul>
-    </section>
-    <div style="margin-top:24px;">
-      <a href="index.html" class="clock-link">← Back to Home</a>
-    </div>
-  </main>
-</body>
-</html>
+.clock-title {
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-size: 3em;
+  font-style: italic;
+  font-weight: normal;
+  color: #fff;
+  margin-bottom: 48px;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  text-shadow:
+    0 4px 0 #181818,
+    0 8px 24px #181818a0;
+}
+
+.clock-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 44px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.clock-list li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.clock-icon {
+  width: 48px;
+  height: 48px;
+  margin-right: 4px;
+  background: transparent;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 1px 4px #0005;
+}
+
+.clock-link,
+.clock-link.clock-link-disabled {
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-size: 2.4em;
+  font-style: italic;
+  font-weight: normal;
+  letter-spacing: 1.7px;
+  color: #fff;
+  text-decoration: none;
+  display: inline-block;
+  background: none;
+  border: none;
+  outline: none;
+  text-shadow:
+    2px 2px 0 #3491ff,
+    -2px 2px 0 #3491ff,
+    2px -2px 0 #3491ff,
+    -2px -2px 0 #3491ff,
+    0 4px 14px #181818a0;
+  transition: color 0.22s;
+  cursor: pointer;
+  line-height: 1.1;
+  margin: 0;
+  padding: 0;
+}
+
+.clock-link:hover:not(.clock-link-disabled) {
+  color: #f7d774;
+}
+
+.clock-link.clock-link-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+.clock-info-link-row {
+  margin-top: 36px;
+  margin-left: 6px;
+}
+
+.clock-info-link {
+  display: inline-block;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-size: 1.5em;
+  font-style: italic;
+  font-weight: normal;
+  color: #fff;
+  letter-spacing: 1.2px;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-shadow:
+    2px 2px 0 #3491ff,
+    -2px 2px 0 #3491ff,
+    2px -2px 0 #3491ff,
+    -2px -2px 0 #3491ff,
+    0 4px 12px #181818a0;
+  transition: color 0.2s;
+}
+
+.clock-info-link:hover {
+  color: #f7d774;
+}
+
+.unavailable-dialogue {
+  position: fixed;
+  left: 0; top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(30,30,30,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.unavailable-dialogue span {
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-size: 1.5em;
+  color: #fff;
+  background: #232323;
+  border-radius: 12px 12px 0 0;
+  padding: 32px 44px 18px 44px;
+  text-align: center;
+  text-shadow: 1px 2px 10px #000c;
+}
+
+.close-dialogue {
+  display: block;
+  margin: 0 auto 24px auto;
+  padding: 12px 32px;
+  font-family: 'CocoGothicPro', Arial, sans-serif;
+  font-size: 1.2em;
+  font-style: italic;
+  background: #3491ff;
+  color: #fff;
+  border: none;
+  border-radius: 0 0 12px 12px;
+  cursor: pointer;
+  font-weight: normal;
+  box-shadow: 0 2px 8px #0009;
+  transition: background 0.18s;
+}
+.close-dialogue:hover {
+  background: #1c5db0;
+}
+
+@media (max-width: 900px) {
+  .clock-main {
+    padding: 28px 2vw 0 2vw;
+  }
+  .clock-title {
+    font-size: 1.4em;
+  }
+  .clock-link,
+  .clock-link.clock-link-disabled {
+    font-size: 1.2em;
+  }
+  .clock-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .clock-info-link {
+    font-size: 1em;
+  }
+  .unavailable-dialogue span {
+    font-size: 1.05em;
+    padding: 20px 8vw 10px 8vw;
+  }
+  .close-dialogue {
+    padding: 8px 22px;
+    font-size: 1em;
+  }
+}
