@@ -1,146 +1,64 @@
-@font-face {
-  font-family: 'CocoGothicPro';
-  src: url('CocoGothicPro-HvIt.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clock Info</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="center-content">
+    <h1 class="main-title">CLOCK INFO</h1>
+    <section class="clock-info-section">
+      <p>This is a page for Mimi's clock-related stuff</p>
+      <h2>CURRENT PROJECTS</h2>
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: 'CocoGothicPro', Arial, sans-serif;
-  background: #2d2d2d;
-  color: #fff;
-  min-height: 100vh;
-  min-width: 100vw;
-  box-sizing: border-box;
-}
+      <h3>Real Time Clock (RTC)</h3>
+      <p><em>(null)</em></p>
 
-.center-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  min-height: 100vh;
-  padding: 42px 0 0 48px;
-}
+      <h3>Countdown Timer</h3>
+      <p><em>(null)</em></p>
 
-.styled-title {
-  font-family: 'CocoGothicPro', Arial, sans-serif;
-  font-size: 2.8em;
-  font-style: italic;
-  font-weight: normal;
-  color: #fff;
-  margin-bottom: 44px;
-  letter-spacing: 2px;
-  line-height: 1.1;
-  /* strong white with black drop shadow just below */
-  text-shadow:
-    0 3px 0 #151515,
-    0 7px 24px #000a;
-}
-
-.styled-links {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  margin-bottom: 44px;
-}
-
-.styled-link-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.styled-icon {
-  width: 38px;
-  height: 38px;
-  background: transparent;
-  border-radius: 50%;
-  box-shadow: 0 1px 4px #0005;
-  object-fit: contain;
-  margin-right: 6px;
-}
-
-.styled-link,
-.styled-link.not-available {
-  font-family: 'CocoGothicPro', Arial, sans-serif;
-  font-style: italic;
-  font-weight: normal;
-  font-size: 2.15em;
-  letter-spacing: 1.6px;
-  color: #fff;
-  text-decoration: none;
-  display: inline-block;
-  /* Blue outline effect using text-shadow */
-  text-shadow:
-    2px 2px 0 #3491ff,
-    -2px 2px 0 #3491ff,
-    2px -2px 0 #3491ff,
-    -2px -2px 0 #3491ff,
-    0 4px 14px #000a;
-  transition: color 0.2s;
-  cursor: pointer;
-  line-height: 1.08;
-  margin-left: 0;
-}
-
-.styled-link.not-available {
-  opacity: 0.55;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.styled-link:hover {
-  color: #f7d774;
-}
-
-.clock-info-link-row {
-  margin-top: 36px;
-  margin-left: 4px;
-}
-
-.clock-info-link {
-  display: inline-block;
-  font-family: 'CocoGothicPro', Arial, sans-serif;
-  font-style: italic;
-  font-weight: normal;
-  font-size: 1.4em;
-  color: #fff;
-  letter-spacing: 1.1px;
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-shadow:
-    2px 2px 0 #3491ff,
-    -2px 2px 0 #3491ff,
-    2px -2px 0 #3491ff,
-    -2px -2px 0 #3491ff,
-    0 4px 12px #101010a0;
-  transition: color 0.2s;
-}
-
-.clock-info-link:hover {
-  color: #f7d774;
-  text-decoration: underline;
-}
-
-@media (max-width: 900px) {
-  .center-content {
-    padding: 30px 2vw 0 2vw;
-  }
-  .styled-title {
-    font-size: 1.45em;
-  }
-  .styled-link,
-  .styled-link.not-available {
-    font-size: 1.13em;
-  }
-  .styled-icon {
-    width: 24px;
-    height: 24px;
-  }
-  .clock-info-link {
-    font-size: 1em;
-  }
-}
+      <h3>Stopwatch - v1.2</h3>
+      <p>
+        A stopwatch timer that was inspired off of
+        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness. I just wanted it to be custom :)
+      </p>
+      <h4>Changelog</h4>
+      <ul>
+        <li>v1.0 - Original Release, Barebones, One font</li>
+        <li><del>v1.1 - "Readability" font setting, Dropdown for ms customization</del> <strong>SCRAPPED</strong></li>
+        <li>
+          v1.2 - Slight revamp of the clock and code
+          <ul>
+            <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
+            <li>
+              New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read, and better on the eyes.
+              <ul>
+                <li><strong>Default</strong> - Fancy Cat PX. A tabular font suitable for a clock!</li>
+                <li><strong>System</strong> - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI</li>
+                <li><strong>Custom</strong> - Upload your own TTF, OTF, or WOFF. <strong>Note</strong>: You may need to refresh the page once you've uploaded a file!</li>
+              </ul>
+            </li>
+            <li>
+              The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether.
+            </li>
+            <li><strong>v1.2.10 - Added icons to the files and reworked the settings button / modal text</strong></li>
+          </ul>
+        </li>
+      </ul>
+      <h4>-TO-DO- (Top = most priority)</h4>
+      <ul>
+        <li>Add a Keybind section to change how the START/STOP and RESET buttons work</li>
+        <li>Make the START/STOP button change from START to STOP when started or stopped</li>
+        <li><strong>KNOWN ISSUE</strong> Apple devices use Helvetica when using the System font setting</li>
+        <li>Add the ability to change the "Milliseconds" to a value between 10-100. Due to current difficulties, 40 is the hardcoded value</li>
+        <li>Add a colour customizer with a colour picker and HEX value support</li>
+      </ul>
+    </section>
+    <div style="margin-top:24px;">
+      <a href="index.html" class="clock-link">← Back to Home</a>
+    </div>
+  </main>
+</body>
+</html>
