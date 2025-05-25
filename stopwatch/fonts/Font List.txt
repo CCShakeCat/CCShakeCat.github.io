@@ -1,0 +1,7 @@
+Default = Fancy Cat PX
+
+=OS Specifics=
+Apple = San Francisco
+Google = Roboto
+Microsoft = Segoe UI
+Other = Default Sans Serif
