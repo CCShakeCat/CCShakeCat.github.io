@@ -16,42 +16,43 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  margin-left: 5vw;
 }
 .main-title {
-  text-align: center;
-  font-size: 2.7em;
+  text-align: left;
+  font-size: 3em;
   font-weight: bold;
-  margin-bottom: 1.3em;
-  line-height: 1.15;
+  margin-bottom: 1.5em;
+  line-height: 1.13;
   letter-spacing: 1px;
   font-style: italic;
   text-shadow:
-    2px 2px 0 #000,
-    0 4px 12px #000a;
+    3px 3px 0 #000,
+    0 6px 24px #000a;
 }
 .clock-links {
   display: flex;
   flex-direction: column;
-  gap: 1.1em;
+  gap: 1.2em;
 }
 .clock-link-row {
   display: flex;
   align-items: center;
-  gap: 0.6em;
-  margin-bottom: 0.1em;
+  gap: 0.7em;
+  margin-bottom: 0.12em;
 }
 .clock-icon {
-  width: 2.3em;
-  height: 2.3em;
+  width: 2.7em;
+  height: 2.7em;
   vertical-align: middle;
   filter: drop-shadow(1px 2px 0 #111a);
   background: transparent;
   border-radius: 50%;
 }
 .clock-link {
-  font-size: 2.3em;
+  font-size: 2.7em;
   font-style: italic;
   font-weight: bold;
   letter-spacing: 1px;
@@ -85,12 +86,30 @@ a.clock-link {
   outline: none;
 }
 
-@media (max-width: 600px) {
-  .main-title { font-size: 1.3em; }
-  .clock-link { font-size: 1.1em; }
-  .clock-icon { width: 1.3em; height: 1.3em; }
-  .clock-links { gap: 0.7em; }
+.footnote {
+  color: #fff;
+  font-size: 1.3em;
+  font-style: italic;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  text-align: left;
+  width: 100%;
+  max-width: 620px;
+  margin-left: 5vw;
+  text-shadow: 1px 2px 0 #111a, 0 4px 12px #000a;
 }
+.footnote p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .main-title { font-size: 2em; }
+  .clock-link { font-size: 1.3em; }
+  .clock-icon { width: 1.5em; height: 1.5em; }
+  .clock-links { gap: 0.7em; }
+  .footnote { font-size: 1em; }
+}
+
 .modal {
   display: none;
   position: fixed;
