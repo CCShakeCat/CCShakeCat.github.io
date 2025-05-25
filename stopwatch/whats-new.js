@@ -1,9 +1,11 @@
-// Version dialog data
+// --- Version Dialog Data ---
 const STOPWATCH_VERSION = "v1.2.10";
 const STOPWATCH_WHATS_NEW = "Added icons to the files and reworked the settings button / modal text";
+
+// --- LocalStorage Key ---
 const DIALOG_SHOWN_KEY = "stopwatchVersionDialog_shown_1.2.10";
 
-// Create version dialog if needed
+// --- Create Dialog Element ---
 function createVersionDialog() {
   let dialog = document.createElement('dialog');
   dialog.id = "stopwatch-version-dialog";
@@ -18,22 +20,30 @@ function createVersionDialog() {
   document.body.appendChild(dialog);
   return dialog;
 }
+
+// --- Show Dialog Logic ---
 function showVersionDialog() {
   let dialog = document.getElementById("stopwatch-version-dialog") || createVersionDialog();
   dialog.showModal();
   dialog.querySelector("#close-version-dialog").onclick = () => dialog.close();
 }
 
+// --- Show Once On Load ---
 document.addEventListener("DOMContentLoaded", () => {
-  // ...existing code...
-
-  // Show dialog once on load
   if (!localStorage.getItem(DIALOG_SHOWN_KEY)) {
     showVersionDialog();
     localStorage.setItem(DIALOG_SHOWN_KEY, "true");
   }
 
-  // "What's New?" button in settings
+  // --- Ctrl + F1 Keybind ---
+  window.addEventListener("keydown", function (e) {
+    if (e.ctrlKey && e.key === "F1") {
+      e.preventDefault();
+      showVersionDialog();
+    }
+  });
+
+  // --- "What's New?" button in settings modal ---
   const whatsNewBtn = document.getElementById('whatsNewBtn');
   if (whatsNewBtn) {
     whatsNewBtn.addEventListener('click', () => {
