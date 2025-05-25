@@ -3,11 +3,21 @@ html, body {
   margin: 0;
   padding: 0;
 }
+@font-face {
+  font-family: 'CocoGothicPro';
+  src: url('fonts/CocoGothicPro-HvIt.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+body, html, .center-content, .main-title, .clock-link, .clock-info-section, .clock-link-row, .clock-links {
+  font-family: 'CocoGothicPro', Arial, sans-serif !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+}
 body {
   min-height: 100vh;
   background: #222222;
   color: #fff;
-  font-family: 'Montserrat', 'Arial Black', Arial, sans-serif;
   display: flex;
   flex-direction: column;
   justify-content: center;
