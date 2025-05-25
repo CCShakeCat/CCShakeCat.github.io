@@ -27,7 +27,6 @@ html, body {
 .clock-title {
   font-family: 'CocoGothicPro', Arial, sans-serif;
   font-size: 3em;
-  font-style: italic;
   font-weight: normal;
   color: #fff;
   margin-bottom: 48px;
@@ -66,9 +65,7 @@ html, body {
 .clock-link,
 .clock-link.clock-link-disabled {
   font-family: 'CocoGothicPro', Arial, sans-serif;
-  font-size: 2.4em;
-  font-style: italic;
-  font-weight: normal;
+  font-size: 2.4em;  font-weight: normal;
   letter-spacing: 1.7px;
   color: #fff;
   text-decoration: none;
@@ -108,7 +105,6 @@ html, body {
   display: inline-block;
   font-family: 'CocoGothicPro', Arial, sans-serif;
   font-size: 1.5em;
-  font-style: italic;
   font-weight: normal;
   color: #fff;
   letter-spacing: 1.2px;
@@ -156,7 +152,6 @@ html, body {
   padding: 12px 32px;
   font-family: 'CocoGothicPro', Arial, sans-serif;
   font-size: 1.2em;
-  font-style: italic;
   background: #3491ff;
   color: #fff;
   border: none;
