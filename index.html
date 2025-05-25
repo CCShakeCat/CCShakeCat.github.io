@@ -7,58 +7,46 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="center-content">
-    <h1 class="main-title">MIMI CAT AND HER<br>CLOCK PROBLEMS :)</h1>
-    <div class="clock-links">
-      <div class="clock-link-row">
+  <main class="clock-main">
+    <h1 class="clock-title">
+      MIMI CAT AND HER<br>
+      CLOCK PROBLEMS :)
+    </h1>
+    <ul class="clock-list">
+      <li>
         <img src="homeicons/three-oclock_1f552.png" alt="Real-Time Clock" class="clock-icon" />
-        <span class="clock-link not-available" id="rtc-link">REAL-TIME CLOCK</span>
-      </div>
-      <div class="clock-link-row">
+        <button class="clock-link clock-link-disabled" onclick="showUnavailable('REAL-TIME CLOCK')">REAL-TIME CLOCK</button>
+      </li>
+      <li>
         <img src="homeicons/stopwatch_23f1-fe0f.png" alt="Stopwatch" class="clock-icon" />
-        <a class="clock-link" id="stopwatch-link" href="./stopwatch/">STOPWATCH</a>
-      </div>
-      <div class="clock-link-row">
+        <a class="clock-link" href="./stopwatch/">STOPWATCH</a>
+      </li>
+      <li>
         <img src="homeicons/timer-clock_23f2-fe0f.png" alt="Timer" class="clock-icon" />
-        <span class="clock-link not-available" id="timer-link">TIMER</span>
-      </div>
-      <div class="clock-link-row">
-        <img src="homeicons/info_2139-fe0f.png" alt="Clock Info" class="clock-icon" />
-        <a class="clock-link" id="clock-info-link" href="clock-info.html">CLOCK INFO</a>
-      </div>
+        <button class="clock-link clock-link-disabled" onclick="showUnavailable('TIMER')">TIMER</button>
+      </li>
+    </ul>
+    <div class="clock-info-link-row">
+      <a class="clock-info-link" href="clock-info.html">CLOCK INFO</a>
+    </div>
+    <div id="unavailable-dialogue" class="unavailable-dialogue" style="display:none;">
+      <span id="unavailable-message"></span>
+      <button class="close-dialogue" onclick="closeUnavailable()">OK</button>
     </div>
   </main>
-  <div id="popup-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <span class="close" id="close-modal">&times;</span>
-      <p id="modal-message"></p>
-    </div>
-  </div>
   <script>
-    // Modal popup logic
-    const modal = document.getElementById('popup-modal');
-    const modalMessage = document.getElementById('modal-message');
-    const closeModal = document.getElementById('close-modal');
-
-    function showModal(message) {
-      modalMessage.textContent = message;
-      modal.style.display = 'block';
+    function showUnavailable(title) {
+      document.getElementById('unavailable-message').textContent =
+        title + " is not currently available. Please try again later.";
+      document.getElementById('unavailable-dialogue').style.display = 'block';
     }
-
-    document.getElementById('rtc-link').onclick = function() {
-      showModal("Real Time Clock is not currently available. Please try again later.");
-    };
-    document.getElementById('timer-link').onclick = function() {
-      showModal("Timer is not currently available. Please try again later.");
-    };
-    closeModal.onclick = function() {
-      modal.style.display = 'none';
-    };
-    window.onclick = function(event) {
-      if (event.target === modal) {
-        modal.style.display = 'none';
-      }
+    function closeUnavailable() {
+      document.getElementById('unavailable-dialogue').style.display = 'none';
     }
+    // Optional: allow escape key to close the dialogue
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeUnavailable();
+    });
   </script>
 </body>
 </html>
