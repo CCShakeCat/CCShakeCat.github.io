@@ -2,131 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mimi's Clock Projects</title>
+  <title>Mimi Cat and Her Clock Problems :)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <nav class="navbar">
-    <div class="navbar-container">
-      <span class="navbar-title">Mimi's Clock Stuff</span>
-      <div class="navbar-links">
-        <button class="navbar-link grayscale" id="rtc-btn" title="Real Time Clock">
-          <img src="./homeicons/clock_three.png" alt="Real Time Clock" class="navbar-icon" />
-        </button>
-        <button class="navbar-link grayscale" id="timer-btn" title="Countdown Timer">
-          <img src="./homeicons/timer_clock.png" alt="Countdown Timer" class="navbar-icon" />
-        </button>
-        <a class="navbar-link" id="stopwatch-link" href="./stopwatch/" title="Stopwatch">
-          <img src="./homeicons/stopwatch_icon.png" alt="Stopwatch" class="navbar-icon" />
-        </a>
+  <main class="center-content">
+    <h1 class="main-title">MIMI CAT AND HER<br>CLOCK PROBLEMS :)</h1>
+    <div class="clock-links">
+      <div class="clock-link-row">
+        <img src="./homeicons/clock_three.png" alt="Real-Time Clock" class="clock-icon" />
+        <span class="clock-link not-available" id="rtc-link">REAL-TIME CLOCK</span>
+      </div>
+      <div class="clock-link-row">
+        <img src="./homeicons/stopwatch_icon.png" alt="Stopwatch" class="clock-icon" />
+        <a class="clock-link" id="stopwatch-link" href="./stopwatch/">STOPWATCH</a>
+      </div>
+      <div class="clock-link-row">
+        <img src="./homeicons/timer_clock.png" alt="Timer" class="clock-icon" />
+        <span class="clock-link not-available" id="timer-link">TIMER</span>
       </div>
     </div>
-  </nav>
+  </main>
   <div id="popup-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <span class="close" id="close-modal">&times;</span>
       <p id="modal-message"></p>
     </div>
   </div>
-  <main>
-  <p class="small">This is a page for Mimi's clock-related stuff</p>
-    <h1>CURRENT PROJECTS</h1>
-    <div class="section">
-      <h2>Real Time Clock (RTC)</h2>
-      <span class="null-note">(null)</span>
-    </div>
-    <div class="section">
-      <h2>Countdown Timer</h2>
-      <span class="null-note">(null)</span>
-    </div>
-    <div class="section">
-      <h2>Stopwatch - v1.2</h2>
-      <p>
-        A stopwatch timer that was inspired by 
-        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness.
-        I just wanted it to be custom :)
-      </p>
-      <h3>Changelog</h3>
-      <ul class="changelog-list">
-        <li><b>v1.0</b> - Original Release, Barebones, One font</li>
-        <li><span class="strike">v1.1 - "Readability" font setting, Dropdown for ms customization</span> <b>SCRAPPED</b></li>
-        <li>
-          <b>v1.2</b> - Slight revamp of the clock and code
-          <ul>
-            <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
-            <li>New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read and better on the eyes
-              <ul>
-                <li><b>Default</b> - Fancy Cat PX. A tabular font suitable for a clock!</li>
-                <li><b>System</b> - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI</li>
-                <li><b>Custom</b> - Upload your own TTF, OTF, or WOFF. <b>Note:</b> You may need to refresh the page once you've uploaded a file!</li>
-              </ul>
-            </li>
-            <li>The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether</li>
-          </ul>
-        </li>
-        <li>
-          <b>v1.2.10</b> - Added icons to the files and reworked the settings button / modal text
-        </li>
-      </ul>
-      <h3>-TO-DO- <span class="small">(Top = most priority)</span></h3>
-      <ul class="todo-list">
-        <li>Add a Keybind section to change how the START/STOP and RESET buttons work</li>
-        <li>Make the START/STOP button change from START to STOP when started or stopped</li>
-        <li><b>KNOWN ISSUE</b> Apple devices use Helvetica when using the System font setting</li>
-        <li>Add the ability to change the "Milliseconds" to a value between 10-100. Due to current difficulties, 40 is the hardcoded value</li>
-        <li>Add a colour customizer with a colour picker and HEX value support</li>
-      </ul>
-    </div>
-  </main>  <p class="small">This is a page for Mimi's clock-related stuff</p>
-    <h1>CURRENT PROJECTS</h1>
-    <div class="section">
-      <h2>Real Time Clock (RTC)</h2>
-      <span class="null-note">(null)</span>
-    </div>
-    <div class="section">
-      <h2>Countdown Timer</h2>
-      <span class="null-note">(null)</span>
-    </div>
-    <div class="section">
-      <h2>Stopwatch - v1.2</h2>
-      <p>
-        A stopwatch timer that was inspired by 
-        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness.
-        I just wanted it to be custom :)
-      </p>
-      <h3>Changelog</h3>
-      <ul class="changelog-list">
-        <li><b>v1.0</b> - Original Release, Barebones, One font</li>
-        <li><span class="strike">v1.1 - "Readability" font setting, Dropdown for ms customization</span> <b>SCRAPPED</b></li>
-        <li>
-          <b>v1.2</b> - Slight revamp of the clock and code
-          <ul>
-            <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
-            <li>New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read and better on the eyes
-              <ul>
-                <li><b>Default</b> - Fancy Cat PX. A tabular font suitable for a clock!</li>
-                <li><b>System</b> - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI</li>
-                <li><b>Custom</b> - Upload your own TTF, OTF, or WOFF. <b>Note:</b> You may need to refresh the page once you've uploaded a file!</li>
-              </ul>
-            </li>
-            <li>The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether</li>
-          </ul>
-        </li>
-        <li>
-          <b>v1.2.10</b> - Added icons to the files and reworked the settings button / modal text
-        </li>
-      </ul>
-      <h3>-TO-DO- <span class="small">(Top = most priority)</span></h3>
-      <ul class="todo-list">
-        <li>Add a Keybind section to change how the START/STOP and RESET buttons work</li>
-        <li>Make the START/STOP button change from START to STOP when started or stopped</li>
-        <li><b>KNOWN ISSUE</b> Apple devices use Helvetica when using the System font setting</li>
-        <li>Add the ability to change the "Milliseconds" to a value between 10-100. Due to current difficulties, 40 is the hardcoded value</li>
-        <li>Add a colour customizer with a colour picker and HEX value support</li>
-      </ul>
-    </div>
-  </main>
   <script>
     // Modal popup logic
     const modal = document.getElementById('popup-modal');
@@ -138,11 +41,11 @@
       modal.style.display = 'block';
     }
 
-    document.getElementById('rtc-btn').onclick = function() {
+    document.getElementById('rtc-link').onclick = function() {
       showModal("Real Time Clock is not currently available. Please try again later.");
     };
-    document.getElementById('timer-btn').onclick = function() {
-      showModal("Countdown Timer is not currently available. Please try again later.");
+    document.getElementById('timer-link').onclick = function() {
+      showModal("Timer is not currently available. Please try again later.");
     };
     closeModal.onclick = function() {
       modal.style.display = 'none';
