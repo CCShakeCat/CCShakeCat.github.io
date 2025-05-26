@@ -1,8 +1,8 @@
 // --- Version and Changelog Data as JSON ---
 const WHATS_NEW_DATA = {
-  version: "1.2.10",
+  version: "1.2.11",
   changelog: [
-    "Added icons to the files and reworked the settings button / modal text"
+    "Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button"
   ]
 };
 
