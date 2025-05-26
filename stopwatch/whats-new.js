@@ -2,7 +2,9 @@
 const WHATS_NEW_DATA = {
   version: "1.2.11",
   changelog: [
-    "Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button\n\nFor more info, visit Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button"
+    "Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button
+    
+    For more info, visit https://ccshakecat.github.io/clock-info.html"
   ]
 };
 
