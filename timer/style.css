@@ -32,7 +32,8 @@ body {
 #display, #timerInput {
     font-size: 7em;
     font-family: inherit;
-    letter-spacing: 0.05em;
+    /* Remove letter-spacing to prevent overlap */
+    letter-spacing: 0;
     margin: 0.4em 0 1em 0;
     text-align: center;
 }
@@ -50,8 +51,9 @@ body {
 
 #display .monochar {
     display: inline-block;
-    width: 1.0ch;
+    width: 1.35ch;      /* Increased to prevent digit overlap */
     text-align: center;
+    letter-spacing: 0;  /* Ensure no extra spacing inside */
 }
 
 @media (max-width: 1000px) {
