@@ -1,8 +1,8 @@
 // --- Version and Changelog Data as JSON ---
 const WHATS_NEW_DATA = {
-  version: "0.0.1",
+  version: "0.0.2",
   changelog: [
-    "Timer Test 1"
+    "Timer Test 2"
   ]
 };
 
