@@ -5,7 +5,7 @@ let hurryPlayed = false;
 let finished = false;
 let timerStartTime = 0;
 let lastDisplayedTicks = null;
-const TICK_MS = 750; // 0.75s per tick for SMB
+const TICK_MS = 400; // 0.4s per tick for SMB
 let animationFrameId = null;
 
 const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
