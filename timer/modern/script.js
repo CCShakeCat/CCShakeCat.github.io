@@ -5,7 +5,7 @@ let hurryPlayed = false;
 let finished = false;
 let timerStartTime = 0;
 let lastDisplayedTicks = null;
-const TICK_MS = 74 ; // 0.74s per tick for 3D Land
+const TICK_MS = 740 ; // 0.74s per tick for 3D Land
 let animationFrameId = null;
 
 const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
