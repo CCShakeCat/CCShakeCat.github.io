@@ -5,10 +5,62 @@ let hurryPlayed = false;
 let finished = false;
 let timerStartTime = 0;
 let lastDisplayedTicks = null;
-const TICK_MS = 400; // 0.68s per tick for SMB3
+const TICK_MS = 750; // 0.75s per tick for SMB
 let animationFrameId = null;
 
 const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+// --- Genesis Hurry Up Toggle Logic and Audio Selection ---
+
+// 1. Make the Genesis Hurry Up toggle visible and hook up logic on page load
+document.addEventListener("DOMContentLoaded", () => {
+    // Show the Genesis hurry up toggle
+    const genHurryToggle = document.getElementById('genHurryToggle');
+    genHurryToggle.style.display = 'block';
+
+    // Load user preference from localStorage if available
+    let useGenesisHurry = localStorage.getItem('useGenesisHurry') === 'true';
+
+    // Set the initial checkmark state
+    document.getElementById('genHurryCheck').textContent = useGenesisHurry ? '✔️' : '';
+
+    // Toggle click logic
+    genHurryToggle.addEventListener('click', () => {
+        useGenesisHurry = !useGenesisHurry;
+        document.getElementById('genHurryCheck').textContent = useGenesisHurry ? '✔️' : '';
+        localStorage.setItem('useGenesisHurry', useGenesisHurry);
+    });
+
+    // Save selector globally for playHurryUp (since let/const in block scope)
+    window._useGenesisHurry = () => useGenesisHurry;
+
+    // Existing DOMContentLoaded code
+    document.getElementById('startStopBtn').addEventListener('click', startStop);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    const timerInput = document.getElementById('timerInput');
+    timerInput.addEventListener('focus', function() {
+        showInput(true);
+    });
+    timerInput.addEventListener('blur', function() {
+        timerInput.value = normalizeInput(timerInput.value);
+    });
+    timerInput.addEventListener('input', function() {
+        timerInput.value = timerInput.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 3);
+    });
+    timerInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            timerInput.blur();
+        }
+    });
+
+    timerInput.value = "400";
+    reset();
+
+    document.querySelectorAll('audio').forEach(audio => {
+        audio.volume = 0.5;
+    });
+});
 
 // --- String decrement logic (supports both numbers and letters) ---
 function decrementSMBString(str) {
@@ -29,7 +81,6 @@ function decrementSMBString(str) {
     return "000";
 }
 
-// --- Helper functions (same as before) ---
 function normalizeInput(str) {
     return (str.toUpperCase().replace(/[^A-Z0-9 ]/g, '').padEnd(3, ' ')).slice(0, 3);
 }
@@ -117,7 +168,7 @@ function startStop() {
         startValue = smbCounter;
         hurryPlayed = false;
         finished = false;
-        document.body.classList.add('smb-mode');
+        document.body.classList.add('nsmb-mode');
         document.body.classList.add('running');
         showInput(false);
         updateDisplay();
@@ -142,38 +193,16 @@ function reset() {
     updateStartStopButton();
     document.body.classList.remove('running');
 }
+
+// --- Hurry Up Sound Selection ---
 function playHurryUp() {
-    let hurryAudio = document.getElementById('hurryAudio');
+    // Use the Genesis sound if toggled, otherwise default NES
+    let useGenesis = window._useGenesisHurry && window._useGenesisHurry();
+    let hurryAudio = useGenesis
+        ? document.getElementById('genHurryAudio')
+        : document.getElementById('hurryAudio');
     if (hurryAudio) {
         hurryAudio.currentTime = 0;
         hurryAudio.play().catch(() => {});
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('startStopBtn').addEventListener('click', startStop);
-    document.getElementById('resetBtn').addEventListener('click', reset);
-
-    const timerInput = document.getElementById('timerInput');
-    timerInput.addEventListener('focus', function() {
-        showInput(true);
-    });
-    timerInput.addEventListener('blur', function() {
-        timerInput.value = normalizeInput(timerInput.value);
-    });
-    timerInput.addEventListener('input', function() {
-        timerInput.value = timerInput.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 3);
-    });
-    timerInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            timerInput.blur();
-        }
-    });
-
-    timerInput.value = "400";
-    reset();
-
-    document.querySelectorAll('audio').forEach(audio => {
-        audio.volume = 0.5;
-    });
-});
