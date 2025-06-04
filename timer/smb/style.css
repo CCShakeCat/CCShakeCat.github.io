@@ -1,0 +1,117 @@
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('./fonts/PressStart2P-Regular.ttf') format('truetype');
+    font-display: swap;
+}
+
+body {
+    font-family: 'Press Start 2P', monospace, Arial, sans-serif;
+    color: #fff;
+    background: #6c9cff;
+    margin: 0;
+    min-height: 100vh;
+    min-width: 100vw;
+    overflow-x: hidden;
+}
+
+.main-center {
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#timerLabel {
+    font-family: inherit;
+    font-size: 5vw;
+    letter-spacing: 0.1em;
+    color: #fff;
+    margin-bottom: 0.2em;
+    text-align: center;
+}
+
+#display, #timerInput {
+    font-size: 5vw;
+    font-family: inherit;
+    letter-spacing: 0.1em;
+    margin: 1.2em 0 0.8em 0;
+    text-align: center;
+    background: none;
+    border: none;
+    color: #fff;
+    font-weight: bold;
+    outline: none;
+    width: 4.2em; /* Ensures input and display match width for 3 chars */
+    padding: 0;
+}
+
+#display {
+    word-spacing: 0;
+    /* Ensures monochar alignment is visually consistent */
+    display: flex;
+    justify-content: center;
+    gap: 0em;
+}
+
+.monochar {
+    display: inline-block;
+    width: 1.1em;
+    min-width: 1.1em;
+    max-width: 1.1em;
+    text-align: center;
+    /* Remove extra spacing for perfect grid look */
+}
+
+.timer-controls {
+    display: flex;
+    gap: 1.5em;
+    margin-top: 0.5em;
+}
+
+.timer-controls button {
+    font-size: 1em;
+    padding: 0.13em 0.6em;
+    border-radius: 0.2em;
+    border: none;
+    background: #888;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+}
+.timer-controls button:hover {
+    background: #aaf;
+    color: #000;
+}
+
+.settings-float {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 2001;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon {
+    width: 2em;
+    height: 2em;
+    display: inline-block;
+    vertical-align: middle;
+}

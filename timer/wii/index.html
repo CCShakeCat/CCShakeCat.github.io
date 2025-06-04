@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSMB Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main Timer Area -->
+    <main class="main-center">
+        <div class="timer">
+            <div id="timerLabel">TIME</div>
+            <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
+            <p id="display" style="display:none;">400</p>
+            <div class="timer-controls">
+                <button id="startStopBtn">Start</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+    </main>
+    <!-- NSMB Wii hurry-up audio -->
+    <audio id="hurryAudio" preload="auto">
+      <source src="sounds/hurryup.ogg" type="audio/ogg">
+      <source src="sounds/hurryup.mp3" type="audio/mpeg">
+    </audio>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mimi Cat and Her Clock Problems :)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="clock-main">
+    <h1 class="clock-title">
+      MIMI CAT AND HER<br>
+      CLOCK PROBLEMS :)
+    </h1>
+    <ul class="clock-list">
+      <li>
+        <img src="homeicons/three-oclock_1f552.png" alt="Real-Time Clock" class="clock-icon" />
+        <button class="clock-link clock-link-disabled" onclick="showUnavailable('REAL-TIME CLOCK')">REAL-TIME CLOCK</button>
+      </li>
+      <li>
+        <img src="homeicons/stopwatch_23f1-fe0f.png" alt="Stopwatch" class="clock-icon" />
+        <a class="clock-link" href="./stopwatch/index.html">STOPWATCH - v1.2.10</a>
+      </li>
+      <li>
+        <img src="homeicons/timer-clock_23f2-fe0f.png" alt="Timer" class="clock-icon" />
+        <button class="clock-link clock-link-disabled" onclick="showUnavailable('TIMER')">TIMER</button>
+      </li>
+    </ul>
+    <div class="clock-info-link-row">
+      <a class="clock-info-link" href="./clock-info.html">CLOCK INFO</a>
+    </div>
+    <div id="unavailable-dialogue" class="unavailable-dialogue" style="display:none;">
+      <span id="unavailable-message"></span>
+      <button class="close-dialogue" onclick="closeUnavailable()">OK</button>
+    </div>
+  </main>
+  <script>
+    function showUnavailable(title) {
+      document.getElementById('unavailable-message').textContent =
+        title + " is not currently available. Please try again later.";
+      document.getElementById('unavailable-dialogue').style.display = 'block';
+    }
+    function closeUnavailable() {
+      document.getElementById('unavailable-dialogue').style.display = 'none';
+    }
+    // Optional: allow escape key to close the dialogue
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeUnavailable();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+@font-face {
+    font-family: 'NSMBWii';
+    src: url('./fonts/Mario-Classic.ttf') format('truetype');
+    font-display: swap;
+}
+body {
+    font-family: 'NSMBWii', 'Press Start 2P', monospace, Arial, sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    min-width: 100vw;
+    margin: 0;
+    overflow-x: hidden;
+    background: linear-gradient(to bottom, #7ecefa 0%, #1e6ad9 60%, #1664b1 100%);
+}
+.main-center {
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Thicker, crisp, NSMB Wii-style black outline for label and timer */
+#timerLabel,
+#display,
+#timerInput,
+.monochar {
+    color: #fff;
+    font-family: inherit;
+    /* Extremely thick, sharp, sticker-like outline */
+    text-shadow:
+        -9px -9px 0 #000,
+         0px -9px 0 #000,
+         9px -9px 0 #000,
+        -9px  0px 0 #000,
+         9px  0px 0 #000,
+        -9px  9px 0 #000,
+         0px  9px 0 #000,
+         9px  9px 0 #000,
+        -7px -7px 0 #000,
+         0px -7px 0 #000,
+         7px -7px 0 #000,
+        -7px  0px 0 #000,
+         7px  0px 0 #000,
+        -7px  7px 0 #000,
+         0px  7px 0 #000,
+         7px  7px 0 #000;
+}
+
+#timerLabel {
+    font-size: 5vw;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.6em;
+    margin-top: 0;
+    text-align: center;
+}
+#display, #timerInput {
+    font-size: 10vw;
+    letter-spacing: 0.1em;
+    margin: 0;
+    text-align: center;
+    background: none;
+    border: none;
+    font-weight: bold;
+    outline: none;
+    width: 7.8em;
+    padding: 0;
+}
+#display {
+    word-spacing: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0em;
+}
+
+/* Updated monochar width for perfect digit alignment */
+.monochar {
+    display: inline-block;
+    width: 0.725em;
+    min-width: 0.725em;
+    max-width: 0.725em;
+    text-align: center;
+}
+
+/* Buttons */
+.timer-controls {
+    display: flex;
+    gap: 1.5em;
+    margin-top: 1.2em;
+}
+.timer-controls button {
+    font-size: 1em;
+    padding: 0.13em 0.6em;
+    border-radius: 0.2em;
+    border: none;
+    background: #888;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+}
+.timer-controls button:hover {
+    background: #aaf;
+    color: #000;
+}

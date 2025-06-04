@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Clock Info</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="center-content">
+    <h1 class="main-title">CLOCK INFO</h1>
+    <section class="clock-info-section">
+      <p>This is a page for Mimi's clock-related stuff</p>
+      <h2>CURRENT PROJECTS</h2>
+
+      <h3>Real Time Clock (RTC)</h3>
+      <p><em>(null)</em></p>
+
+      <h3>Countdown Timer</h3>
+      <p>
+        A stopwatch timer that was inspired off of
+        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness. I just wanted it to be custom :)
+      </p>
+      <h4>Changelog</h4>
+      <ul>
+          <li><span style="color:#ffff55">v1.0 - Original Release! Multiple styles and customization!</li>
+      </ul>
+
+      <h3>Stopwatch - v1.2</h3>
+      <p>
+        A stopwatch timer that was inspired off of
+        <a href="https://twitch.tv/jcog" target="_blank" rel="noopener">Jcog</a>'s timer, but with no craziness. I just wanted it to be custom :)
+      </p>
+      <h4>Changelog</h4>
+      <ul>
+        <li>v1.0 - Original Release, Barebones, One font</li>
+        <li><del>v1.1 - "Readability" font setting, Dropdown for ms customization</del> SCRAPPED</strong></li>
+        <li>
+          v1.2 - Slight revamp of the clock and code
+          <ul>
+            <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
+            <li>
+              New Settings menu with a font changer. The display has a "forced monospace" property which will eliminate the jitteriness of otherwise professional fonts, making them easier to read, and better on the eyes.
+              <ul>
+                <li>Default</strong> - Fancy Cat PX. A tabular font suitable for a clock!</li>
+                <li>System</strong> - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto, and Windows will use Segoe UI</li>
+                <li>Custom</strong> - Upload your own TTF, OTF, or WOFF. Note</strong>: You may need to refresh the page once you've uploaded a file!</li>
+              </ul>
+            </li>
+            <li>
+              The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window altogether.
+            </li>
+            <li>v1.2.10 - Added icons to the files and reworked the settings button / modal text</strong></li>
+            <li>v1.2.11 - Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button</strong></li>
+              <li><span style="color:#ffff55">v1.2.2 - New options to hide the options in the stopwatch (i.e. Hours, Mins, etc)</span></strong></li>
+          </ul>
+        </li>
+      </ul>
+      <h4>-TO-DO- (Top = most priority)</h4>
+      <ul>
+        <li>Add a Keybind section to change how the START/STOP and RESET buttons work</li>
+        <li>Make the START/STOP button change from START to STOP when started or stopped</li>
+        <li>KNOWN ISSUE</strong> Apple devices use Helvetica when using the System font setting</li>
+        <li>Add the ability to change the "Milliseconds" to a value between 10-100. Due to current difficulties, 40 is the hardcoded value</li>
+        <li>Add a colour customizer with a colour picker and HEX value support</li>
+      </ul>
+    </section>
+    <div style="margin-top:24px;">
+      <a href="index.html" class="clock-link">← Back to Home</a>
+    </div>
+  </main>
+</body>
+</html>
