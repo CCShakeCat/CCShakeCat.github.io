@@ -5,7 +5,7 @@ let hurryPlayed = false;
 let finished = false;
 let timerStartTime = 0;
 let lastDisplayedTicks = null;
-const TICK_MS = 750; // 0.75s per tick for NSMB Wii
+const TICK_MS = 7375 ; // 0.7375s per tick for 3D Land
 let animationFrameId = null;
 
 const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
