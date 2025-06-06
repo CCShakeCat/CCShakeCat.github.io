@@ -5,8 +5,8 @@
 }
 body {
     font-family: 'SMB3Secondary', 'Press Start 2P', monospace, Arial, sans-serif;
-    color: #ffe96b; /* SMW yellow */
-    background: #0866c6; /* SMW blue */
+    color: #ffe96b;
+    background: #0866c6;
     margin: 0;
     min-height: 100vh;
     min-width: 100vw;
@@ -25,28 +25,48 @@ body {
     flex-direction: column;
     align-items: center;
 }
-#timerLabel {
+
+/* --- CLEAN SMW OUTLINE --- */
+#timerLabel, #display, #timerInput, .monochar {
+    color: #ffe96b;
     font-family: inherit;
-    font-size: 5vw;
+    -webkit-text-stroke: 3px #000;
+    text-stroke: 3px #000;
+    text-shadow:
+        -2px -2px 0 #000,
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000,
+         0px -2px 0 #000,
+         0px  2px 0 #000,
+        -2px  0px 0 #000,
+         2px  0px 0 #000;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
     letter-spacing: 0.1em;
-    color: #ffe96b; /* SMW yellow */
+}
+
+#timerLabel {
+    font-size: 5vw;
     margin-bottom: 0.6em;
     margin-top: 0;
     text-align: center;
 }
+
 #display, #timerInput {
     font-size: 10vw;
-    font-family: inherit;
-    letter-spacing: 0.1em;
     margin: 0;
     text-align: center;
     background: none;
     border: none;
-    color: #ffe96b; /* SMW yellow */
     font-weight: bold;
     outline: none;
     width: 7.8em;
     padding: 0;
+    letter-spacing: 0.1em;
+    font-family: inherit;
+    color: #ffe96b;
 }
 #display {
     word-spacing: 0;
@@ -54,24 +74,7 @@ body {
     justify-content: center;
     gap: 0em;
 }
-/* --- 9px PIXEL OUTLINE EFFECT FOR SMW STYLE --- */
-.monochar, #timerLabel, #display, #timerInput {
-    color: #ffe96b; /* SMW yellow */
-    font-family: inherit;
-    text-shadow:
-        -9px -9px 0 #000,
-         0px -9px 0 #000,
-         9px -9px 0 #000,
-        -9px  0px 0 #000,
-         9px  0px 0 #000,
-        -9px  9px 0 #000,
-         0px  9px 0 #000,
-         9px  9px 0 #000;
-    image-rendering: pixelated;
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.1em;
-}
+
 .monochar {
     display: inline-block;
     width: 0.62em;
@@ -79,6 +82,7 @@ body {
     max-width: 0.62em;
     text-align: center;
 }
+
 .timer-controls {
     display: flex;
     gap: 1.5em;
@@ -98,5 +102,4 @@ body {
 .timer-controls button:hover {
     background: #aaf;
     color: #000;
-}   
-    
+}
