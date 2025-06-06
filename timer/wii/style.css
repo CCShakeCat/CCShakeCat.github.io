@@ -26,43 +26,33 @@ body {
     align-items: center;
 }
 
-/* Thicker, crisp, NSMB Wii-style black outline for label and timer */
-#timerLabel,
-#display,
-#timerInput,
-.monochar {
+/* --- CLEAN NSMBW OUTLINE --- */
+#timerLabel, #display, #timerInput, .monochar {
     color: #fff;
     font-family: inherit;
-    /* Extremely thick, sharp, sticker-like outline */
+    -webkit-text-stroke: 5px #000;
+    text-stroke: 5px #000;
     text-shadow:
-        -9px -9px 0 #000,
-         0px -9px 0 #000,
-         9px -9px 0 #000,
-        -9px  0px 0 #000,
-         9px  0px 0 #000,
-        -9px  9px 0 #000,
-         0px  9px 0 #000,
-         9px  9px 0 #000,
-        -7px -7px 0 #000,
-         0px -7px 0 #000,
-         7px -7px 0 #000,
-        -7px  0px 0 #000,
-         7px  0px 0 #000,
-        -7px  7px 0 #000,
-         0px  7px 0 #000,
-         7px  7px 0 #000;
+        -3px -3px 0 #000,
+         3px -3px 0 #000,
+        -3px  3px 0 #000,
+         3px  3px 0 #000,
+         0px -3px 0 #000,
+         0px  3px 0 #000,
+        -3px  0px 0 #000,
+         3px  0px 0 #000;
+    letter-spacing: 0.05em;
 }
 
 #timerLabel {
     font-size: 5vw;
-    letter-spacing: 0.1em;
     margin-bottom: 0.6em;
     margin-top: 0;
     text-align: center;
 }
+
 #display, #timerInput {
     font-size: 10vw;
-    letter-spacing: 0.1em;
     margin: 0;
     text-align: center;
     background: none;
@@ -71,6 +61,9 @@ body {
     outline: none;
     width: 7.8em;
     padding: 0;
+    letter-spacing: 0.05em;
+    font-family: inherit;
+    color: #fff;
 }
 #display {
     word-spacing: 0;
@@ -79,7 +72,6 @@ body {
     gap: 0em;
 }
 
-/* Updated monochar width for perfect digit alignment */
 .monochar {
     display: inline-block;
     width: 0.725em;
@@ -88,7 +80,6 @@ body {
     text-align: center;
 }
 
-/* Buttons */
 .timer-controls {
     display: flex;
     gap: 1.5em;
