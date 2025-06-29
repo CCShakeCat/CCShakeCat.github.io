@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real Time Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="stopwatch">
+    <p id="display"></p>
+    <button id="settingsBtn" aria-label="Clock Settings">
+        <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon" />
+    </button>
+  </div>
+
+  <div class="modal" id="settingsModal">
+    <div class="modal-content system-font">
+      <button id="closeSettings" class="close-btn" aria-label="Close Settings">&times;</button>
+      <div class="settings-header">
+        <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
+        <span class="font-header-text">FONT OPTIONS</span>
+      </div>
+      <div class="setting-row">
+        <label for="fontSelect" class="setting-label">Font:</label>
+        <select id="fontSelect" class="setting-input">
+          <option value="default">Default</option>
+          <option value="system">System</option>
+          <option value="custom">Custom</option>
+        </select>
+        <button id="importCustomFont" class="icon-btn">Import Custom Font...</button>
+        <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
+        <span id="customFontName"></span>
+        <div id="customFontNotice">Custom font is used for the clock display.</div>
+      </div>
+
+      <div class="setting-row">
+        <label for="is24Hour" class="setting-label">24-hour clock:</label>
+        <input type="checkbox" id="is24Hour" />
+      </div>
+
+      <div class="setting-row">
+        <label for="clockModeSelect" class="setting-label">Clock Mode:</label>
+        <select id="clockModeSelect" class="setting-input"></select>
+      </div>
+
+      <div class="show-hide-row">
+        <strong>SHOW ON CLOCK:</strong>
+        <label><input type="checkbox" id="showSeconds">Seconds</label>
+        <label><input type="checkbox" id="showTicks">Ticks</label>
+      </div>
+      <div class="show-hide-row" id="showAMPMRow" style="display:none;">
+        <label>
+          <input type="checkbox" id="showAMPM" />
+          AM/PM
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
