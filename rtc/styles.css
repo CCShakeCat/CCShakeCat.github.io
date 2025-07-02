@@ -60,7 +60,7 @@ body {
     display: inline-block;
     width: 1.0ch;
     text-align: center;
-    font-variant-numeric: tabular-nums;
+    /* font-variant-numeric: tabular-nums; */ /* <--- comment this out */
     vertical-align: baseline;
 }
 
