@@ -198,6 +198,28 @@ body {
     font-family: inherit;
 }
 
+/* Native browser style: Remove customizations for checkboxes and selects */
+.show-hide-row input[type="checkbox"] {
+    /* width: 1.15em; */
+    /* height: 1.15em; */
+    /* margin-right: 0.4em; */
+    /* accent-color: #f7d774; */
+    /* border-radius: 4px; */
+    /* background: #fff; */
+}
+
+/* Remove any select/input customizations for native look */
+/*
+.setting-input,
+select,
+input[type="checkbox"] {
+    appearance: none;
+    background: #fff;
+    border: 1px solid #888;
+    border-radius: 6px;
+}
+*/
+
 #importCustomFont {
     font-size: 1.8em;
     color: #00f;
@@ -247,12 +269,6 @@ body[data-os="apple"] .modal-content.system-font { font-family: 'San Francisco',
     font-size: 1.2em;
     cursor: pointer;
     transition: opacity 0.2s;
-}
-.show-hide-row input[type="checkbox"] {
-    width: 1.15em;
-    height: 1.15em;
-    margin-right: 0.4em;
-    accent-color: #f7d774;
 }
 
 .show-hide-row label.disabled-checkbox {

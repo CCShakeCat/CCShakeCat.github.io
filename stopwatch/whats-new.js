@@ -1,8 +1,8 @@
 // --- Version and Changelog Data as JSON ---
 const WHATS_NEW_DATA = {
-  version: "1.2.2",
+  version: "1.3.0",
   changelog: [
-    "New options to hide the options in the stopwatch (i.e. Hours, Mins, etc)"
+    "Made the dropdowns and checkboxes native"
   ]
 };
 

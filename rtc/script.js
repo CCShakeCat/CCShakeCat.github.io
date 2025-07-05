@@ -200,7 +200,7 @@ const clockModes = {
     }
   },
   "Upside Down": {
-    name: "˥ʇɐʍuo pǝpᴉsd∩ ⥃",
+    name: "⮀ uʍop ǝpᴉsdn",
     formatter: (d) => {
       const { h } = getHourAMPM(d);
       const m = d.getMinutes();
@@ -214,18 +214,28 @@ const clockModes = {
     }
   },
   "Backwards": {
-    name: "sdrawkcaB ⮂", // Unicode mirrored arrow for fun
+    name: "⮀ ƨbяɒwʞɔɒꓭ",
     formatter: (d) => {
-      const { h } = getHourAMPM(d);
-      const m = d.getMinutes();
-      const s = d.getSeconds();
-      let out = [pad(h), pad(m), pad(s)].join(":");
-      if (showTicks) {
-        const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
-        out += "." + msTick.toString().padStart(2, '0');
+      let h24 = d.getHours();
+      let m = d.getMinutes();
+      let s = d.getSeconds();
+      let ms = d.getMilliseconds();
+      let h = h24;
+      let ampm = '';
+      if (!is24Hour && showHours) {
+        ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
       }
-      // Reverse the string for backwards effect
-      return [...out].reverse().map(ch => `<span class="monochar">${ch}</span>`).join('');
+      let out = [
+        showHours ? pad(h) : null,
+        showMinutes ? pad(m) : null,
+        showSeconds ? pad(s) : null
+      ].filter(x=>x!==null).join(":");
+      if (showTicks) out += "." + Math.floor(ms / msPerTick).toString().padStart(2, '0');
+      return `<span style="display:inline-block;transform:scaleX(-1);">` +
+        [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
+        `</span>`;
     }
   },
   "esreveR": {
@@ -240,7 +250,6 @@ const clockModes = {
         out += "." + msTick.toString().padStart(2, '0');
       }
       // Reverse the string, but keep the formatting (e.g., 23:59:59.39 -> 93.95.95:32)
-      // We'll reverse the whole string including separators.
       let reversed = out.split('').reverse().join('');
       return [...reversed].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
@@ -252,7 +261,6 @@ const clockModes = {
       const sessionStart = Date.now();
       return () => {
         const elapsed = Date.now() - sessionStart;
-        // Format as HH:MM:SS.ticks (ticks = hundredths of a second)
         const hours = Math.floor(elapsed / 3600000);
         const minutes = Math.floor((elapsed % 3600000) / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
@@ -278,7 +286,6 @@ const clockModes = {
   "Is it Thursday?": {
     name: "Is it Thursday?",
     formatter: (d) => {
-      // Sunday = 0, Monday = 1, ..., Thursday = 4
       const answer = (d.getDay() === 4) ? "YES" : "NO";
       return [...answer].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
@@ -287,7 +294,6 @@ const clockModes = {
     name: "Can I sleep yet?",
     formatter: (d) => {
       const { h } = getHourAMPM(d);
-      // YES if it's 8PM or later, or before 6:00AM
       const answer = (is24Hour ? (h >= 20 || h < 6) : (d.getHours() >= 20 || d.getHours() < 6)) ? "You may rest now, it's night" : "You can only sleep at night";
       return [...answer].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
@@ -298,13 +304,8 @@ const clockModes = {
       let lastTime = "";
       let offset = 0;
       let lastUpdate = Date.now();
-
-      // You can adjust this for speed (pixels per second)
-      const speed = 80; // Higher = faster, in pixels per second
-
-      // We'll use a span with a moving left position
+      const speed = 80;
       return (d) => {
-        // Generate the time string as usual
         const { h } = getHourAMPM(d);
         const m = pad(d.getMinutes());
         const s = pad(d.getSeconds());
@@ -313,54 +314,42 @@ const clockModes = {
           const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
           out += "." + msTick.toString().padStart(2, '0');
         }
-
-        // Only update position if time has passed
         const now = Date.now();
-        const dt = (now - lastUpdate) / 1000; // seconds
+        const dt = (now - lastUpdate) / 1000;
         lastUpdate = now;
-
-        // Move offset left by speed*dt pixels (but since we're using monospace, we'll move by characters)
-        offset -= speed * dt / 16; // 16 px per monochar approx
-        if (offset < -out.length) offset = out.length; // wrap around
-
-        // To produce the scrolling effect, pad spaces at start and end and take a substring
+        offset -= speed * dt / 16;
+        if (offset < -out.length) offset = out.length;
         const padLen = 10;
         const scrollText = " ".repeat(padLen) + out + " ".repeat(padLen);
         let start = Math.floor(offset) % (out.length + padLen);
         if (start < 0) start += (out.length + padLen);
         const visible = scrollText.substring(start, start + 10);
-
-        // Display each character in a span as usual
         return [...visible].map(ch => `<span class="monochar">${ch}</span>`).join('');
       };
     })()
   },
+  // Fixed Rotating Time - smooth, fixed width, no jitter
   "Rotating Time": {
-    name: "(Jittery) Rotating Time",
+    name: "Rotating Time",
     formatter: (d) => {
-      // Compute values and angles
       const { h } = getHourAMPM(d);
       const m = d.getMinutes();
       const s = d.getSeconds();
       const t = showTicks ? Math.floor((d.getMilliseconds()) / msPerTick) : null;
-
-      // Rotation for each field (full circle for max value)
-      const hourAngle = ((is24Hour ? h : d.getHours()) % 24) * (360 / 24); // 0-23 mapped to 0-360
-      const minuteAngle = m * (360 / 60);            // 0-59 mapped to 0-360
-      const secondAngle = s * (360 / 60);            // 0-59 mapped to 0-360
-      const tickAngle = t !== null ? t * (360 / 40) : 0; // 0-39 mapped to 0-360
-
-      // Format with rotating spans
+      const hourAngle = ((is24Hour ? h : d.getHours()) % 24) * (360 / 24);
+      const minuteAngle = m * (360 / 60);
+      const secondAngle = s * (360 / 60);
+      const tickAngle = t !== null ? t * (360 / 40) : 0;
       let out = [
-        `<span class="rot-group" style="display:inline-block;transform:rotate(${hourAngle}deg);">${pad(h)}</span>`,
+        `<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${hourAngle}deg);">${pad(h)}</span>`,
         `<span class="monochar">:</span>`,
-        `<span class="rot-group" style="display:inline-block;transform:rotate(${minuteAngle}deg);">${pad(m)}</span>`,
+        `<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${minuteAngle}deg);">${pad(m)}</span>`,
         `<span class="monochar">:</span>`,
-        `<span class="rot-group" style="display:inline-block;transform:rotate(${secondAngle}deg);">${pad(s)}</span>`
+        `<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${secondAngle}deg);">${pad(s)}</span>`
       ];
       if (showTicks) {
         out.push(`<span class="monochar">.</span>`);
-        out.push(`<span class="rot-group" style="display:inline-block;transform:rotate(${tickAngle}deg);">${t.toString().padStart(2, "0")}</span>`);
+        out.push(`<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${tickAngle}deg);">${t.toString().padStart(2, "0")}</span>`);
       }
       return out.join('');
     }
@@ -368,11 +357,8 @@ const clockModes = {
   "Flashing": {
     name: "Flashing",
     formatter: (d) => {
-      // Only show on odd seconds (1, 3, 5, ...)
       const s = d.getSeconds();
       const showTime = s % 2 === 1;
-
-      // Build time string based on options
       const { h } = getHourAMPM(d);
       const m = pad(d.getMinutes());
       let out = pad(h) + ":" + m;
@@ -381,9 +367,7 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
         out += "." + msTick.toString().padStart(2, '0');
       }
-
       if (!showTime) return "";
-
       return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
   },
@@ -391,16 +375,11 @@ const clockModes = {
     name: "Power Lost",
     formatter: (d) => {
       const s = d.getSeconds();
-      const showTime = s % 2 === 1; // Show on odd seconds
-
+      const showTime = s % 2 === 1;
       if (!showTime) return "";
-
-      // Build zeroed out time according to options
       let out = "00:00";
       if (showSeconds) out += ":00";
       if (showTicks) out += ".00";
-
-      // Wrap in red class
       return `<span class="red">` +
         [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
       `</span>`;
@@ -409,51 +388,32 @@ const clockModes = {
   "Time until Tomorrow": {
     name: "Time until Tomorrow",
     formatter: (d) => {
-      // Get next midnight
       let tomorrow = new Date(d);
-      tomorrow.setHours(24, 0, 0, 0); // Set to next midnight
+      tomorrow.setHours(24, 0, 0, 0);
       let msLeft = tomorrow - d;
-
-      // Calculate hours, minutes, seconds, ticks
       let totalSeconds = Math.floor(msLeft / 1000);
       let hours = Math.floor(totalSeconds / 3600);
       let minutes = Math.floor((totalSeconds % 3600) / 60);
       let seconds = totalSeconds % 60;
-
       let out = pad(hours) + ":" + pad(minutes);
       if (showSeconds) out += ":" + pad(seconds);
       if (showTicks) {
         const msTick = Math.floor((msLeft % 1000) / msPerTick);
         out += "." + msTick.toString().padStart(2, '0');
       }
-
       return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
   },
   "LGBTQ Pride": {
     name: "LGBTQ Pride",
     formatter: (d) => {
-      // Progress Pride flag colors
       const flagColors = [
-        "#E40303", // Red
-        "#FF8C00", // Orange
-        "#FFED00", // Yellow (rainbow)
-        "#008026", // Green
-        "#004DFF", // Blue
-        "#750787", // Violet
-        "#FFF430", // Intersex yellow
-        "#7851A9", // Intersex purple
-        "#FFFFFF", // White
-        "#F5A9B8", // Trans pink
-        "#55CDFC", // Trans blue
-        "#603813", // Brown
-        "#000000", // Black
+        "#E40303", "#FF8C00", "#FFED00", "#008026", "#004DFF", "#750787",
+        "#FFF430", "#7851A9", "#FFFFFF", "#F5A9B8", "#55CDFC", "#603813", "#000000"
       ];
-
       let ss = typeof showSeconds !== "undefined" ? showSeconds : true;
       let st = typeof showTicks !== "undefined" ? showTicks : false;
       let mpt = typeof msPerTick !== "undefined" ? msPerTick : 10;
-
       const { h } = getHourAMPM(d);
       let timeStr = pad(h) + ":" + pad(d.getMinutes());
       if (ss) timeStr += ":" + pad(d.getSeconds());
@@ -461,10 +421,7 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / mpt);
         timeStr += "." + pad(msTick, 2);
       }
-
-      // Shift colors by time (cycles every 100ms)
       const offset = Math.floor(Date.now() / 250) % flagColors.length;
-
       let html = "";
       for (let i = 0; i < timeStr.length; ++i) {
         const ch = timeStr[i];
@@ -484,7 +441,6 @@ const clockModes = {
       const frameCount = 64;
       const frameW = 16, frameH = 16, scale = 4;
       const imageSrc = "./images/minecraft_clock_atlas.png";
-      // Real-time hour, offset so 6am = frame 0 (sync to real time)
       let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600;
       let mcTime = (hours - 6 + 24) % 24;
       let frame = Math.floor(mcTime / 24 * frameCount) % frameCount;
@@ -512,26 +468,24 @@ const clockModes = {
       </span>`;
     }
   },
-    "Time Query (Ticks)": {
-  name: "Time Query (Ticks)",
-  formatter: (d) => {
-    let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600 + d.getMilliseconds()/3600000;
-    let ticks = Math.floor((hours / 24) * 24000) % 24000;
-    const q = getTimeOfDayAndColor(d);
-    return `<span class="timequery" style="color:${q.color}; font-size:2em;">
-      Daytime is ${ticks}
-    </span>`;
-  }
-},
-      "Crazycolors": {
+  "Time Query (Ticks)": {
+    name: "Time Query (Ticks)",
+    formatter: (d) => {
+      let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600 + d.getMilliseconds()/3600000;
+      let ticks = Math.floor((hours / 24) * 24000) % 24000;
+      const q = getTimeOfDayAndColor(d);
+      return `<span class="timequery" style="color:${q.color}; font-size:2em;">
+        Daytime is ${ticks}
+      </span>`;
+    }
+  },
+  "Crazycolors": {
     name: "Crazycolors",
     formatter: (d) => {
-      // Get time parts
       const h24 = d.getHours();
       const m = d.getMinutes();
       const s = d.getSeconds();
       const ms = d.getMilliseconds();
-      // 12h/24h logic
       let h = h24;
       let ampm = '';
       let use24 = is24Hour;
@@ -546,10 +500,8 @@ const clockModes = {
         showSeconds ? pad(s) : null
       ].filter(x=>x!==null).join(":");
       if (showTicks) out += "." + Math.floor(ms / msPerTick).toString().padStart(2, '0');
-
       let outputHtml = '';
       let extraHtml = '';
-
       // 2:40 - pixelation
       if (h === 2 && m === 40) {
         outputHtml = `<span style="image-rendering: pixelated; filter: blur(1.2px);">${[...out].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
@@ -568,9 +520,36 @@ const clockModes = {
         outputHtml = `<span style="color:#00aa00;">${[...out].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
         extraHtml = `<div style="font-size:0.7em; color:#00aa00; opacity:0.25;">Haha Funny Snoop Dogg reference</div>`;
       }
-      // 6:09 - remove zeros
+      // 6:09 - remove zeros in hours and minutes only, but keep zeros in seconds (ones place) and ticks
       else if (((!use24 && ampm === "AM" && h === 6 && m === 9) || (use24 && h === 6 && m === 9))) {
-        outputHtml = [...out.replace(/0/g,'')].map(ch => `<span class="monochar">${ch}</span>`).join('');
+        // Split out into main time and ticks (if any)
+        let [mainTime, tickPart] = out.split(".");
+        let parts = mainTime.split(":");
+        let processed = parts.map((part, idx) => {
+          if (idx === 0 || idx === 1) { // hours or minutes
+            // Hide all zeros in hours and minutes
+            return [...part].map(ch =>
+              ch === "0"
+                ? `<span class="monochar" style="opacity:0;">0</span>`
+                : `<span class="monochar">${ch}</span>`
+            ).join('');
+          } else {
+            // For seconds and anything after, keep zeros visible
+            return [...part].map(ch =>
+              `<span class="monochar">${ch}</span>`
+            ).join('');
+          }
+        }).join('<span class="monochar">:</span>');
+
+        // Add ticks (the part after a dot) if present
+        if (typeof tickPart !== "undefined") {
+          let tickHtml = [...tickPart].map(ch =>
+            `<span class="monochar">${ch}</span>`
+          ).join('');
+          processed += `<span class="monochar">.</span>${tickHtml}`;
+        }
+
+        outputHtml = processed;
         extraHtml = `<div style="font-size:0.7em;opacity:0.5;">heh, nice</div>`;
       }
       // 7:04 - Red, White, Blue
@@ -587,10 +566,39 @@ const clockModes = {
         outputHtml = [...out].map((ch,i) => i>=3&&i<5 ? `<span class="monochar" style="filter:brightness(0.5);">😷</span>` : `<span class="monochar">${ch}</span>`).join('');
         extraHtml = `<div style="font-size:0.7em;opacity:0.5;">Stay safe!</div>`;
       }
-      // 9:06 - remove zeros, flip
+      // 9:06 - hide zeros in hours/minutes, keep zeros in seconds/ticks, flip everything, put message below clock
       else if (((!use24 && ampm === "AM" && h === 9 && m === 6) || (use24 && h === 9 && m === 6))) {
-        outputHtml = `<span style="display:inline-block;transform:scaleX(-1);">${[...out.replace(/0/g,'')].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
-        extraHtml = `<div style="font-size:0.7em;opacity:0.5;">heh, nice</div>`;
+        let [mainTime, tickPart] = out.split(".");
+        let parts = mainTime.split(":");
+        let processed = parts.map((part, idx) => {
+          if (idx === 0 || idx === 1) {
+            return [...part].map(ch =>
+              ch === "0"
+                ? `<span class="monochar" style="opacity:0;">0</span>`
+                : `<span class="monochar">${ch}</span>`
+            ).join('');
+          } else {
+            return [...part].map(ch =>
+              `<span class="monochar">${ch}</span>`
+            ).join('');
+          }
+        }).join('<span class="monochar">:</span>');
+
+        if (typeof tickPart !== "undefined") {
+          let tickHtml = [...tickPart].map(ch =>
+            `<span class="monochar">${ch}</span>`
+          ).join('');
+          processed += `<span class="monochar">.</span>${tickHtml}`;
+        }
+
+        // Flip the whole clock and the message together, with the message below
+        outputHtml = `
+          <div style="display: inline-block; transform: scaleX(-1); text-align: center;">
+            <div>${processed}</div>
+            <div style="font-size:0.7em;opacity:0.5;margin-top:0.5em;">heh, nice</div>
+          </div>
+        `;
+        extraHtml = ""; // Do not use extraHtml for this effect
       }
       // 9:11 - 🛩️🏢🏢
       else if (((!use24 && ampm === "AM" && h === 9 && m === 11) || (use24 && h === 9 && m === 11))) {
@@ -616,15 +624,13 @@ const clockModes = {
           return `<span class="monochar" style="color:hsl(${hue},100%,60%);">${ch}</span>`;
         }).join('');
       }
-
       if (!outputHtml && !extraHtml) extraHtml = `<div style="font-size:0.7em;opacity:0.5;">Crazycolors mode</div>`;
       return outputHtml + extraHtml;
     }
   },
-      "Rainbow": {
+  "Rainbow": {
     name: "Rainbow Hurrah",
     formatter: (d) => {
-      // 12h/24h logic
       let h = d.getHours();
       let ampm = '';
       if (!is24Hour && showHours) {
@@ -638,16 +644,13 @@ const clockModes = {
         showSeconds ? pad(d.getSeconds()) : null
       ].filter(x=>x!==null).join(":");
       if (showTicks) out += "." + Math.floor(d.getMilliseconds() / msPerTick).toString().padStart(2, '0');
-
-      // Rainbow effect
       let html = [...out].map((ch, i) => {
         let hue = (Date.now() / 8 + i * 40) % 360;
         return `<span class="monochar" style="color:hsl(${hue},100%,60%);">${ch}</span>`;
       }).join('');
       return html;
     }
-  },
-
+  }
 };
 // --------- END CLOCK MODES ---------
 
@@ -729,12 +732,13 @@ function updateDisplay() {
     const display = document.getElementById('display');
     if (!display) return;
     display.innerHTML = formatClock(new Date());
-
     // Rotate 180° for Upside Down mode, else reset
     if (clockMode === "Upside Down") {
         display.style.transform = "rotate(180deg)";
     } else if (clockMode === "Backwards") {
-        display.style.transform = "scaleX(-1)";
+        display.style.transform = "";
+    } else if (clockMode === "Flipped") {
+        display.style.transform = "";
     } else {
         display.style.transform = "";
     }
@@ -767,10 +771,10 @@ document.addEventListener("DOMContentLoaded", () => {
         option.textContent = tempDiv.textContent;
         // For Upside Down and Backwards, try to visually flip the option using Unicode or upside down text
         if (mode === "Upside Down") {
-          option.textContent = "˥ʇɐʍuo pǝpᴉsd∩ ⥃";
+          option.textContent = "uʍop ǝpᴉsdn ⥃";
         }
         if (mode === "Backwards") {
-          option.textContent = "sdrawkcaB ⮂";
+          option.textContent = "⮀ ƨbяɒwʞɔɒꓭ";
         }
         clockModeSelect.appendChild(option);
       });
