@@ -5,8 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMW Timer</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+      #customAudioInput {
+        font-size: 1em;
+        width: 22em;
+        max-width: 90vw;
+        padding: 0.4em;
+        border: 2px solid #000;
+        border-radius: 0.3em;
+        background: #eee;
+        color: #000;
+        font-family: inherit;
+        text-align: center;
+      }
+    </style>
 </head>
 <body>
+    <!-- Custom Music Input -->
+    <div id="customAudioBox" style="margin-top: 1em;">
+      <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
+      <button id="loadAudioBtn">Submit</button>
+      <div id="audioStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
+      <div id="mediaPreview" style="margin-top: 0.5em;"></div>
+    </div>
+
     <!-- Main Timer Area -->
     <main class="main-center">
         <div class="timer">
@@ -19,7 +41,7 @@
             </div>
         </div>
     </main>
-    <!-- Default NES hurry-up audio -->
+    <!-- SMW hurry-up audio -->
     <audio id="hurryAudio" preload="auto">
       <source src="sounds/hurryup.ogg" type="audio/ogg">
       <source src="sounds/hurryup.mp3" type="audio/mpeg">

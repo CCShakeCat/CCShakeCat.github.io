@@ -77,9 +77,9 @@ body {
 
 .monochar {
     display: inline-block;
-    width: 0.62em;
-    min-width: 0.62em;
-    max-width: 0.62em;
+    width: 1.0em;
+    min-width: 1.0em;
+    max-width: 1.0em;
     text-align: center;
 }
 

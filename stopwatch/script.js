@@ -1,22 +1,26 @@
-// Wall-clock accurate stopwatch with system-font settings modal and dynamic button/icon updates
-let msPerTick = 25; // 40 ticks per second: shows .00 - .39
+// Wall-clock accurate stopwatch with system-font settings modal, font selector, unit toggles, and RTC-style clock modes
+let msPerTick = 25;
 let running = false;
 let intervalId = null;
 let startTimestamp = null;
-let elapsedBefore = 0; // ms accumulated before current run
+let elapsedBefore = 0;
 
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 let savedFontType = localStorage.getItem('stopwatchFontType') || 'default';
 let customFontData = localStorage.getItem('customFontData') || null;
 let customFontName = localStorage.getItem('customFontName') || '';
 
-// --- Show/hide state for units ---
 let showHours = (localStorage.getItem('showHours') ?? "1") === "1";
 let showMinutes = (localStorage.getItem('showMinutes') ?? "1") === "1";
 let showSeconds = (localStorage.getItem('showSeconds') ?? "1") === "1";
 let showTicks = (localStorage.getItem('showTicks') ?? "1") === "1";
 
-// --- Format time with show/hide logic ---
+let clockMode = localStorage.getItem('clockMode') || 'default';
+let laggyOffset = 0;
+let laggyState = false;
+let rainbowIndex = 0;
+const rainbowColors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'];
+
 function formatTime(ms) {
     const msTick = Math.floor((ms % 1000) / msPerTick);
     const s = Math.floor(ms / 1000);
@@ -27,19 +31,14 @@ function formatTime(ms) {
     let out = [];
 
     if (showTicks && !showSeconds && !showMinutes && !showHours) {
-        // Only ticks
         out.push(Math.floor(ms / msPerTick).toString());
     } else if (showSeconds && !showTicks && !showMinutes && !showHours) {
-        // Only seconds
         out.push(Math.floor(ms / 1000).toString());
     } else if (showMinutes && !showSeconds && !showTicks && !showHours) {
-        // Only minutes
         out.push((ms / 60000).toFixed(4));
     } else if (showHours && !showMinutes && !showSeconds && !showTicks) {
-        // Only hours
         out.push((ms / 3600000).toFixed(6));
     } else if (!showHours && !showMinutes && showSeconds && showTicks) {
-        // Only seconds and ticks
         out.push(sec.toString().padStart(2, '0'));
         out.push('.');
         out.push(msTick.toString().padStart(2, '0'));
@@ -65,16 +64,32 @@ function getElapsed() {
     }
 }
 
+function updateLaggyOffset() {
+    laggyOffset = Math.floor(Math.random() * 400) - 200;
+}
+
+function getLaggyElapsed() {
+    return getElapsed() + laggyOffset;
+}
+
 function updateDisplay() {
     const display = document.getElementById('display');
-    if (display) display.innerHTML = formatTime(getElapsed());
+    if (!display) return;
+
+    const ms = clockMode === 'laggy' ? getLaggyElapsed() : getElapsed();
+    display.innerHTML = formatTime(ms);
+
+    if (clockMode === 'rainbowhurrah') {
+        display.style.color = rainbowColors[rainbowIndex % rainbowColors.length];
+        rainbowIndex++;
+    }
 }
 
 function updateStartStopButton() {
     const btn = document.getElementById('startStopBtn');
     if (btn) {
         btn.textContent = running ? "Stop" : "Start";
-        btn.classList.toggle('running', running); // For styling
+        btn.classList.toggle('running', running);
     }
 }
 
@@ -100,7 +115,6 @@ function reset() {
     updateStartStopButton();
 }
 
-// --- Font logic ---
 function detectOS() {
     const ua = navigator.userAgent;
     if (/Windows/i.test(ua)) return "windows";
@@ -153,7 +167,6 @@ function applyAndSaveFont(type) {
     }
 }
 
-// --- Checkbox UI logic ---
 function updateShowHideCheckboxUI() {
     const ids = ['showHours', 'showMinutes', 'showSeconds', 'showTicks'];
     const flags = [showHours, showMinutes, showSeconds, showTicks];
@@ -167,6 +180,7 @@ function updateShowHideCheckboxUI() {
         else if (label) label.classList.remove('disabled-checkbox');
     });
 }
+
 function saveShowHideState() {
     localStorage.setItem('showHours', showHours ? "1" : "0");
     localStorage.setItem('showMinutes', showMinutes ? "1" : "0");
@@ -174,8 +188,31 @@ function saveShowHideState() {
     localStorage.setItem('showTicks', showTicks ? "1" : "0");
 }
 
+function applyClockModeStyle() {
+    const el = document.getElementById("display");
+    if (!el) return;
+    el.classList.remove('crazycolors', 'flashing', 'marquee', 'rotating', 'pride', 'rainbowhurrah');
+    el.style.color = '';
+    el.style.fontStyle = '';
+    el.style.transform = '';
+    el.style.animation = '';
+
+    if (clockMode === "flashing") {
+        el.classList.add('flashing');
+    } else if (clockMode === "crazycolors") {
+        el.classList.add('crazycolors');
+    } else if (clockMode === "marquee") {
+        el.classList.add('marquee');
+    } else if (clockMode === "rotating") {
+        el.classList.add('rotating');
+    } else if (clockMode === "pride") {
+        el.classList.add('pride');
+    } else if (clockMode === "rainbowhurrah") {
+        el.classList.add('rainbowhurrah');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    // Detect OS for settings modal font
     const os = detectOS();
     document.body.setAttribute('data-os', os);
 
@@ -199,7 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
         settingsModal.classList.add('show');
         updateCustomFontNotice();
         updateShowHideCheckboxUI();
+        const clockModeSelect = document.getElementById('clockModeSelect');
+        if (clockModeSelect) clockModeSelect.value = clockMode;
     });
+
     closeSettings.addEventListener('click', () => {
         settingsModal.classList.remove('show');
     });
@@ -213,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
         customFontFile.value = '';
         customFontFile.click();
     });
-    customFontFile.addEventListener('change', function() {
+    customFontFile.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
         customFontNameElem.textContent = file.name;
@@ -221,7 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('customFontName', file.name);
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const fontData = e.target.result;
             localStorage.setItem('customFontData', fontData);
             localStorage.setItem('stopwatchFont', file.name.replace(/\.[^/.]+$/, ""));
@@ -231,7 +271,8 @@ document.addEventListener("DOMContentLoaded", () => {
         fontSelect.value = 'custom';
         updateCustomFontNotice();
     });
-    fontSelect.addEventListener('change', function() {
+
+    fontSelect.addEventListener('change', function () {
         localStorage.setItem('stopwatchFontType', this.value);
         if (this.value === 'custom') {
             applyFontFamily('custom');
@@ -257,9 +298,8 @@ document.addEventListener("DOMContentLoaded", () => {
         applyFontFamily(savedFontType);
     }
 
-    // Show/hide checkboxes logic
-    ["showHours","showMinutes","showSeconds","showTicks"].forEach(id => {
-        document.getElementById(id).addEventListener('change', function() {
+    ["showHours", "showMinutes", "showSeconds", "showTicks"].forEach(id => {
+        document.getElementById(id).addEventListener('change', function () {
             if (id === "showHours") showHours = this.checked;
             if (id === "showMinutes") showMinutes = this.checked;
             if (id === "showSeconds") showSeconds = this.checked;
@@ -269,8 +309,23 @@ document.addEventListener("DOMContentLoaded", () => {
             updateDisplay();
         });
     });
-    updateShowHideCheckboxUI();
 
+    const clockModeSelect = document.getElementById('clockModeSelect');
+    if (clockModeSelect) {
+        clockModeSelect.value = clockMode;
+        clockModeSelect.addEventListener('change', () => {
+            clockMode = clockModeSelect.value;
+            localStorage.setItem('clockMode', clockMode);
+            applyClockModeStyle();
+            updateLaggyOffset();
+            updateDisplay();
+        });
+    }
+
+    applyClockModeStyle();
+    updateLaggyOffset();
+    updateShowHideCheckboxUI();
     updateDisplay();
     updateStartStopButton();
+    setInterval(updateDisplay, msPerTick);
 });

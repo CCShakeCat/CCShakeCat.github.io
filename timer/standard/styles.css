@@ -334,3 +334,12 @@ input[type="checkbox"] {
     color: #f7d774;
     margin-top: 4px;
 }
+
+.hurry-up-flash {
+    /* Optionally add a light animation for fallback */
+    /* animation: hurryupflash 1s steps(1) infinite alternate; */
+}
+@keyframes hurryupflash {
+    from { filter: brightness(1); }
+    to   { filter: brightness(3); }
+}
