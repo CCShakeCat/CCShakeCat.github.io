@@ -1,0 +1,111 @@
+@font-face {
+    font-family: 'AftikaBlack';
+    src: url('./fonts/AftikaBlack.ttf') format('truetype');
+    font-display: swap;
+}
+
+body {
+    color: #fff;
+    min-height: 100vh;
+    min-width: 100vw;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+.main-center {
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#timerLabel {
+    font-size: 5vw;
+    margin-bottom: 0.6em;
+    margin-top: 0;
+    text-align: center;
+}
+
+#display, #timerInput {
+    font-size: 10vw;
+    margin: 0;
+    text-align: center;
+    background: none;
+    border: none;
+    font-weight: bold;
+    outline: none;
+    width: 7.8em;
+    padding: 0;
+    letter-spacing: 0.05em;
+    font-family: inherit;
+    color: #fff;
+}
+#display {
+    display: flex;
+    justify-content: center;
+    gap: 0em;
+}
+
+.monochar {
+    display: inline-block;
+    width: 0.8em;
+    min-width: 0.8em;
+    max-width: 0.8em;
+    text-align: center;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 1.5em;
+    margin-top: 1.2em;
+}
+.timer-controls button {
+    font-size: 1em;
+    padding: 0.13em 0.6em;
+    border-radius: 0.2em;
+    border: none;
+    background: #888;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+}
+.timer-controls button:hover {
+    background: #aaf;
+    color: #000;
+}
+
+/* Background gradient (use your preferred one) */
+.body-slw {
+    background: linear-gradient(to bottom, #0000AA 0%, #0088FF 100%);
+}
+
+/* --- Sonic Lost World digits: heavy navy outline, no white --- */
+:root { --slw-outline: #00124D; --slw-fill: #FFF04A; --slw-stroke: 9px; }
+
+.slw-timer #timerLabel,
+.slw-timer #display,
+.slw-timer #timerInput,
+.slw-timer .monochar {
+  font-family: 'AftikaBlack', 'PixelSuperHudPX', Arial, sans-serif;
+  color: var(--slw-fill);
+  -webkit-text-stroke: var(--slw-stroke) var(--slw-outline);
+  /* Fallback for browsers without stroke (keeps edges crisp) */
+  text-shadow:
+     -3px -3px 0 var(--slw-outline),
+      3px -3px 0 var(--slw-outline),
+     -3px  3px 0 var(--slw-outline),
+      3px  3px 0 var(--slw-outline),
+      0px -3px 0 var(--slw-outline),
+      0px  3px 0 var(--slw-outline),
+     -3px  0px 0 var(--slw-outline),
+      3px  0px 0 var(--slw-outline);
+}

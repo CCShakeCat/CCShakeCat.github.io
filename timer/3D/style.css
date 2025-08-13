@@ -1,0 +1,126 @@
+@font-face {
+    font-family: 'ModernMario';
+    src: url('./fonts/Modern-Mario.otf') format('opentype');
+    font-display: swap;
+}
+body {
+    font-family: 'ModernMario', monospace, Arial, sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    min-width: 100vw;
+    margin: 0;
+    overflow-x: hidden;
+    background: #07a0df;
+}
+.main-center {
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- 3D LAND/MODERN OUTLINE (Default) --- */
+body:not(.world-timer) #timerLabel,
+body:not(.world-timer) #display,
+body:not(.world-timer) #timerInput,
+body:not(.world-timer) .monochar {
+    font-family: inherit;
+    color: #ffd700;
+    -webkit-text-stroke: 5px #000;
+    text-stroke: 5px #000;
+    text-shadow:
+        -3px -3px 0 #000,
+         3px -3px 0 #000,
+        -3px  3px 0 #000,
+         3px  3px 0 #000,
+         0px -3px 0 #000,
+         0px  3px 0 #000,
+        -3px  0px 0 #000,
+         3px  0px 0 #000;
+    letter-spacing: 0.05em;
+}
+
+/* --- 3D WORLD OUTLINE --- */
+.world-timer #timerLabel,
+.world-timer #display,
+.world-timer #timerInput,
+.world-timer .monochar {
+    font-family: 'ModernMario', Arial, sans-serif;
+    color: #98a9b5;
+    font-weight: bold;
+    -webkit-text-stroke: 4px #fff;
+    text-stroke: 4px #fff;
+    text-shadow:
+        0 0 0 #fff,
+        0 2px 0 #454b54,
+        2px 2px 0 #454b54,
+        -2px 2px 0 #454b54,
+        0 4px 10px #0009;
+    image-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.1em;
+}
+
+#timerLabel {
+    font-size: 5vw;
+    margin-bottom: 0.6em;
+    margin-top: 0;
+    text-align: center;
+}
+
+#display, #timerInput {
+    font-size: 10vw;
+    margin: 0;
+    text-align: center;
+    background: none;
+    border: none;
+    font-weight: bold;
+    outline: none;
+    width: 7.8em;
+    padding: 0;
+    letter-spacing: 0.05em;
+    font-family: inherit;
+    color: #ffd700;
+}
+#display {
+    word-spacing: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0em;
+}
+
+.monochar {
+    display: inline-block;
+    width: 0.85em;
+    min-width: 0.85em;
+    max-width: 0.85em;
+    text-align: center;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 1.5em;
+    margin-top: 1.2em;
+}
+.timer-controls button {
+    font-size: 1em;
+    padding: 0.13em 0.6em;
+    border-radius: 0.2em;
+    border: none;
+    background: #888;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: inherit;
+}
+.timer-controls button:hover {
+    background: #aaf;
+    color: #000;
+}
