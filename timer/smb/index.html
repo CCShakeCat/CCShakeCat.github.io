@@ -34,9 +34,7 @@
       border-radius: 0.3em;
       display: block;
     }
-    #genHurryToggle label {
-      cursor: pointer;
-    }
+    #genHurryToggle label { cursor: pointer; }
     #genHurryToggle input[type="checkbox"] {
       margin-right: 0.5em;
       transform: scale(1.3);
@@ -46,27 +44,40 @@
   </style>
 </head>
 <body>
-  <!-- Genesis Hurry Up Toggle (checkbox version) -->
-  <div id="genHurryToggle">
+  <!-- Genesis Hurry Up Toggle -->
+  <div id="genHurryToggle" class="ui-chrome">
     <input type="checkbox" id="genHurryToggleBox" />
-    <label for="genHurryToggleBox">Use Genesis Hurry Up Sound instead</label>
+    <label for="genHurryToggleBox">Genesis Hurry Up Sound</label>
   </div>
 
   <!-- Custom Music Input -->
-  <div id="customAudioBox" style="margin-top: 1em;">
+  <div id="customAudioBox" class="ui-chrome" style="margin-top: 1em;">
     <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
     <button id="loadAudioBtn">Submit</button>
     <div id="audioStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
     <div id="mediaPreview" style="margin-top: 0.5em;"></div>
+
+    <!-- Style dropdown (kept in HTML so it's always there) -->
+    <div class="style-row">
+      <label for="styleSelect">Style</label>
+      <select id="styleSelect">
+        <option value="smb" selected>Super Mario Bros (Default)</option>
+        <option value="smblost">Super Mario Bros: The Lost Levels</option>
+        <option value="smas">Super Mario All-Stars (SNES)</option>
+      </select>
+    </div>
   </div>
 
   <!-- Main Timer Area -->
   <main class="main-center">
     <div class="timer">
-      <div id="timerLabel">TIME</div>
-      <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
-      <p id="display" style="display:none;">400</p>
-      <div class="timer-controls">
+      <!-- Timer text wrapped in #timerArea so it stays when running -->
+      <div id="timerArea">
+        <div id="timerLabel">TIME</div>
+        <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
+        <p id="display" style="display:none;">400</p>
+      </div>
+      <div class="timer-controls ui-chrome">
         <button id="startStopBtn">Start</button>
         <button id="resetBtn">Reset</button>
       </div>
@@ -75,8 +86,8 @@
 
   <!-- Hurry Up Sounds -->
   <audio id="hurryAudio" preload="auto">
-    <source src="sounds/hurryup.ogg" type="audio/ogg">
-    <source src="sounds/hurryup.mp3" type="audio/mpeg">
+    <source id="hurryOgg" src="sounds/hurryup.ogg" type="audio/ogg">
+    <source id="hurryMp3" src="sounds/hurryup.mp3" type="audio/mpeg">
   </audio>
   <audio id="genHurryAudio" preload="auto">
     <source src="sounds/gen-hurryup.ogg" type="audio/ogg">

@@ -1,11 +1,11 @@
-// === SMB Timer with Full NSMB Music Logic + Styles + Mobile Gain ===
+// === SMB Timer with Full NSMB Music Logic ===
 const customAudioInput = document.getElementById('customAudioInput');
-const customAudioBox   = document.getElementById('customAudioBox');
-const loadAudioBtn     = document.getElementById('loadAudioBtn');
-const audioStatus      = document.getElementById('audioStatus');
-const mediaPreview     = document.getElementById('mediaPreview');
-const hurryAudio       = document.getElementById('hurryAudio');
-const genHurryAudio    = document.getElementById('genHurryAudio');
+const customAudioBox = document.getElementById('customAudioBox');
+const loadAudioBtn = document.getElementById('loadAudioBtn');
+const audioStatus = document.getElementById('audioStatus');
+const mediaPreview = document.getElementById('mediaPreview');
+const hurryAudio = document.getElementById('hurryAudio');
+const genHurryAudio = document.getElementById('genHurryAudio');
 
 let customAudio = null;
 let youTubeVideoID = null;
@@ -15,79 +15,13 @@ let mediaType = null; // 'audio', 'youtube', 'spotify'
 let currentPlaybackRate = 1;
 let hurryTriggered = false;
 
-// ---------------------
-// Running state -> CSS
-// ---------------------
-function setRunningUI(isRunning) {
-  if (isRunning) document.body.setAttribute('data-running', 'true');
-  else document.body.removeAttribute('data-running');
-}
-
-// ---------------------
-// Mobile gain boosting
-// ---------------------
-function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
-let audioCtx = null, globalGain = null, gainWired = false;
-function ensureAudioGain() {
-  if (gainWired || !isMobile()) return;
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    globalGain = audioCtx.createGain();
-    globalGain.gain.value = 1.5; // ~1.5x boost on mobile only
-    document.querySelectorAll('audio').forEach(a => {
-      const src = audioCtx.createMediaElementSource(a);
-      src.connect(globalGain).connect(audioCtx.destination);
-    });
-    gainWired = true;
-    audioCtx.resume?.();
-  } catch (e) { console.warn('AudioContext init failed:', e); }
-}
-
-// ---------------------
-// Style dropdown + SMAS audio
-// ---------------------
-(function ensureStyleDropdown() {
-  const box = document.getElementById('customAudioBox');
-  if (!box || document.getElementById('styleSelect')) return;
-  const row = document.createElement('div');
-  row.className = 'style-row';
-  row.innerHTML = `
-    <label for="styleSelect">Style</label>
-    <select id="styleSelect">
-      <option value="smb" selected>Super Mario Bros (Default)</option>
-      <option value="smblost">Super Mario Bros: The Lost Levels</option>
-      <option value="smas">Super Mario All-Stars (SNES)</option>
-    </select>`;
-  box.appendChild(row);
-})();
-
-function applyStyle(val) {
-  document.body.setAttribute('data-style', val);
-  // Swap SNES hurry-up when SMAS selected
-  const hurryOgg = document.getElementById('hurryOgg');
-  const hurryMp3 = document.getElementById('hurryMp3');
-  if (hurryOgg && hurryMp3) {
-    if (val === 'smas') {
-      hurryOgg.src = 'sounds/snes-hurryup.ogg';
-      hurryMp3.src = 'sounds/snes-hurryup.mp3';
-    } else {
-      hurryOgg.src = 'sounds/hurryup.ogg';
-      hurryMp3.src = 'sounds/hurryup.mp3';
-    }
-    try { hurryAudio?.load(); } catch {}
-  }
-}
-function isGenesisHurryEnabled() {
-  // Force SNES if SMAS is active
-  if (document.body.getAttribute('data-style') === 'smas') return false;
-  const cb = document.getElementById('genHurryToggleBox');
-  return !!(cb && cb.checked);
-}
-
 // === Volume fade helper, returns Promise ===
 function fadeVolume(audioElem, targetVolume, duration) {
   return new Promise((resolve) => {
-    if (!audioElem) { resolve(); return; }
+    if (!audioElem) {
+      resolve();
+      return;
+    }
     const startVolume = audioElem.volume;
     const volumeChange = targetVolume - startVolume;
     const startTime = performance.now();
@@ -116,6 +50,13 @@ function updatePlaybackRateDisplay(rate) {
     display.style.marginTop = '10px';
     document.body.appendChild(display);
   }
+  if (rate <= 0) {
+    display.textContent = '';
+  } else if (rate === 1) {
+    display.textContent = 'Playback speed: Normal (1x)';
+  } else {
+    display.textContent = `Playback speed: ${rate.toFixed(2)}x`;
+  }
 }
 
 function extractYouTubeID(url) {
@@ -132,22 +73,33 @@ loadAudioBtn.onclick = () => {
   spotifyURL = null;
 
   mediaPreview.innerHTML = "";
-  if (customAudio) { customAudio.pause(); customAudio.remove(); customAudio = null; }
-  if (youTubePlayer) { youTubePlayer.destroy(); youTubePlayer = null; }
+  if (customAudio) {
+    customAudio.pause();
+    customAudio.remove();
+    customAudio = null;
+  }
+  if (youTubePlayer) {
+    youTubePlayer.destroy();
+    youTubePlayer = null;
+  }
 
-  if (!url) { audioStatus.textContent = "❌ Invalid URL."; return; }
+  if (!url) {
+    audioStatus.textContent = "❌ Invalid URL.";
+    return;
+  }
 
-  // YouTube
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
     const id = extractYouTubeID(url);
-    if (!id) { audioStatus.textContent = "❌ Invalid YouTube URL."; return; }
+    if (!id) {
+      audioStatus.textContent = "❌ Invalid YouTube URL.";
+      return;
+    }
     youTubeVideoID = id;
     mediaType = 'youtube';
     audioStatus.textContent = "✅ YouTube video ready!";
     return;
   }
 
-  // Spotify
   if (url.includes("spotify.com")) {
     spotifyURL = url.replace("/track/", "/embed/track/");
     mediaType = 'spotify';
@@ -155,9 +107,8 @@ loadAudioBtn.onclick = () => {
     return;
   }
 
-  // Direct audio
   customAudio = new Audio(url);
-  customAudio.volume = 1.0;     // baseline full volume; gain node will boost mobile
+  customAudio.volume = 0.8;
   customAudio.autoplay = false;
   customAudio.preload = "metadata";
   customAudio.loop = false;
@@ -179,7 +130,10 @@ loadAudioBtn.onclick = () => {
 // === YouTube Iframe API setup ===
 function onYouTubeIframeAPIReady() {
   if (!youTubeVideoID) return;
-  if (youTubePlayer) { youTubePlayer.destroy(); youTubePlayer = null; }
+  if (youTubePlayer) {
+    youTubePlayer.destroy();
+    youTubePlayer = null;
+  }
 
   mediaPreview.innerHTML = `<div id="youtubePlayerDiv"></div>`;
   youTubePlayer = new YT.Player('youtubePlayerDiv', {
@@ -208,7 +162,7 @@ if (!window.YT) {
   document.head.appendChild(tag);
 }
 
-// === Audio control helpers ===
+// === Audio Logic with fade and playbackRateDisplay ===
 function playMedia(rate = 1) {
   currentPlaybackRate = rate;
   mediaPreview.innerHTML = "";
@@ -218,13 +172,11 @@ function playMedia(rate = 1) {
     customAudio.currentTime = 0;
     customAudio.controls = true;
     mediaPreview.appendChild(customAudio);
-    fadeVolume(customAudio, 1.0, 500).then(() => customAudio.play());
+    fadeVolume(customAudio, 0.8, 500).then(() => customAudio.play());
   } else if (mediaType === 'youtube' && youTubeVideoID) {
     onYouTubeIframeAPIReady();
   } else if (mediaType === 'spotify' && spotifyURL) {
-    mediaPreview.innerHTML =
-      `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80"
-        frameBorder="0" allowtransparency="true" allow="encrypted-media; autoplay" allowfullscreen></iframe>`;
+    mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
   }
   updatePlaybackRateDisplay(currentPlaybackRate);
 }
@@ -232,7 +184,7 @@ function playMedia(rate = 1) {
 function pauseMedia() {
   if (customAudio) fadeVolume(customAudio, 0, 500).then(() => customAudio.pause());
   if (youTubePlayer) youTubePlayer.pauseVideo();
-  // Spotify iframe can't be paused programmatically
+  // Spotify iframe can't be paused
   updatePlaybackRateDisplay(0);
 }
 
@@ -253,7 +205,14 @@ function resetMedia() {
   updatePlaybackRateDisplay(0);
 }
 
-// === Hurry Up Logic ===
+// === Genesis Hurry Up Toggle Check ===
+function isGenesisHurryEnabled() {
+  const toggle = document.getElementById('genHurryToggleBox');
+  // Defensive: ensure toggle is in DOM and is a checkbox
+  return toggle && (toggle.type === 'checkbox') && toggle.checked;
+}
+
+// === Hurry Up Logic with fade and playbackRateDisplay ===
 function triggerHurryUp() {
   if (hurryTriggered) return;
   hurryTriggered = true;
@@ -269,7 +228,7 @@ function triggerHurryUp() {
         currentPlaybackRate = 1.25;
         customAudio.currentTime = 0;
         customAudio.playbackRate = currentPlaybackRate;
-        fadeVolume(customAudio, 1.0, 500).then(() => {
+        fadeVolume(customAudio, 0.8, 500).then(() => {
           customAudio.play();
           updatePlaybackRateDisplay(currentPlaybackRate);
         });
@@ -281,17 +240,14 @@ function triggerHurryUp() {
         updatePlaybackRateDisplay(1.25);
       }
       else if (mediaType === 'spotify') {
-        // Spotify can't change speed; restart normal
-        mediaPreview.innerHTML =
-          `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80"
-            frameBorder="0" allowtransparency="true" allow="encrypted-media; autoplay" allowfullscreen></iframe>`;
+        mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
         updatePlaybackRateDisplay(1);
       }
     }
   };
 }
 
-// === Timer Logic (unchanged behavior) ===
+// === Timer Logic ===
 let running = false;
 let smbCounter = "400";
 let startValue = "400";
@@ -322,12 +278,18 @@ function decrementSMBString(str) {
 function normalizeInput(str) {
   return (str.toUpperCase().replace(/[^A-Z0-9 ]/g, '').padEnd(3, ' ')).slice(0, 3);
 }
-function toLogicStr(str) { return str.replace(/ /g, '0'); }
-function toDisplayArr(str) { return str.padEnd(3, ' ').slice(0, 3).split(''); }
+function toLogicStr(str) {
+  return str.replace(/ /g, '0');
+}
+function toDisplayArr(str) {
+  return str.padEnd(3, ' ').slice(0, 3).split('');
+}
 function formatSMB(str) {
   return toDisplayArr(str).map(ch => `<span class="monochar">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
 }
-function updateDisplay() { document.getElementById('display').innerHTML = formatSMB(smbCounter); }
+function updateDisplay() {
+  document.getElementById('display').innerHTML = formatSMB(smbCounter);
+}
 function showInput(show) {
   const input = document.getElementById('timerInput');
   input.style.display = show ? '' : 'none';
@@ -372,19 +334,15 @@ function wallClockUpdate() {
     updateStartStopButton();
     showInput(false);
     document.body.classList.remove('running');
-    setRunningUI(false);
     updateDisplay();
     animationFrameId = null;
     resetMedia();
-    const box = document.getElementById('genHurryToggleBox');
-    if (box) box.disabled = false;
   }
 }
 
 function startStop() {
   if (finished && !running) return;
-  const genBox = document.getElementById('genHurryToggleBox');
-
+  const genHurryToggle = document.getElementById('genHurryToggle');
   if (running) {
     running = false;
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -392,10 +350,8 @@ function startStop() {
     updateStartStopButton();
     showInput(false);
     document.body.classList.remove('running');
-    setRunningUI(false);           // hide logic targets only 3 bits
-    if (genBox) genBox.disabled = false;
+    if (genHurryToggle) genHurryToggle.disabled = false; // Enable toggle
     finished = false;
-    customAudioBox.style.display = '';
   } else {
     smbCounter = normalizeInput(document.getElementById('timerInput').value);
     startValue = smbCounter;
@@ -405,15 +361,13 @@ function startStop() {
     running = true;
     document.body.classList.add('smb-mode');
     document.body.classList.add('running');
-    setRunningUI(true);            // only hides toggle + URL + style row
     showInput(false);
     updateDisplay();
     timerStartTime = performance.now();
     lastDisplayedTicks = 0;
     updateStartStopButton();
-    ensureAudioGain();             // mobile gain after user gesture
     playMedia();
-    if (genBox) genBox.disabled = true;
+    if (genHurryToggle) genHurryToggle.disabled = true; // Disable toggle while running
     customAudioBox.style.display = 'none';
     animationFrameId = requestAnimationFrame(wallClockUpdate);
   }
@@ -429,13 +383,12 @@ function reset() {
   finished = false;
   document.body.classList.add('smb-mode');
   document.body.classList.remove('running');
-  setRunningUI(false);
   showInput(true);
   updateDisplay();
   updateStartStopButton();
   resetMedia();
-  const genBox = document.getElementById('genHurryToggleBox');
-  if (genBox) genBox.disabled = false;
+  const genHurryToggle = document.getElementById('genHurryToggle');
+  if (genHurryToggle) genHurryToggle.disabled = false; // Enable toggle
   customAudioBox.style.display = '';
 }
 
@@ -445,18 +398,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const timerInput = document.getElementById('timerInput');
   timerInput.addEventListener('focus', () => showInput(true));
-  timerInput.addEventListener('blur', () => { timerInput.value = normalizeInput(timerInput.value); });
+  timerInput.addEventListener('blur', () => {
+    timerInput.value = normalizeInput(timerInput.value);
+  });
   timerInput.addEventListener('input', () => {
     timerInput.value = timerInput.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 3);
   });
-  timerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') timerInput.blur(); });
+  timerInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') timerInput.blur();
+  });
 
   timerInput.value = "400";
-  // Init style system + audio baseline
-  applyStyle('smb');                               // default: keep your original look
-  const styleSelect = document.getElementById('styleSelect');
-  styleSelect?.addEventListener('change', () => applyStyle(styleSelect.value));
-  document.querySelectorAll('audio').forEach(a => a.volume = 1.0);
-
   reset();
+  document.querySelectorAll('audio').forEach(audio => audio.volume = 0.5);
 });

@@ -1,105 +1,202 @@
-@font-face {
-    font-family: 'SMB3Secondary';
-    src: url('./fonts/super-mario-brothers-3-secondary.ttf') format('truetype');
-    font-display: swap;
-}
-body {
-    font-family: 'SMB3Secondary', 'Press Start 2P', monospace, Arial, sans-serif;
-    color: #fff;
-    background: #7ecefa;
-    margin: 0;
-    min-height: 100vh;
-    min-width: 100vw;
-    overflow-x: hidden;
-}
-.main-center {
-    min-height: 100vh;
-    min-width: 100vw;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-.timer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+@font-face{
+  font-family:'SMB3Secondary';
+  src:url('./fonts/super-mario-brothers-3-secondary.ttf') format('truetype');
+  font-display:swap;
 }
 
-/* --- CLEAN SMB3 OUTLINE --- */
-#timerLabel, #display, #timerInput, .monochar {
-    color: #fff;
-    font-family: inherit;
-    -webkit-text-stroke: 3px #000;
-    text-stroke: 3px #000;
-    text-shadow:
-        -2px -2px 0 #000,
-         2px -2px 0 #000,
-        -2px  2px 0 #000,
-         2px  2px 0 #000,
-         0px -2px 0 #000,
-         0px  2px 0 #000,
-        -2px  0px 0 #000,
-         2px  0px 0 #000;
-    image-rendering: pixelated;
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.1em;
+/* ---------- Theme variables ---------- */
+:root{
+  --ui-text:#d7dbff;
+
+  /* Outline + shadow (SMB3 look) */
+  --stroke-w: 3px;
+  --shadow: #000;
+  --shadow-ofs: 6px;
+
+  /* All-Stars (SNES) fill */
+  --smb3-yellow: #ffd54a;
+
+  /* Clock icon sizing */
+  --icon-em: 0.98em;   /* icon box vs digits height */
+  --icon-zoom: 100%;   /* inner artwork zoom to fight PNG padding */
+  --icon-crop: .28em;  /* crop outer whitespace around the PNG */
+
+  /* Baseline nudge for the icon (optical) */
+  --hud-nudge-y: -0.12em;
 }
 
-#timerLabel {
-    font-size: 5vw;
-    margin-bottom: 0.6em;
-    margin-top: 0;
-    text-align: center;
+/* All-Stars can use a hair different nudge if desired */
+body[data-style="smb3smas"]{
+  --hud-nudge-y: -0.10em;
 }
 
-#display, #timerInput {
-    font-size: 10vw;
-    margin: 0;
-    text-align: center;
-    background: none;
-    border: none;
-    font-weight: bold;
-    outline: none;
-    width: 7.8em;
-    padding: 0;
-    letter-spacing: 0.1em;
-    font-family: inherit;
-    color: #fff;
-}
-#display {
-    word-spacing: 0;
-    display: flex;
-    justify-content: center;
-    gap: 0em;
+/* ---------- Base ---------- */
+html,body{height:100%}
+body{
+  margin:0;
+  min-height:100vh; min-width:100vw; overflow-x:hidden;
+  background:#7ecefa;                /* SMB3 default sky */
+  color:#fff;
+  font-family:'SMB3Secondary','Press Start 2P',monospace,Arial,sans-serif;
 }
 
-.monochar {
-    display: inline-block;
-    width: 0.62em;
-    min-width: 0.62em;
-    max-width: 0.62em;
-    text-align: center;
+/* All-Stars (SNES) background gradient */
+body[data-style="smb3smas"]{
+  background: linear-gradient(#5893a3, #cbfffd);
 }
 
-.timer-controls {
-    display: flex;
-    gap: 1.5em;
-    margin-top: 1.2em;
+/* ============================================================
+   Controls (two rows, no bar background)
+   ============================================================ */
+#controls{ padding:.6rem .8rem 0 .8rem; }
+.ctrl-row{
+  display:flex; align-items:center; gap:.5rem;
+  margin:.35rem 0;
+  flex-wrap:wrap;
 }
-.timer-controls button {
-    font-size: 1em;
-    padding: 0.13em 0.6em;
-    border-radius: 0.2em;
-    border: none;
-    background: #888;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-    font-family: inherit;
+.ctrl-row .chk{ display:flex; align-items:center; gap:.45rem; }
+
+/* SMB-style label chips */
+.chip{
+  display:inline-block;
+  padding:.28rem .45rem;
+  color:#cfe1ff;
+  border-radius:4px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  user-select:none;
 }
-.timer-controls button:hover {
-    background: #aaf;
-    color: #000;
+.chip-dark{
+  background:#1b1f2d;
+  color:#cfe1ff;
+}
+
+/* Inputs / selects / buttons */
+#customAudioInput{
+  min-width: 360px;
+  padding:.4rem .55rem; border-radius:4px;
+  border:1px solid #3a3f55; background:#121420; color:#dfe6ff;
+}
+#loadAudioBtn{
+  padding:.42rem .7rem; border:0; border-radius:4px;
+  background:#6c7bd8; color:#fff; cursor:pointer;
+}
+#styleSelect{
+  background:#1b1f2d; color:#cfe1ff;
+  border:0; padding:.35rem .55rem; border-radius:4px; outline:none;
+}
+
+/* Hide URL/style rows while running */
+body.running #urlRow,
+body.running #styleRow{
+  display:none;
+}
+
+/* ============================================================
+   Stage
+   ============================================================ */
+.main-center{
+  min-height:calc(100vh - 110px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.timer{ display:flex; flex-direction:column; align-items:center; }
+
+/* One-line HUD: clock icon + digits/input */
+#hudRow{
+  display:flex;
+  align-items: baseline;                 /* <<< share a baseline */
+  justify-content:center;
+  gap:.35em;
+  font-size: clamp(28px, 12vw, 200px);  /* scales entire row */
+  line-height: 1;                        /* tight metrics */
+}
+
+/* Clock icon box */
+#clockIcon{
+  display:inline-block; flex:0 0 auto;
+
+  width:var(--icon-em);
+  height:var(--icon-em);
+  aspect-ratio: 1 / 1;
+
+  /* crop PNG padding without clipping the glyph */
+  overflow: hidden;
+  padding: var(--icon-crop);
+  background-origin: content-box;
+  background-clip: content-box;
+
+  background-image:url('./fonts/clock.png');
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size: var(--icon-zoom);
+
+  /* crisp pixels across browsers */
+  image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -o-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+
+  align-self: baseline;                   /* participates in baseline */
+  transform: translateY(var(--hud-nudge-y)); /* optical nudge */
+  margin-right:.12em;
+}
+
+/* Digits (view) */
+#display{
+  font-size:1.75em; letter-spacing:.1em; font-weight:700; margin:0; text-align:center; cursor:text;
+  line-height:1;
+  color:#fff;                                  /* default SMB3 fill */
+  -webkit-text-stroke: var(--stroke-w) #000;
+  text-shadow: var(--shadow-ofs) var(--shadow-ofs) 0 var(--shadow);
+  visibility: visible;                          /* toggled while editing */
+}
+
+/* Digits (edit field) */
+#timerInput{
+  display:none; font:inherit; font-size:1em; letter-spacing:.1em; font-weight:700; width:7.8em;
+  background:transparent; color:#fff;
+  line-height:1;
+  -webkit-text-stroke: var(--stroke-w) #000;
+  text-shadow: var(--shadow-ofs) var(--shadow-ofs) 0 var(--shadow);
+  border:none; outline:none; text-align:center; caret-color:#fff;
+}
+
+/* All-Stars: yellow fill on digits/input */
+body[data-style="smb3smas"] #display,
+body[data-style="smb3smas"] #timerInput{
+  color: var(--smb3-yellow);
+}
+
+/* Buttons */
+.timer-controls{ display:flex; gap:1.5em; margin-top:1.2em; }
+.timer-controls button{
+  font-size:2em; padding:.13em .6em; border-radius:.2em; border:none;
+  background:#888; color:#fff; cursor:pointer; transition:background .2s; font-family:inherit;
+}
+.timer-controls button:hover{ background:#aaf; color:#000; }
+
+/* Media preview (when URL music is used) */
+.media{ margin-top: .8rem; }
+
+/* Small screens */
+@media (max-width:720px){
+  #customAudioInput{ min-width:240px; width:100%; flex:1 1 240px; }
+}
+
+/* Ensure HUD row can position the input overlay */
+#hudRow { position: relative; }
+
+/* Hide media preview while running */
+.running .media { display: none !important; }
+
+/* Make sure digits are actually visible inline */
+#display { display: inline-block; cursor: text; }
+
+/* Big overlay input inherits font; we only ensure no borders */
+#timerInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  text-align: center;
 }

@@ -1,407 +1,318 @@
-// === SMB3 Timer with Music Logic (Audio, YouTube, Spotify) ===
-const customAudioInput = document.getElementById('customAudioInput');
-const customAudioBox = document.getElementById('customAudioBox');
-const loadAudioBtn = document.getElementById('loadAudioBtn');
-const audioStatus = document.getElementById('audioStatus');
-const mediaPreview = document.getElementById('mediaPreview');
-const hurryAudio = document.getElementById('hurryAudio');
+// ===== SMB3 timer — media control (pause for Hurry, then restart at 1.25x) =====
+(() => {
+  const TICK_MS  = 680;
+  const HURRY_AT = 100;
 
-let customAudio = null;
-let youTubeVideoID = null;
-let youTubePlayer = null;
-let spotifyURL = null;
-let mediaType = null; // 'audio', 'youtube', 'spotify'
-let currentPlaybackRate = 1;
-let hurryTriggered = false;
+  // ---- DOM
+  const body          = document.body;
+  const displayEl     = document.getElementById('display');
+  const inputEl       = document.getElementById('timerInput');
+  const startBtn      = document.getElementById('startStopBtn');
+  const resetBtn      = document.getElementById('resetBtn');
 
-function fadeVolume(audioElem, targetVolume, duration) {
-  return new Promise((resolve) => {
-    if (!audioElem) {
-      resolve();
-      return;
-    }
-    const startVolume = audioElem.volume;
-    const volumeChange = targetVolume - startVolume;
-    const startTime = performance.now();
+  const urlInput      = document.getElementById('customAudioInput');
+  const loadBtn       = document.getElementById('loadAudioBtn');
+  const audioStatus   = document.getElementById('audioStatus');
+  const mediaPreview  = document.getElementById('mediaPreview');
 
-    function step() {
-      const elapsed = performance.now() - startTime;
-      if (elapsed >= duration) {
-        audioElem.volume = targetVolume;
-        resolve();
-        return;
-      }
-      audioElem.volume = startVolume + (volumeChange * (elapsed / duration));
-      requestAnimationFrame(step);
-    }
-    step();
-  });
-}
+  const styleSelect   = document.getElementById('styleSelect');
 
-function updatePlaybackRateDisplay(rate) {
-  let display = document.getElementById('playbackRateDisplay');
-  if (!display) {
-    display = document.createElement('div');
-    display.id = 'playbackRateDisplay';
-    display.style.fontWeight = 'bold';
-    display.style.marginTop = '10px';
-    document.body.appendChild(display);
-  }
-  if (rate <= 0) {
-    display.textContent = '';
-  } else if (rate === 1) {
-    display.textContent = 'Playback speed: Normal (1x)';
-  } else {
-    display.textContent = `Playback speed: ${rate.toFixed(2)}x`;
-  }
-}
+  const hurryNES      = document.getElementById('hurryAudioNES');
+  const hurrySNES     = document.getElementById('hurryAudioSNES');
 
-function extractYouTubeID(url) {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[7].length === 11) ? match[7] : null;
-}
+  // ---- state
+  let running = false;
+  let startedSinceReset = false;
+  let hurryPlayed = false;
+  let timerId = null;
 
-loadAudioBtn.onclick = () => {
-  const url = customAudioInput.value.trim();
-  audioStatus.textContent = "";
-  mediaType = null;
-  youTubeVideoID = null;
-  spotifyURL = null;
+  let value = 400;
+  let baseValue = 400;
 
-  mediaPreview.innerHTML = "";
-  if (customAudio) {
-    customAudio.pause();
-    customAudio.remove();
-    customAudio = null;
-  }
-  if (youTubePlayer) {
-    youTubePlayer.destroy();
-    youTubePlayer = null;
-  }
+  let currentMedia = null;     // { kind: 'yt'|'file'|'spotify', id|url }
+  let extAudioEl = null;       // <audio> for file media
+  let ytId = null;
 
-  if (!url) {
-    audioStatus.textContent = "❌ Invalid URL.";
-    return;
-  }
+  // YouTube control
+  let ytAPIReady = false;
+  let ytPlayer = null;         // YT.Player
+  let ytContainer = null;
 
-  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    const id = extractYouTubeID(url);
-    if (!id) {
-      audioStatus.textContent = "❌ Invalid YouTube URL.";
-      return;
-    }
-    youTubeVideoID = id;
-    mediaType = 'youtube';
-    audioStatus.textContent = "✅ YouTube video ready!";
-    return;
-  }
+  const pad3 = n => String(Math.max(0, Math.min(999, n|0))).padStart(3,'0');
+  const desiredRate = () => (value <= HURRY_AT ? 1.25 : 1.0);
 
-  if (url.includes("spotify.com")) {
-    spotifyURL = url.replace("/track/", "/embed/track/");
-    mediaType = 'spotify';
-    audioStatus.textContent = "✅ Spotify track ready!";
-    return;
-  }
-
-  customAudio = new Audio(url);
-  customAudio.volume = 0.8;
-  customAudio.autoplay = false;
-  customAudio.preload = "metadata";
-  customAudio.loop = false;
-  customAudio.controls = false;
-  mediaType = 'audio';
-
-  customAudio.addEventListener("loadedmetadata", () => {
-    if (customAudio.duration < 10) customAudio.loop = true;
-    audioStatus.textContent = `✅ Audio loaded (${customAudio.duration.toFixed(1)}s)`;
-  });
-
-  customAudio.addEventListener("error", () => {
-    audioStatus.textContent = "❌ Audio load failed.";
-  });
-
-  customAudio.load();
-};
-
-function onYouTubeIframeAPIReady() {
-  if (!youTubeVideoID) return;
-  if (youTubePlayer) {
-    youTubePlayer.destroy();
-    youTubePlayer = null;
-  }
-
-  mediaPreview.innerHTML = `<div id="youtubePlayerDiv"></div>`;
-  youTubePlayer = new YT.Player('youtubePlayerDiv', {
-    videoId: youTubeVideoID,
-    playerVars: {
-      autoplay: 1,
-      controls: 1,
-      loop: 1,
-      playlist: youTubeVideoID,
-      modestbranding: 1,
-      disablekb: 1,
-    },
-    events: {
-      onReady: (event) => {
-        event.target.setPlaybackRate(currentPlaybackRate);
-        if (running) event.target.playVideo();
-      }
-    }
-  });
-}
-
-if (!window.YT) {
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  document.head.appendChild(tag);
-}
-
-function playMedia(rate = 1) {
-  currentPlaybackRate = rate;
-  mediaPreview.innerHTML = "";
-
-  if (mediaType === 'audio' && customAudio) {
-    customAudio.playbackRate = rate;
-    customAudio.currentTime = 0;
-    customAudio.controls = true;
-    mediaPreview.appendChild(customAudio);
-    fadeVolume(customAudio, 0.8, 500).then(() => customAudio.play());
-  } else if (mediaType === 'youtube' && youTubeVideoID) {
-    onYouTubeIframeAPIReady();
-  } else if (mediaType === 'spotify' && spotifyURL) {
-    mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
-  }
-  updatePlaybackRateDisplay(currentPlaybackRate);
-}
-
-function pauseMedia() {
-  if (customAudio) fadeVolume(customAudio, 0, 500).then(() => customAudio.pause());
-  if (youTubePlayer) youTubePlayer.pauseVideo();
-  updatePlaybackRateDisplay(0);
-}
-
-function resetMedia() {
-  if (customAudio) {
-    fadeVolume(customAudio, 0, 500).then(() => {
-      customAudio.pause();
-      customAudio.currentTime = 0;
-      customAudio.playbackRate = 1;
-    });
-  }
-  if (youTubePlayer) {
-    youTubePlayer.stopVideo();
-    youTubePlayer.seekTo(0);
-    youTubePlayer.setPlaybackRate(1);
-  }
-  mediaPreview.innerHTML = "";
-  updatePlaybackRateDisplay(0);
-}
-
-function triggerHurryUp() {
-  if (hurryTriggered) return;
-  hurryTriggered = true;
-  pauseMedia();
-
-  hurryAudio.currentTime = 0;
-  hurryAudio.play();
-
-  hurryAudio.onended = () => {
-    if (running) {
-      if (mediaType === 'audio' && customAudio) {
-        currentPlaybackRate = 1.25;
-        customAudio.currentTime = 0;
-        customAudio.playbackRate = currentPlaybackRate;
-        fadeVolume(customAudio, 0.8, 500).then(() => {
-          customAudio.play();
-          updatePlaybackRateDisplay(currentPlaybackRate);
-        });
-      }
-      else if (mediaType === 'youtube' && youTubePlayer) {
-        youTubePlayer.seekTo(0);
-        youTubePlayer.setPlaybackRate(1.25);
-        youTubePlayer.playVideo();
-        updatePlaybackRateDisplay(1.25);
-      }
-      else if (mediaType === 'spotify') {
-        mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
-        updatePlaybackRateDisplay(1);
-      }
-    }
+  const setStatus = (m, ok=true)=>{
+    if (!audioStatus) return;
+    audioStatus.textContent = m.toUpperCase();
+    audioStatus.style.color = ok ? '#b6ffb6' : '#ff6685';
   };
-}
+  const styleMode = () => (styleSelect?.value || body.dataset.style || 'smb3');
+  const currentHurry = () => (styleMode()==='smb3smas' ? hurrySNES : hurryNES);
 
-// --- Timer Logic ---
-let running = false;
-let smbCounter = "400";
-let startValue = "400";
-let hurryPlayed = false;
-let finished = false;
-let timerStartTime = 0;
-let lastDisplayedTicks = null;
-const TICK_MS = 680; // 0.68s per tick for SMB3
-let animationFrameId = null;
+  function render(){ displayEl.textContent = pad3(value); }
 
-const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-function decrementSMBString(str) {
-    let arr = str.toUpperCase().split('');
-    for (let i = arr.length - 1; i >= 0; i--) {
-        let ch = arr[i];
-        if (ch === ' ') continue;
-        let idx = ALLOWED_CHARS.indexOf(ch);
-        if (idx > 0) {
-            arr[i] = ALLOWED_CHARS[idx - 1];
-            for (let j = i + 1; j < arr.length; j++) {
-                arr[j] = (arr[j] === ' ') ? ' ' : '9';
-            }
-            return arr.join('');
-        }
+  function enterEdit(){
+    if (running || startedSinceReset) return;
+    inputEl.value = pad3(baseValue);
+    displayEl.style.display = 'none';
+    inputEl.style.display = 'inline-block';
+    inputEl.focus(); inputEl.select();
+  }
+  function exitEdit(commit){
+    if (commit){
+      const raw = inputEl.value.replace(/[^\d]/g,'').slice(0,3);
+      const num = raw==='' ? baseValue : Math.max(0, Math.min(999, parseInt(raw,10)));
+      baseValue = num; value = num; render();
     }
-    return "000";
-}
+    inputEl.style.display = 'none';
+    displayEl.style.display = '';
+  }
 
-function normalizeInput(str) {
-    return (str.toUpperCase().replace(/[^A-Z0-9 ]/g, '').padEnd(3, ' ')).slice(0, 3);
-}
-function toLogicStr(str) {
-    return str.replace(/ /g, '0');
-}
-function toDisplayArr(str) {
-    return str.padEnd(3, ' ').slice(0, 3).split('');
-}
-function formatSMB(str) {
-    let sArr = toDisplayArr(str);
-    return sArr.map(ch => `<span class="monochar">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-}
+  // ---------- URL → media parsing ----------
+  function pickYouTubeId(url){
+    try{
+      const u = new URL(url);
+      if (u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+      if (u.hostname.includes('youtube.com')){
+        const v = u.searchParams.get('v'); if (v) return v;
+        const m = u.pathname.match(/\/(shorts|embed)\/([^/?#]+)/i);
+        if (m) return m[2];
+      }
+    }catch{}
+    const m = String(url).match(/(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
+    return m ? m[1] : null;
+  }
+  function parseMedia(url){
+    if (!url) return null;
+    const s = url.trim();
+    const id = pickYouTubeId(s);
+    if (id) return { kind:'yt', id };
+    if (/open\.spotify\.com\/track\//i.test(s)) return { kind:'spotify', url:s.replace('/track/','/embed/track/') };
+    if (/\.(mp3|ogg|wav)(\?|#|$)/i.test(s)) return { kind:'file', url:s };
+    return null;
+  }
 
-function updateDisplay() {
-    const display = document.getElementById('display');
-    display.innerHTML = formatSMB(smbCounter);
-}
-function showInput(show) {
-    const timerInput = document.getElementById('timerInput');
-    timerInput.style.display = show ? '' : 'none';
-    document.getElementById('display').style.display = show ? 'none' : '';
-    if (show) {
-        timerInput.style.letterSpacing = '0.1em';
-        timerInput.style.width = '7.8em';
-        timerInput.style.textAlign = 'center';
+  // ---------- YouTube API loader ----------
+  function ensureYTAPI(){
+    if (ytAPIReady) return;
+    if (window.YT && window.YT.Player){ ytAPIReady = true; return; }
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+    window.onYouTubeIframeAPIReady = () => { ytAPIReady = true; };
+  }
+
+  // ---------- preview build / clear ----------
+  function clearPreview(){
+    if (!mediaPreview) return;
+    mediaPreview.innerHTML = '';
+    extAudioEl = null;
+    ytId = null;
+    ytPlayer = null;
+    ytContainer = null;
+  }
+  function showPreview(){
+    if (!mediaPreview) return;
+    mediaPreview.style.display = (!running && currentMedia) ? '' : 'none';
+  }
+  function buildPreview(){
+    clearPreview();
+    if (!currentMedia){ setStatus('INVALID FILE OR URL', false); showPreview(); return; }
+
+    if (currentMedia.kind === 'yt'){
+      ytId = currentMedia.id;
+      ensureYTAPI();
+      ytContainer = document.createElement('div');
+      ytContainer.id = 'yt-player-'+Math.random().toString(36).slice(2);
+      mediaPreview.appendChild(ytContainer);
+
+      const tryMake = () => {
+        if (!ytAPIReady || !window.YT){ setTimeout(tryMake, 60); return; }
+        ytPlayer = new YT.Player(ytContainer.id, {
+          width: 360, height: 203,
+          videoId: ytId,
+          playerVars: { rel:0, modestbranding:1, controls:1, origin: location.origin },
+          events:{ onReady: ()=> setStatus('YOUTUBE VIDEO LOADED', true) }
+        });
+      };
+      tryMake();
+
+    } else if (currentMedia.kind === 'spotify'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '300'; iframe.height = '80';
+      iframe.src = currentMedia.url;
+      iframe.allow = 'encrypted-media; autoplay';
+      iframe.style.border = '0';
+      mediaPreview.appendChild(iframe);
+      setStatus('SPOTIFY TRACK LOADED', true);
+
+    } else if (currentMedia.kind === 'file'){
+      extAudioEl = document.createElement('audio');
+      extAudioEl.controls = true;
+      extAudioEl.preload = 'metadata';
+      extAudioEl.src = currentMedia.url;
+      mediaPreview.appendChild(extAudioEl);
+      setStatus('AUDIO LOADED', true);
+    } else {
+      setStatus('INVALID FILE OR URL', false);
     }
-}
-function updateStartStopButton() {
-    const btn = document.getElementById('startStopBtn');
-    btn.textContent = running ? "Stop" : "Start";
-}
+    showPreview();
+  }
+  function loadMediaFromURL(){
+    const url = urlInput?.value.trim();
+    currentMedia = parseMedia(url);
+    buildPreview();
+  }
 
-function wallClockUpdate() {
-    if (!running) return;
-    const now = performance.now();
-    const elapsed = now - timerStartTime;
-    const ticksPassed = Math.floor(elapsed / TICK_MS);
+  // ---------- playback-rate helpers ----------
+  function ytPickRate(target){
+    try{
+      const rates = ytPlayer?.getAvailablePlaybackRates?.() || [];
+      if (!rates.length) return 1.0;
+      // choose the closest supported to target (preferring higher)
+      let best = rates[0], bestDiff = Math.abs(best - target);
+      for (const r of rates){
+        const d = Math.abs(r - target);
+        if (d < bestDiff || (d === bestDiff && r > best)){ best = r; bestDiff = d; }
+      }
+      return best;
+    }catch{ return 1.0; }
+  }
 
-    if (lastDisplayedTicks === null) lastDisplayedTicks = 0;
-    let decrementsNeeded = ticksPassed - lastDisplayedTicks;
-    for (let i = 0; i < decrementsNeeded; i++) {
-        if (toLogicStr(smbCounter) !== "000") {
-            smbCounter = decrementSMBString(smbCounter);
-        }
+  function setBgRate(rate){
+    if (!currentMedia) return;
+    if (currentMedia.kind === 'file' && extAudioEl){
+      extAudioEl.playbackRate = rate;
+    } else if (currentMedia.kind === 'yt' && ytPlayer){
+      const r = ytPickRate(rate);
+      try{ ytPlayer.setPlaybackRate(r); }catch{}
     }
-    updateDisplay();
+    // spotify: cannot change rate
+  }
 
-    if (!hurryPlayed && /^\d{3}$/.test(toLogicStr(smbCounter)) && parseInt(toLogicStr(smbCounter), 10) <= 100 && parseInt(toLogicStr(smbCounter), 10) > 0) {
+  function restartBackgroundAtRate(rate){
+    if (!currentMedia) return;
+    if (currentMedia.kind === 'file' && extAudioEl){
+      try{
+        extAudioEl.pause();
+        extAudioEl.currentTime = 0;
+        extAudioEl.playbackRate = rate;
+        extAudioEl.play().catch(()=>{});
+      }catch{}
+    } else if (currentMedia.kind === 'yt' && ytPlayer){
+      try{
+        const r = ytPickRate(rate);
+        ytPlayer.setPlaybackRate(r);
+        ytPlayer.seekTo(0, true);
+        ytPlayer.playVideo();
+      }catch{}
+    } // spotify: no rate; just resume
+  }
+
+  // ---------- play / pause ----------
+  function playBackground(){
+    if (!currentMedia) return;
+    const rate = desiredRate();
+    setBgRate(rate);
+
+    if (currentMedia.kind === 'file' && extAudioEl){
+      try{ extAudioEl.play().catch(()=>{});}catch{}
+    } else if (currentMedia.kind === 'yt' && ytPlayer && ytPlayer.playVideo){
+      try{ ytPlayer.playVideo(); }catch{}
+    }
+  }
+  function pauseBackground(){
+    if (!currentMedia) return;
+    if (currentMedia.kind === 'file' && extAudioEl){
+      try{ extAudioEl.pause(); }catch{}
+    } else if (currentMedia.kind === 'yt' && ytPlayer && ytPlayer.pauseVideo){
+      try{ ytPlayer.pauseVideo(); }catch{}
+    }
+  }
+
+  // Pause bg, play hurry; after SFX ends, RESTART music at 1.25x
+  function playHurryThenResume(){
+    const sfx = currentHurry();
+    if (!sfx) return;
+    pauseBackground();
+    try{ sfx.currentTime = 0; sfx.play().catch(()=>{});}catch{}
+    const onEnd = ()=>{
+      sfx.removeEventListener('ended', onEnd);
+      if (running && value>0){
+        // restart from the top at 1.25x
+        restartBackgroundAtRate(1.25);
+      }
+    };
+    sfx.addEventListener('ended', onEnd);
+  }
+
+  // ---------- timer ----------
+  function setRunning(on){
+    running = on;
+    body.classList.toggle('running', on);
+    startBtn.textContent = on ? 'STOP' : 'START';
+    showPreview();
+  }
+  function start(){
+    if (running) return;
+    startedSinceReset = true;
+    if (inputEl.style.display!=='none') exitEdit(true);
+
+    setRunning(true);
+    hurryPlayed = value <= HURRY_AT;
+
+    // play bg at appropriate rate (1.25x if starting at <=100)
+    playBackground();
+
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      value = Math.max(0, value-1);
+      render();
+
+      if (!hurryPlayed && value <= HURRY_AT){
         hurryPlayed = true;
-        triggerHurryUp();
-    }
+        playHurryThenResume(); // will restart bg at 1.25x when SFX ends
+      }
 
-    lastDisplayedTicks = ticksPassed;
-
-    if (toLogicStr(smbCounter) !== "000") {
-        animationFrameId = requestAnimationFrame(wallClockUpdate);
-    } else {
-        running = false;
-        finished = true;
-        updateStartStopButton();
-        showInput(false);
-        document.body.classList.remove('running');
-        updateDisplay();
-        animationFrameId = null;
-        resetMedia();
-    }
-}
-
-function startStop() {
-    if (finished && !running) return;
-    if (running) {
-        running = false;
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        pauseMedia();
-        updateStartStopButton();
-        showInput(false);
-        document.body.classList.remove('running');
-        finished = false;
-    } else {
-        let input = document.getElementById('timerInput');
-        smbCounter = normalizeInput(input.value);
-        startValue = smbCounter;
-        hurryPlayed = false;
-        hurryTriggered = false;
-        currentPlaybackRate = 1;
-        running = true;
-        document.body.classList.add('smb-mode');
-        document.body.classList.add('running');
-        showInput(false);
-        updateDisplay();
-        timerStartTime = performance.now();
-        lastDisplayedTicks = 0;
-        updateStartStopButton();
-        playMedia();
-        customAudioBox.style.display = 'none';
-        animationFrameId = requestAnimationFrame(wallClockUpdate);
-    }
-}
-function reset() {
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    running = false;
-    let input = document.getElementById('timerInput');
-    smbCounter = normalizeInput(input.value);
-    startValue = smbCounter;
+      if (value===0) stop();
+    }, TICK_MS);
+  }
+  function stop(){
+    if (!running) return;
+    clearInterval(timerId);
+    timerId = null;
+    pauseBackground();
+    setBgRate(1.0); // normalize after stop
+    setRunning(false);
+  }
+  function reset(){
+    stop();
+    value = baseValue;
     hurryPlayed = false;
-    hurryTriggered = false;
-    finished = false;
-    document.body.classList.add('smb-mode');
-    showInput(true);
-    updateDisplay();
-    updateStartStopButton();
-    document.body.classList.remove('running');
-    resetMedia();
-    customAudioBox.style.display = '';
-}
+    startedSinceReset = false;
+    setBgRate(1.0);
+    render();
+    showPreview();
+  }
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('startStopBtn').addEventListener('click', startStop);
-    document.getElementById('resetBtn').addEventListener('click', reset);
+  // ---------- wire-up ----------
+  render();
+  displayEl.addEventListener('click', enterEdit);
+  inputEl.addEventListener('keydown', e=>{
+    if (e.key==='Enter'){ e.preventDefault(); exitEdit(true); }
+    if (e.key==='Escape'){ e.preventDefault(); exitEdit(false); }
+  });
+  inputEl.addEventListener('blur', ()=>{
+    if (!running && !startedSinceReset) exitEdit(true);
+  });
 
-    const timerInput = document.getElementById('timerInput');
-    timerInput.addEventListener('focus', function() {
-        showInput(true);
-    });
-    timerInput.addEventListener('blur', function() {
-        timerInput.value = normalizeInput(timerInput.value);
-    });
-    timerInput.addEventListener('input', function() {
-        timerInput.value = timerInput.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 3);
-    });
-    timerInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            timerInput.blur();
-        }
-    });
+  startBtn.addEventListener('click', ()=> (running ? stop() : start()));
+  resetBtn.addEventListener('click', reset);
+  loadBtn?.addEventListener('click', loadMediaFromURL);
 
-    timerInput.value = "400";
-    reset();
+  styleSelect?.addEventListener('change', ()=>{
+    body.dataset.style = styleSelect.value;
+  });
 
-    document.querySelectorAll('audio').forEach(audio => {
-        audio.volume = 0.5;
-    });
-});
+  showPreview();
+})();

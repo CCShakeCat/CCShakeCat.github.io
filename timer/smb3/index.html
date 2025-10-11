@@ -1,51 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMB3 Timer</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-      #customAudioInput {
-        font-size: 1em;
-        width: 22em;
-        max-width: 90vw;
-        padding: 0.4em;
-        border: 2px solid #000;
-        border-radius: 0.3em;
-        background: #eee;
-        color: #000;
-        font-family: inherit;
-        text-align: center;
-      }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMB3 Timer</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
-<body>
-    <!-- Custom Music Input -->
-    <div id="customAudioBox" style="margin-top: 1em;">
-      <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
-      <button id="loadAudioBtn">Submit</button>
-      <div id="audioStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
-      <div id="mediaPreview" style="margin-top: 0.5em;"></div>
-    </div>
+<body data-style="smb3">
+  <!-- Controls (no background) -->
+  <div id="controls">
+    <!-- Row 1: URL + Submit + status + Genesis toggle -->
+  <div class="header-row">
+    <input id="customAudioInput" type="text" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
+    <button id="loadAudioBtn">Submit</button>
+    <span id="audioStatus" aria-live="polite"></span>
 
-    <!-- Main Timer Area -->
-    <main class="main-center">
-        <div class="timer">
-            <div id="timerLabel">TIME</div>
-            <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
-            <p id="display" style="display:none;">400</p>
-            <div class="timer-controls">
-                <button id="startStopBtn">Start</button>
-                <button id="resetBtn">Reset</button>
-            </div>
-        </div>
-    </main>
-    <!-- NES hurry-up audio -->
-    <audio id="hurryAudio" preload="auto">
-      <source src="sounds/hurryup.ogg" type="audio/ogg">
-      <source src="sounds/hurryup.mp3" type="audio/mpeg">
-    </audio>
-    <script src="script.js"></script>
+    <div class="spacer"></div>
+
+    <!-- Row 2: STYLE (under URL) -->
+    <div class="ctrl-row" id="styleRow">
+      <span class="chip">STYLE</span>
+      <select id="styleSelect" aria-label="Style">
+        <option value="smb3">Super Mario Bros 3 (Default)</option>
+        <option value="smb3smas">Super Mario Bros 3 All-Stars (SNES)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Stage -->
+  <main class="main-center">
+    <div class="timer">
+      <!-- One-line HUD: icon + digits/input -->
+      <div id="hudRow" aria-live="off">
+        <span id="clockIcon" aria-hidden="true"></span>
+        <span id="display" class="digits" role="button" tabindex="0">400</span>
+        <input id="timerInput" maxlength="3" inputmode="latin" autocapitalize="characters" />
+      </div>
+
+      <div class="timer-controls">
+        <button id="startStopBtn">START</button>
+        <button id="resetBtn">RESET</button>
+      </div>
+
+      <!-- Preview area for custom audio / YT / Spotify -->
+      <div id="mediaPreview" class="media"></div>
+    </div>
+  </main>
+
+  <!-- Hurry-up sounds -->
+<!-- NES -->
+<audio id="hurryAudioNES" preload="auto">
+  <source src="./sounds/smb3-hurryup.ogg" type="audio/ogg">
+  <source src="./sounds/smb3-hurryup.mp3" type="audio/mpeg">
+</audio>
+
+<!-- SNES -->
+<audio id="hurryAudioSNES" preload="auto">
+  <source src="./sounds/snes-hurryup.ogg" type="audio/ogg">
+  <source src="./sounds/snes-hurryup.mp3" type="audio/mpeg">
+</audio>
+  <script src="./script.js"></script>
 </body>
 </html>
