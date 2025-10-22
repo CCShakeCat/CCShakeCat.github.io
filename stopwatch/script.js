@@ -1,331 +1,328 @@
-// Wall-clock accurate stopwatch with system-font settings modal, font selector, unit toggles, and RTC-style clock modes
-let msPerTick = 25;
-let running = false;
-let intervalId = null;
-let startTimestamp = null;
-let elapsedBefore = 0;
+(() => {
+  // ===== DOM =====
+  const displayEl     = document.getElementById('display');
+  const startStopBtn  = document.getElementById('startStopBtn');
+  const resetBtn      = document.getElementById('resetBtn');
 
-let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
-let savedFontType = localStorage.getItem('stopwatchFontType') || 'default';
-let customFontData = localStorage.getItem('customFontData') || null;
-let customFontName = localStorage.getItem('customFontName') || '';
+  const settingsBtn   = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const closeSettings = document.getElementById('closeSettings');
 
-let showHours = (localStorage.getItem('showHours') ?? "1") === "1";
-let showMinutes = (localStorage.getItem('showMinutes') ?? "1") === "1";
-let showSeconds = (localStorage.getItem('showSeconds') ?? "1") === "1";
-let showTicks = (localStorage.getItem('showTicks') ?? "1") === "1";
+  // Unit toggles / AUTO
+  const showAuto    = document.getElementById('showAuto');
+  const showHours   = document.getElementById('showHours');
+  const showMinutes = document.getElementById('showMinutes');
+  const showSeconds = document.getElementById('showSeconds');
+  const showTicks   = document.getElementById('showTicks');
 
-let clockMode = localStorage.getItem('clockMode') || 'default';
-let laggyOffset = 0;
-let laggyState = false;
-let rainbowIndex = 0;
-const rainbowColors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'];
+  // Speedrunner + TPS
+  const speedrunnerMode = document.getElementById('speedrunnerMode');
+  const tpsSelect       = document.getElementById('tpsSelect');
+  const tpsCustom       = document.getElementById('tpsCustom');
 
-function formatTime(ms) {
-    const msTick = Math.floor((ms % 1000) / msPerTick);
-    const s = Math.floor(ms / 1000);
-    const sec = s % 60;
-    const min = Math.floor(s / 60) % 60;
-    const hr = Math.floor(s / 3600);
+  // Font controls
+  const fontSelect        = document.getElementById('fontSelect');
+  const importFontBtn     = document.getElementById('importCustomFont');
+  const customFontInput   = document.getElementById('customFontFile');
+  const customFontName    = document.getElementById('customFontName');
+  const customFontNotice  = document.getElementById('customFontNotice');
 
-    let out = [];
+  // ===== State =====
+  let running = false;
 
-    if (showTicks && !showSeconds && !showMinutes && !showHours) {
-        out.push(Math.floor(ms / msPerTick).toString());
-    } else if (showSeconds && !showTicks && !showMinutes && !showHours) {
-        out.push(Math.floor(ms / 1000).toString());
-    } else if (showMinutes && !showSeconds && !showTicks && !showHours) {
-        out.push((ms / 60000).toFixed(4));
-    } else if (showHours && !showMinutes && !showSeconds && !showTicks) {
-        out.push((ms / 3600000).toFixed(6));
-    } else if (!showHours && !showMinutes && showSeconds && showTicks) {
-        out.push(sec.toString().padStart(2, '0'));
-        out.push('.');
-        out.push(msTick.toString().padStart(2, '0'));
-    } else {
-        if (showHours) out.push(hr.toString().padStart(2, '0'));
-        if (showMinutes) out.push(min.toString().padStart(2, '0'));
-        if (showSeconds) out.push(sec.toString().padStart(2, '0'));
-        let joined = out.join((showHours || showMinutes) ? ":" : "");
-        if (showTicks) {
-            joined += (out.length ? "." : "") + msTick.toString().padStart(2, '0');
-        }
-        out = [joined];
+  // Time is stored in *ticks*. One tick = 1/TPS second.
+  let totalTicks   = 0;   // accumulated ticks (at current tickBase)
+  let tickBase     = 40;  // TPS (default 40)
+  let rafId        = null;
+
+  // Accurate accumulation while running
+  let runStartMs   = 0;   // perf.now() when started
+  let ticksAtStart = 0;   // snapshot of totalTicks at start
+
+  // Custom font bookkeeping
+  let currentFontFace = null;
+  let currentFontURL  = null;
+
+  // OS hint for “System” font option
+  try {
+    const ua = navigator.userAgent.toLowerCase();
+    if (/android/.test(ua)) document.body.dataset.os = 'android';
+    else if (/iphone|ipad|mac os x|macintosh/.test(ua)) document.body.dataset.os = 'apple';
+  } catch {}
+
+  // ===== Helpers =====
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+  function readTPS() {
+    if (!tpsSelect) return tickBase;
+    if (tpsSelect.value === 'custom') {
+      const v = clamp(parseInt(tpsCustom.value || '40', 10), 10, 100);
+      tpsCustom.value = String(v);
+      return v;
     }
+    return clamp(parseInt(tpsSelect.value, 10), 10, 100);
+  }
 
-    return [...out.join('')].map(ch => `<span class="monochar">${ch}</span>`).join('');
-}
+  // Convert ticks between bases while keeping absolute time
+  function convertTicksBase(absTicks, oldBase, newBase) {
+    if (oldBase === newBase) return absTicks;
+    const sign = absTicks < 0 ? -1 : 1;
+    let a = Math.abs(absTicks);
+    const sec   = Math.floor(a / oldBase);
+    const frac  = a % oldBase; // 0..oldBase-1
+    const newA  = sec * newBase + Math.round(frac * newBase / oldBase);
+    return sign * newA;
+  }
 
-function getElapsed() {
+  function applyTPS() {
+    const oldBase = tickBase;
+    const newBase = readTPS();
+    if (newBase === oldBase) return;
+
     if (running) {
-        return elapsedBefore + (Date.now() - startTimestamp);
+      const nowTicksOld = currentTotalTicks(oldBase);
+      totalTicks   = convertTicksBase(nowTicksOld, oldBase, newBase);
+      ticksAtStart = totalTicks;
+      runStartMs   = performance.now();
     } else {
-        return elapsedBefore;
+      // paused: convert displayed ticks directly
+      totalTicks = convertTicksBase(totalTicks, oldBase, newBase);
     }
-}
+    tickBase = newBase;
+    render();
+  }
 
-function updateLaggyOffset() {
-    laggyOffset = Math.floor(Math.random() * 400) - 200;
-}
+  // Current total ticks, using provided or current base
+  function currentTotalTicks(baseOverride = tickBase) {
+    if (!running) return totalTicks;
+    const elapsedMs   = performance.now() - runStartMs;
+    const elapsedTick = Math.floor(elapsedMs * baseOverride / 1000);
+    return ticksAtStart + elapsedTick;
+  }
 
-function getLaggyElapsed() {
-    return getElapsed() + laggyOffset;
-}
-
-function updateDisplay() {
-    const display = document.getElementById('display');
-    if (!display) return;
-
-    const ms = clockMode === 'laggy' ? getLaggyElapsed() : getElapsed();
-    display.innerHTML = formatTime(ms);
-
-    if (clockMode === 'rainbowhurrah') {
-        display.style.color = rainbowColors[rainbowIndex % rainbowColors.length];
-        rainbowIndex++;
+  // AUTO UI (disable/enable H/M/S checkboxes when Auto is on)
+  function syncAutoUI() {
+    const auto = !!showAuto?.checked;
+    [showHours, showMinutes, showSeconds].forEach(cb => {
+      if (!cb) return;
+      cb.disabled = auto;
+      const label = cb.closest('label');
+      if (label) label.classList.toggle('disabled-checkbox', auto);
+    });
+    // Ticks stays user-controlled
+    if (showTicks) {
+      showTicks.disabled = false;
+      const tlabel = showTicks.closest('label');
+      if (tlabel) tlabel.classList.remove('disabled-checkbox');
     }
-}
+  }
 
-function updateStartStopButton() {
-    const btn = document.getElementById('startStopBtn');
-    if (btn) {
-        btn.textContent = running ? "Stop" : "Start";
-        btn.classList.toggle('running', running);
+  function getDisplayFlagsFromTicks(absTicks) {
+    const totalSeconds = Math.floor(absTicks / tickBase);
+    if (showAuto?.checked) {
+      const showH = totalSeconds >= 3600;        // show hours ≥ 1h
+      const showM = showH || totalSeconds >= 60; // show minutes ≥ 1m or if hours shown
+      const showS = true;                        // seconds always
+      const showT = !!showTicks?.checked;        // ticks stay user-controlled
+      return { showH, showM, showS, showT };
     }
-}
+    return {
+      showH: !!showHours?.checked,
+      showM: !!showMinutes?.checked,
+      showS: !!showSeconds?.checked,
+      showT: !!showTicks?.checked,
+    };
+  }
 
-function startStop() {
-    if (running) {
-        clearInterval(intervalId);
-        elapsedBefore += Date.now() - startTimestamp;
-        running = false;
-    } else {
-        startTimestamp = Date.now();
-        intervalId = setInterval(updateDisplay, msPerTick);
-        running = true;
+  function formatFromTicks(ticks) {
+    const sign = ticks < 0 ? '-' : '';
+    let abs = Math.abs(ticks);
+
+    const sec      = Math.floor(abs / tickBase);
+    const tickPart = abs % tickBase;
+
+    let s = sec;
+    const hours   = Math.floor(s / 3600); s -= hours * 3600;
+    const minutes = Math.floor(s / 60);   s -= minutes * 60;
+    const seconds = s;
+
+    const flags = getDisplayFlagsFromTicks(abs);
+    const parts = [];
+    if (flags.showH) parts.push(String(hours).padStart(2, '0'));
+    if (flags.showM) parts.push(String(minutes).padStart(2, '0'));
+    if (flags.showS) parts.push(String(seconds).padStart(2, '0'));
+
+    let out = parts.join(':') || '00';
+    if (flags.showT) {
+      out += (parts.length ? '.' : '0.') + String(tickPart).padStart(2, '0');
     }
-    updateStartStopButton();
-}
+    return sign + out;
+  }
 
-function reset() {
-    clearInterval(intervalId);
+  function applySpeedrunnerColor(ticksNow) {
+    if (!speedrunnerMode?.checked) { displayEl.style.color = '#fff'; return; }
+    if (running)                   { displayEl.style.color = '#00ff77'; return; } // green
+    if (ticksNow < 0)              { displayEl.style.color = '#c6c6c6'; return; } // light gray
+    if (ticksNow > 0)              { displayEl.style.color = '#00aaff'; return; } // blue
+    displayEl.style.color = '#fff';
+  }
+
+  // Render as .monochar spans (no jitter)
+  function toMonoHTML(text){
+    return Array.from(text, ch => {
+      const sep = (ch === ':' || ch === '.') ? ' monochar--sep' : '';
+      const safe = ch === ' ' ? '&nbsp;' : ch;
+      return `<span class="monochar${sep}">${safe}</span>`;
+    }).join('');
+  }
+
+  function render() {
+    const nowTicks = currentTotalTicks();
+    const txt = formatFromTicks(nowTicks);
+    displayEl.innerHTML = toMonoHTML(txt);
+    applySpeedrunnerColor(nowTicks);
+  }
+
+  // Smooth UI updates independent of TPS
+  function startRAF() {
+    if (rafId) return;
+    const step = () => { render(); rafId = requestAnimationFrame(step); };
+    rafId = requestAnimationFrame(step);
+  }
+  function stopRAF() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+
+  // ===== Controls =====
+  function start() {
+    if (running) return;
+    runStartMs   = performance.now();
+    ticksAtStart = totalTicks;
+    running = true;
+    startStopBtn.textContent = 'Stop';
+    startRAF();
+    render();
+  }
+
+  function stop() {
+    if (!running) return;
+    totalTicks = currentTotalTicks();
     running = false;
-    startTimestamp = null;
-    elapsedBefore = 0;
-    updateDisplay();
-    updateStartStopButton();
-}
+    startStopBtn.textContent = 'Start';
+    stopRAF();
+    render();
+  }
 
-function detectOS() {
-    const ua = navigator.userAgent;
-    if (/Windows/i.test(ua)) return "windows";
-    if (/Android/i.test(ua)) return "android";
-    if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
-    return "windows";
-}
+  function reset() {
+    stop();
+    totalTicks = 0;
+    render();
+  }
 
-function applyFontFamily(fontType) {
-    const sw = document.querySelector('.stopwatch');
-    let fontStack;
-    if (fontType === 'custom') {
-        const fontData = localStorage.getItem('customFontData');
-        const fontName = (localStorage.getItem('customFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
-        if (fontData && fontName) {
-            if (!document.getElementById('customFontStyle')) {
-                const style = document.createElement('style');
-                style.id = 'customFontStyle';
-                style.innerHTML = `
-                  @font-face {
-                    font-family: '${fontName}';
-                    src: url(${fontData});
-                  }
-                `;
-                document.head.appendChild(style);
-            }
-            fontStack = `'${fontName}', sans-serif`;
-        } else {
-            fontStack = "'FancyCatPX', sans-serif";
-        }
-    } else if (fontType === 'system') {
-        const os = detectOS();
-        if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
-        else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
-        else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  // ===== Font logic =====
+  function applyFontChoice(mode, familyName = '') {
+    if (mode === 'system') {
+      const os = document.body.dataset.os;
+      if (os === 'android') {
+        document.body.style.fontFamily = "Roboto, Arial, sans-serif";
+      } else if (os === 'apple') {
+        document.body.style.fontFamily = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+      } else {
+        document.body.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+      }
+      return;
+    }
+    if (mode === 'custom' && familyName) {
+      document.body.style.fontFamily = `'${familyName}', sans-serif`;
+      return;
+    }
+    document.body.style.fontFamily = "'FancyCatPX', sans-serif"; // default
+  }
+
+  async function loadCustomFontFromFile(file) {
+    try {
+      if (currentFontFace) { document.fonts.delete(currentFontFace); currentFontFace = null; }
+      if (currentFontURL)  { URL.revokeObjectURL(currentFontURL); currentFontURL = null; }
+    } catch {}
+
+    const familyName = file.name.replace(/\.(ttf|otf|woff2?|)$/i, '');
+    const blob = new Blob([await file.arrayBuffer()]);
+    const url  = URL.createObjectURL(blob);
+
+    const face = new FontFace(familyName, `url(${url})`, { style: 'normal', weight: '400', stretch: 'normal' });
+    await face.load();
+    document.fonts.add(face);
+
+    currentFontFace = face;
+    currentFontURL  = url;
+    return familyName;
+  }
+
+  // ===== Events =====
+  startStopBtn?.addEventListener('click', () => (running ? stop() : start()));
+  resetBtn?.addEventListener('click', reset);
+
+  // Settings modal
+  function openSettings(){ settingsModal?.classList.add('show'); settingsModal?.setAttribute('aria-hidden','false'); }
+  function closeSettingsModal(){ settingsModal?.classList.remove('show'); settingsModal?.setAttribute('aria-hidden','true'); }
+  settingsBtn?.addEventListener('click', openSettings);
+  closeSettings?.addEventListener('click', closeSettingsModal);
+  settingsModal?.addEventListener('click', (e)=>{ if (e.target === settingsModal) closeSettingsModal(); });
+
+  // Toggles + speedrunner + AUTO
+  [showHours, showMinutes, showSeconds, showTicks, speedrunnerMode, showAuto].forEach(cb => {
+    cb?.addEventListener('change', () => {
+      if (cb === showAuto) syncAutoUI();
+      render();
+    });
+  });
+
+  // TPS UI
+  tpsSelect?.addEventListener('change', () => {
+    const custom = tpsSelect.value === 'custom';
+    tpsCustom?.classList.toggle('hidden', !custom);
+    if (!custom) applyTPS();
+  });
+  tpsCustom?.addEventListener('input', applyTPS);
+
+  // Font UI
+  fontSelect?.addEventListener('change', () => {
+    const val = fontSelect.value;
+    if (val === 'custom') {
+      if (!currentFontFace) { importFontBtn?.click(); return; }
+      applyFontChoice('custom', currentFontFace.family);
     } else {
-        fontStack = "'FancyCatPX', sans-serif";
+      applyFontChoice(val);
     }
-    if (sw) sw.style.fontFamily = fontStack;
-    localStorage.setItem('stopwatchFont', fontStack);
-}
+  });
 
-function applyAndSaveFont(type) {
-    if (type === 'system') {
-        applyFontFamily('system');
-        localStorage.setItem('stopwatchFont', 'system');
-    } else {
-        applyFontFamily('default');
-        localStorage.setItem('stopwatchFont', 'FancyCatPX');
+  importFontBtn?.addEventListener('click', () => customFontInput?.click());
+  customFontInput?.addEventListener('change', async () => {
+    const file = customFontInput.files?.[0];
+    if (!file) return;
+    try {
+      const fam = await loadCustomFontFromFile(file);
+      if (customFontName)   customFontName.textContent = `Loaded: ${fam}`;
+      if (customFontNotice) customFontNotice.style.display = 'block';
+      if (fontSelect)       fontSelect.value = 'custom';
+      applyFontChoice('custom', fam);
+    } catch (err) {
+      if (customFontName)   customFontName.textContent = 'Failed to load font';
+      if (customFontNotice) customFontNotice.style.display = 'block';
+      console.error(err);
     }
-}
+  });
 
-function updateShowHideCheckboxUI() {
-    const ids = ['showHours', 'showMinutes', 'showSeconds', 'showTicks'];
-    const flags = [showHours, showMinutes, showSeconds, showTicks];
-    const count = flags.filter(Boolean).length;
-    ids.forEach((id, idx) => {
-        const box = document.getElementById(id);
-        const label = box.closest('label');
-        box.checked = flags[idx];
-        box.disabled = (count === 1 && flags[idx]);
-        if (box.disabled && label) label.classList.add('disabled-checkbox');
-        else if (label) label.classList.remove('disabled-checkbox');
-    });
-}
+  // ===== Init =====
+  // TPS initial
+  const custom = tpsSelect?.value === 'custom';
+  tpsCustom?.classList.toggle('hidden', !custom);
+  tickBase = readTPS();
 
-function saveShowHideState() {
-    localStorage.setItem('showHours', showHours ? "1" : "0");
-    localStorage.setItem('showMinutes', showMinutes ? "1" : "0");
-    localStorage.setItem('showSeconds', showSeconds ? "1" : "0");
-    localStorage.setItem('showTicks', showTicks ? "1" : "0");
-}
+  // AUTO initial
+  syncAutoUI();
 
-function applyClockModeStyle() {
-    const el = document.getElementById("display");
-    if (!el) return;
-    el.classList.remove('crazycolors', 'flashing', 'marquee', 'rotating', 'pride', 'rainbowhurrah');
-    el.style.color = '';
-    el.style.fontStyle = '';
-    el.style.transform = '';
-    el.style.animation = '';
+  // Fonts initial
+  applyFontChoice('default');
 
-    if (clockMode === "flashing") {
-        el.classList.add('flashing');
-    } else if (clockMode === "crazycolors") {
-        el.classList.add('crazycolors');
-    } else if (clockMode === "marquee") {
-        el.classList.add('marquee');
-    } else if (clockMode === "rotating") {
-        el.classList.add('rotating');
-    } else if (clockMode === "pride") {
-        el.classList.add('pride');
-    } else if (clockMode === "rainbowhurrah") {
-        el.classList.add('rainbowhurrah');
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const os = detectOS();
-    document.body.setAttribute('data-os', os);
-
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const fontSelect = document.getElementById('fontSelect');
-    const closeSettings = document.getElementById('closeSettings');
-    const importCustomFont = document.getElementById('importCustomFont');
-    const customFontFile = document.getElementById('customFontFile');
-    const customFontNameElem = document.getElementById('customFontName');
-    const customFontNotice = document.getElementById('customFontNotice');
-    const startStopBtn = document.getElementById('startStopBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    startStopBtn.addEventListener('click', startStop);
-    resetBtn.addEventListener('click', reset);
-
-    settingsBtn.addEventListener('click', () => {
-        fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
-        customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
-        settingsModal.classList.add('show');
-        updateCustomFontNotice();
-        updateShowHideCheckboxUI();
-        const clockModeSelect = document.getElementById('clockModeSelect');
-        if (clockModeSelect) clockModeSelect.value = clockMode;
-    });
-
-    closeSettings.addEventListener('click', () => {
-        settingsModal.classList.remove('show');
-    });
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.classList.remove('show');
-        }
-    });
-
-    importCustomFont.addEventListener('click', () => {
-        customFontFile.value = '';
-        customFontFile.click();
-    });
-    customFontFile.addEventListener('change', function () {
-        const file = this.files[0];
-        if (!file) return;
-        customFontNameElem.textContent = file.name;
-        localStorage.setItem('stopwatchFontType', 'custom');
-        localStorage.setItem('customFontName', file.name);
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const fontData = e.target.result;
-            localStorage.setItem('customFontData', fontData);
-            localStorage.setItem('stopwatchFont', file.name.replace(/\.[^/.]+$/, ""));
-            applyFontFamily('custom');
-        };
-        reader.readAsDataURL(file);
-        fontSelect.value = 'custom';
-        updateCustomFontNotice();
-    });
-
-    fontSelect.addEventListener('change', function () {
-        localStorage.setItem('stopwatchFontType', this.value);
-        if (this.value === 'custom') {
-            applyFontFamily('custom');
-            customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
-        } else {
-            customFontNameElem.textContent = '';
-            applyAndSaveFont(this.value);
-        }
-        updateCustomFontNotice();
-    });
-
-    function updateCustomFontNotice() {
-        if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
-            customFontNotice.style.display = '';
-        } else {
-            customFontNotice.style.display = 'none';
-        }
-    }
-
-    if (savedFontType === 'custom') {
-        applyFontFamily('custom');
-    } else {
-        applyFontFamily(savedFontType);
-    }
-
-    ["showHours", "showMinutes", "showSeconds", "showTicks"].forEach(id => {
-        document.getElementById(id).addEventListener('change', function () {
-            if (id === "showHours") showHours = this.checked;
-            if (id === "showMinutes") showMinutes = this.checked;
-            if (id === "showSeconds") showSeconds = this.checked;
-            if (id === "showTicks") showTicks = this.checked;
-            saveShowHideState();
-            updateShowHideCheckboxUI();
-            updateDisplay();
-        });
-    });
-
-    const clockModeSelect = document.getElementById('clockModeSelect');
-    if (clockModeSelect) {
-        clockModeSelect.value = clockMode;
-        clockModeSelect.addEventListener('change', () => {
-            clockMode = clockModeSelect.value;
-            localStorage.setItem('clockMode', clockMode);
-            applyClockModeStyle();
-            updateLaggyOffset();
-            updateDisplay();
-        });
-    }
-
-    applyClockModeStyle();
-    updateLaggyOffset();
-    updateShowHideCheckboxUI();
-    updateDisplay();
-    updateStartStopButton();
-    setInterval(updateDisplay, msPerTick);
-});
+  // First paint
+  render();
+})();
