@@ -1,5 +1,6 @@
-(() => {
-  // ===== DOM =====
+// stopwatch script with IndexedDB-persisted custom font
+(async () => {
+  // ---------- DOM ----------
   const displayEl     = document.getElementById('display');
   const startStopBtn  = document.getElementById('startStopBtn');
   const resetBtn      = document.getElementById('resetBtn');
@@ -27,30 +28,173 @@
   const customFontName    = document.getElementById('customFontName');
   const customFontNotice  = document.getElementById('customFontNotice');
 
-  // ===== State =====
+  // ---------- State ----------
   let running = false;
 
-  // Time is stored in *ticks*. One tick = 1/TPS second.
-  let totalTicks   = 0;   // accumulated ticks (at current tickBase)
-  let tickBase     = 40;  // TPS (default 40)
+  // time stored in ticks; one tick = 1/TPS second
+  let totalTicks   = 0;
+  let tickBase     = 40;  // default TPS
   let rafId        = null;
 
-  // Accurate accumulation while running
-  let runStartMs   = 0;   // perf.now() when started
-  let ticksAtStart = 0;   // snapshot of totalTicks at start
+  let runStartMs   = 0;
+  let ticksAtStart = 0;
 
-  // Custom font bookkeeping
+  // custom font bookkeeping
   let currentFontFace = null;
   let currentFontURL  = null;
 
-  // OS hint for “System” font option
+  // simple OS hint for "System" option
   try {
     const ua = navigator.userAgent.toLowerCase();
     if (/android/.test(ua)) document.body.dataset.os = 'android';
     else if (/iphone|ipad|mac os x|macintosh/.test(ua)) document.body.dataset.os = 'apple';
   } catch {}
 
-  // ===== Helpers =====
+  // ---------- Persistence (settings) ----------
+  const LS_KEY = 'stopwatch:v1';
+
+  function saveSettings() {
+    const data = {
+      // UI
+      showAuto:        !!showAuto?.checked,
+      showHours:       !!showHours?.checked,
+      showMinutes:     !!showMinutes?.checked,
+      showSeconds:     !!showSeconds?.checked,
+      showTicks:       !!showTicks?.checked,
+      speedrunnerMode: !!speedrunnerMode?.checked,
+
+      // TPS
+      tpsMode:   tpsSelect?.value || '40', // '40' or 'custom'
+      tpsCustom: tpsCustom?.value || '',
+
+      // font choice (the actual bytes are in IndexedDB)
+      fontMode:       fontSelect?.value || 'default',
+      customFontName: customFontName?.textContent?.replace(/^Loaded:\s*/, '') || '',
+    };
+    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+
+      if (showAuto)    showAuto.checked    = !!data.showAuto;
+      if (showHours)   showHours.checked   = !!data.showHours;
+      if (showMinutes) showMinutes.checked = !!data.showMinutes;
+      if (showSeconds) showSeconds.checked = !!data.showSeconds;
+      if (showTicks)   showTicks.checked   = !!data.showTicks;
+
+      if (speedrunnerMode) speedrunnerMode.checked = !!data.speedrunnerMode;
+
+      if (tpsSelect && data.tpsMode) {
+        tpsSelect.value = data.tpsMode;
+        const custom = tpsSelect.value === 'custom';
+        tpsCustom?.classList.toggle('hidden', !custom);
+        if (custom && data.tpsCustom) tpsCustom.value = data.tpsCustom;
+      }
+
+      if (fontSelect && data.fontMode) {
+        fontSelect.value = data.fontMode;
+        if (data.fontMode === 'custom' && data.customFontName) {
+          if (customFontName)   customFontName.textContent = `Loaded: ${data.customFontName}`;
+          if (customFontNotice) customFontNotice.style.display = 'block';
+        }
+      }
+    } catch {}
+  }
+
+  // ---------- IndexedDB (persist custom font file) ----------
+  const DB_NAME   = 'stopwatch-fonts';
+  const DB_STORE  = 'fonts';
+  const FONT_KEY  = 'customFont';
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) {
+          db.createObjectStore(DB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => reject(req.error);
+    });
+  }
+  async function idbGet(key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx  = db.transaction(DB_STORE, 'readonly');
+      const os  = tx.objectStore(DB_STORE);
+      const req = os.get(key);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror   = () => reject(req.error);
+    });
+  }
+  async function idbSet(key, val) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx  = db.transaction(DB_STORE, 'readwrite');
+      const os  = tx.objectStore(DB_STORE);
+      const req = os.put(val, key);
+      req.onsuccess = () => resolve(true);
+      req.onerror   = () => reject(req.error);
+    });
+  }
+
+  // Load persisted custom font (if any) before first render
+  async function restoreCustomFontFromDB() {
+    try {
+      const rec = await idbGet(FONT_KEY);
+      if (!rec || !rec.bytes) return false;
+
+      // clean old
+      try {
+        if (currentFontFace) { document.fonts.delete(currentFontFace); currentFontFace = null; }
+        if (currentFontURL)  { URL.revokeObjectURL(currentFontURL); currentFontURL = null; }
+      } catch {}
+
+      const blob = new Blob([rec.bytes], { type: rec.type || 'font/ttf' });
+      const url  = URL.createObjectURL(blob);
+      const fam  = rec.family || 'CustomFont';
+
+      const face = new FontFace(fam, `url(${url})`, { style: 'normal', weight: '400', stretch: 'normal' });
+      await face.load();
+      document.fonts.add(face);
+
+      currentFontFace = face;
+      currentFontURL  = url;
+
+      // set UI to custom so it actually uses it
+      if (fontSelect) fontSelect.value = 'custom';
+      if (customFontName)   customFontName.textContent = `Loaded: ${fam}`;
+      if (customFontNotice) customFontNotice.style.display = 'block';
+
+      applyFontChoice('custom', fam);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Save chosen font file into DB
+  async function persistCustomFontFile(file) {
+    const bytes = await file.arrayBuffer();
+    const family = file.name.replace(/\.(ttf|otf|woff2?|)$/i, '');
+    await idbSet(FONT_KEY, { bytes, family, type: file.type || 'font/ttf' });
+    return family;
+  }
+
+  // On tab close, revoke object URL
+  window.addEventListener('beforeunload', () => {
+    try {
+      if (currentFontURL) URL.revokeObjectURL(currentFontURL);
+    } catch {}
+  });
+
+  // ---------- Helpers ----------
   const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
   function readTPS() {
@@ -63,36 +207,34 @@
     return clamp(parseInt(tpsSelect.value, 10), 10, 100);
   }
 
-  // Convert ticks between bases while keeping absolute time
   function convertTicksBase(absTicks, oldBase, newBase) {
     if (oldBase === newBase) return absTicks;
     const sign = absTicks < 0 ? -1 : 1;
     let a = Math.abs(absTicks);
     const sec   = Math.floor(a / oldBase);
-    const frac  = a % oldBase; // 0..oldBase-1
+    const frac  = a % oldBase;
     const newA  = sec * newBase + Math.round(frac * newBase / oldBase);
     return sign * newA;
   }
 
-  function applyTPS() {
+  function applyTPS({ fromUser = false } = {}) {
     const oldBase = tickBase;
     const newBase = readTPS();
-    if (newBase === oldBase) return;
+    if (newBase === oldBase) { if (fromUser) saveSettings(); return; }
 
     if (running) {
-      const nowTicksOld = currentTotalTicks(oldBase);
-      totalTicks   = convertTicksBase(nowTicksOld, oldBase, newBase);
+      const nowOld = currentTotalTicks(oldBase);
+      totalTicks   = convertTicksBase(nowOld, oldBase, newBase);
       ticksAtStart = totalTicks;
       runStartMs   = performance.now();
     } else {
-      // paused: convert displayed ticks directly
       totalTicks = convertTicksBase(totalTicks, oldBase, newBase);
     }
     tickBase = newBase;
     render();
+    if (fromUser) saveSettings();
   }
 
-  // Current total ticks, using provided or current base
   function currentTotalTicks(baseOverride = tickBase) {
     if (!running) return totalTicks;
     const elapsedMs   = performance.now() - runStartMs;
@@ -100,7 +242,6 @@
     return ticksAtStart + elapsedTick;
   }
 
-  // AUTO UI (disable/enable H/M/S checkboxes when Auto is on)
   function syncAutoUI() {
     const auto = !!showAuto?.checked;
     [showHours, showMinutes, showSeconds].forEach(cb => {
@@ -109,7 +250,7 @@
       const label = cb.closest('label');
       if (label) label.classList.toggle('disabled-checkbox', auto);
     });
-    // Ticks stays user-controlled
+    // ticks remains user-controlled
     if (showTicks) {
       showTicks.disabled = false;
       const tlabel = showTicks.closest('label');
@@ -120,10 +261,10 @@
   function getDisplayFlagsFromTicks(absTicks) {
     const totalSeconds = Math.floor(absTicks / tickBase);
     if (showAuto?.checked) {
-      const showH = totalSeconds >= 3600;        // show hours ≥ 1h
-      const showM = showH || totalSeconds >= 60; // show minutes ≥ 1m or if hours shown
-      const showS = true;                        // seconds always
-      const showT = !!showTicks?.checked;        // ticks stay user-controlled
+      const showH = totalSeconds >= 3600;
+      const showM = showH || totalSeconds >= 60;
+      const showS = true;
+      const showT = !!showTicks?.checked;
       return { showH, showM, showS, showT };
     }
     return {
@@ -167,10 +308,9 @@
     displayEl.style.color = '#fff';
   }
 
-  // Render as .monochar spans (no jitter)
-  function toMonoHTML(text){
+  function toMonoHTML(text) {
     return Array.from(text, ch => {
-      const sep = (ch === ':' || ch === '.') ? ' monochar--sep' : '';
+      const sep  = (ch === ':' || ch === '.') ? ' monochar--sep' : '';
       const safe = ch === ' ' ? '&nbsp;' : ch;
       return `<span class="monochar${sep}">${safe}</span>`;
     }).join('');
@@ -178,12 +318,10 @@
 
   function render() {
     const nowTicks = currentTotalTicks();
-    const txt = formatFromTicks(nowTicks);
-    displayEl.innerHTML = toMonoHTML(txt);
+    displayEl.innerHTML = toMonoHTML(formatFromTicks(nowTicks));
     applySpeedrunnerColor(nowTicks);
   }
 
-  // Smooth UI updates independent of TPS
   function startRAF() {
     if (rafId) return;
     const step = () => { render(); rafId = requestAnimationFrame(step); };
@@ -191,7 +329,7 @@
   }
   function stopRAF() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
 
-  // ===== Controls =====
+  // ---------- Controls ----------
   function start() {
     if (running) return;
     runStartMs   = performance.now();
@@ -201,7 +339,6 @@
     startRAF();
     render();
   }
-
   function stop() {
     if (!running) return;
     totalTicks = currentTotalTicks();
@@ -210,24 +347,19 @@
     stopRAF();
     render();
   }
-
   function reset() {
     stop();
     totalTicks = 0;
     render();
   }
 
-  // ===== Font logic =====
+  // ---------- Font logic ----------
   function applyFontChoice(mode, familyName = '') {
     if (mode === 'system') {
       const os = document.body.dataset.os;
-      if (os === 'android') {
-        document.body.style.fontFamily = "Roboto, Arial, sans-serif";
-      } else if (os === 'apple') {
-        document.body.style.fontFamily = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-      } else {
-        document.body.style.fontFamily = "'Segoe UI', Arial, sans-serif";
-      }
+      if (os === 'android')      document.body.style.fontFamily = "Roboto, Arial, sans-serif";
+      else if (os === 'apple')   document.body.style.fontFamily = "'San Francisco','Helvetica Neue',Helvetica,Arial,sans-serif";
+      else                       document.body.style.fontFamily = "'Segoe UI', Arial, sans-serif";
       return;
     }
     if (mode === 'custom' && familyName) {
@@ -238,25 +370,34 @@
   }
 
   async function loadCustomFontFromFile(file) {
+    // purge current
     try {
       if (currentFontFace) { document.fonts.delete(currentFontFace); currentFontFace = null; }
       if (currentFontURL)  { URL.revokeObjectURL(currentFontURL); currentFontURL = null; }
     } catch {}
 
-    const familyName = file.name.replace(/\.(ttf|otf|woff2?|)$/i, '');
-    const blob = new Blob([await file.arrayBuffer()]);
-    const url  = URL.createObjectURL(blob);
+    // persist file bytes in DB, then load face
+    const familyName = await persistCustomFontFile(file);
 
-    const face = new FontFace(familyName, `url(${url})`, { style: 'normal', weight: '400', stretch: 'normal' });
+    const bytes = await file.arrayBuffer();
+    const url   = URL.createObjectURL(new Blob([bytes], { type: file.type || 'font/ttf' }));
+    const face  = new FontFace(familyName, `url(${url})`, { style:'normal', weight:'400', stretch:'normal' });
     await face.load();
     document.fonts.add(face);
 
     currentFontFace = face;
     currentFontURL  = url;
+
+    if (customFontName)   customFontName.textContent = `Loaded: ${familyName}`;
+    if (customFontNotice) customFontNotice.style.display = 'block';
+    if (fontSelect)       fontSelect.value = 'custom';
+    applyFontChoice('custom', familyName);
+    saveSettings();
+
     return familyName;
   }
 
-  // ===== Events =====
+  // ---------- Events ----------
   startStopBtn?.addEventListener('click', () => (running ? stop() : start()));
   resetBtn?.addEventListener('click', reset);
 
@@ -267,21 +408,22 @@
   closeSettings?.addEventListener('click', closeSettingsModal);
   settingsModal?.addEventListener('click', (e)=>{ if (e.target === settingsModal) closeSettingsModal(); });
 
-  // Toggles + speedrunner + AUTO
+  // Toggles (save + render)
   [showHours, showMinutes, showSeconds, showTicks, speedrunnerMode, showAuto].forEach(cb => {
     cb?.addEventListener('change', () => {
       if (cb === showAuto) syncAutoUI();
+      saveSettings();
       render();
     });
   });
 
-  // TPS UI
+  // TPS
   tpsSelect?.addEventListener('change', () => {
     const custom = tpsSelect.value === 'custom';
     tpsCustom?.classList.toggle('hidden', !custom);
-    if (!custom) applyTPS();
+    applyTPS({ fromUser: true });
   });
-  tpsCustom?.addEventListener('input', applyTPS);
+  tpsCustom?.addEventListener('input', () => applyTPS({ fromUser: true }));
 
   // Font UI
   fontSelect?.addEventListener('change', () => {
@@ -292,37 +434,38 @@
     } else {
       applyFontChoice(val);
     }
+    saveSettings();
   });
 
   importFontBtn?.addEventListener('click', () => customFontInput?.click());
   customFontInput?.addEventListener('change', async () => {
     const file = customFontInput.files?.[0];
     if (!file) return;
-    try {
-      const fam = await loadCustomFontFromFile(file);
-      if (customFontName)   customFontName.textContent = `Loaded: ${fam}`;
-      if (customFontNotice) customFontNotice.style.display = 'block';
-      if (fontSelect)       fontSelect.value = 'custom';
-      applyFontChoice('custom', fam);
-    } catch (err) {
-      if (customFontName)   customFontName.textContent = 'Failed to load font';
-      if (customFontNotice) customFontNotice.style.display = 'block';
-      console.error(err);
-    }
+    try { await loadCustomFontFromFile(file); } catch (err) { console.error(err); }
   });
 
-  // ===== Init =====
-  // TPS initial
+  // ---------- Init ----------
+  loadSettings();
+
+  // show/hide custom input based on saved TPS mode
   const custom = tpsSelect?.value === 'custom';
   tpsCustom?.classList.toggle('hidden', !custom);
+
+  // restore custom font (if one is saved); must happen before we choose family
+  const restored = await restoreCustomFontFromDB();
+
+  // TPS & AUTO & font apply
   tickBase = readTPS();
-
-  // AUTO initial
   syncAutoUI();
+  if (fontSelect) {
+    if (fontSelect.value === 'custom' && restored && currentFontFace) {
+      applyFontChoice('custom', currentFontFace.family);
+    } else {
+      applyFontChoice(fontSelect.value || 'default');
+    }
+  } else {
+    applyFontChoice('default');
+  }
 
-  // Fonts initial
-  applyFontChoice('default');
-
-  // First paint
   render();
 })();
