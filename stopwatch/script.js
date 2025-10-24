@@ -1,32 +1,50 @@
-// stopwatch script with IndexedDB-persisted custom font
-(async () => {
-  // ---------- DOM ----------
-  const displayEl     = document.getElementById('display');
-  const startStopBtn  = document.getElementById('startStopBtn');
-  const resetBtn      = document.getElementById('resetBtn');
+// ==== Stopwatch (single-boot, de-duped) ======================================
+(() => {
+  if (window.__STOPWATCH_BOOTED__) return;
+  window.__STOPWATCH_BOOTED__ = true;
 
-  const settingsBtn   = document.getElementById('settingsBtn');
-  const settingsModal = document.getElementById('settingsModal');
-  const closeSettings = document.getElementById('closeSettings');
+  // ---------- DOM ----------
+  const $ = (id) => document.getElementById(id);
+
+  // Core UI
+  const displayEl     = $('display');
+  const startStopBtn  = $('startStopBtn');
+  const resetBtn      = $('resetBtn');
+
+  // Settings modal + controls (optional but supported)
+  const settingsBtn   = $('settingsBtn');
+  const settingsModal = $('settingsModal');
+  const closeSettings = $('closeSettings');
 
   // Unit toggles / AUTO
-  const showAuto    = document.getElementById('showAuto');
-  const showHours   = document.getElementById('showHours');
-  const showMinutes = document.getElementById('showMinutes');
-  const showSeconds = document.getElementById('showSeconds');
-  const showTicks   = document.getElementById('showTicks');
+  const showAuto    = $('showAuto');
+  const showHours   = $('showHours');
+  const showMinutes = $('showMinutes');
+  const showSeconds = $('showSeconds');
+  const showTicks   = $('showTicks');
 
   // Speedrunner + TPS
-  const speedrunnerMode = document.getElementById('speedrunnerMode');
-  const tpsSelect       = document.getElementById('tpsSelect');
-  const tpsCustom       = document.getElementById('tpsCustom');
+  const speedrunnerMode = $('speedrunnerMode');
+  const tpsSelect       = $('tpsSelect');
+  const tpsCustom       = $('tpsCustom');
 
   // Font controls
-  const fontSelect        = document.getElementById('fontSelect');
-  const importFontBtn     = document.getElementById('importCustomFont');
-  const customFontInput   = document.getElementById('customFontFile');
-  const customFontName    = document.getElementById('customFontName');
-  const customFontNotice  = document.getElementById('customFontNotice');
+  const fontSelect       = $('fontSelect');
+  const importFontBtn    = $('importCustomFont');
+  const customFontInput  = $('customFontFile');
+  const customFontName   = $('customFontName');
+  const customFontNotice = $('customFontNotice');
+
+  // Keybinds UI (optional, if present in your HTML)
+  const openKeybinds        = $('openKeybinds');
+  const keybindsModal       = $('keybindsModal');
+  const closeKeybinds       = $('closeKeybinds');
+  const rebindStartStop     = $('rebindStartStop');
+  const rebindReset         = $('rebindReset');
+  const bindStartStopLabel  = $('bindStartStopLabel');
+  const bindResetLabel      = $('bindResetLabel');
+  const kbResetDefaults     = $('kbResetDefaults');
+  const kbCountdown         = $('kbCountdown');
 
   // ---------- State ----------
   let running = false;
@@ -43,7 +61,7 @@
   let currentFontFace = null;
   let currentFontURL  = null;
 
-  // simple OS hint for "System" option
+  // simple OS hint for "System" font option
   try {
     const ua = navigator.userAgent.toLowerCase();
     if (/android/.test(ua)) document.body.dataset.os = 'android';
@@ -51,7 +69,14 @@
   } catch {}
 
   // ---------- Persistence (settings) ----------
-  const LS_KEY = 'stopwatch:v1';
+  const LS_KEY       = 'stopwatch:v1';
+  const LS_BINDS     = 'stopwatch:keybinds:v1';
+
+  const defaultBinds = {
+    startStop: { key: 'Enter',  shift: false, ctrl: false, alt: false, meta: false },
+    reset:     { key: 'Delete', shift: true,  ctrl: false, alt: false, meta: false }
+  };
+  let binds = loadLS(LS_BINDS, defaultBinds);
 
   function saveSettings() {
     const data = {
@@ -64,10 +89,10 @@
       speedrunnerMode: !!speedrunnerMode?.checked,
 
       // TPS
-      tpsMode:   tpsSelect?.value || '40', // '40' or 'custom'
+      tpsMode:   tpsSelect?.value || '40', // '40'.. or 'custom'
       tpsCustom: tpsCustom?.value || '',
 
-      // font choice (the actual bytes are in IndexedDB)
+      // font choice (bytes are in IndexedDB)
       fontMode:       fontSelect?.value || 'default',
       customFontName: customFontName?.textContent?.replace(/^Loaded:\s*/, '') || '',
     };
@@ -144,7 +169,6 @@
     });
   }
 
-  // Load persisted custom font (if any) before first render
   async function restoreCustomFontFromDB() {
     try {
       const rec = await idbGet(FONT_KEY);
@@ -167,7 +191,6 @@
       currentFontFace = face;
       currentFontURL  = url;
 
-      // set UI to custom so it actually uses it
       if (fontSelect) fontSelect.value = 'custom';
       if (customFontName)   customFontName.textContent = `Loaded: ${fam}`;
       if (customFontNotice) customFontNotice.style.display = 'block';
@@ -179,19 +202,15 @@
     }
   }
 
-  // Save chosen font file into DB
   async function persistCustomFontFile(file) {
-    const bytes = await file.arrayBuffer();
+    const bytes  = await file.arrayBuffer();
     const family = file.name.replace(/\.(ttf|otf|woff2?|)$/i, '');
     await idbSet(FONT_KEY, { bytes, family, type: file.type || 'font/ttf' });
     return family;
   }
 
-  // On tab close, revoke object URL
   window.addEventListener('beforeunload', () => {
-    try {
-      if (currentFontURL) URL.revokeObjectURL(currentFontURL);
-    } catch {}
+    try { if (currentFontURL) URL.revokeObjectURL(currentFontURL); } catch {}
   });
 
   // ---------- Helpers ----------
@@ -204,7 +223,7 @@
       tpsCustom.value = String(v);
       return v;
     }
-    return clamp(parseInt(tpsSelect.value, 10), 10, 100);
+    return clamp(parseInt(tpsSelect.value, 10) || 40, 10, 100);
   }
 
   function convertTicksBase(absTicks, oldBase, newBase) {
@@ -250,7 +269,7 @@
       const label = cb.closest('label');
       if (label) label.classList.toggle('disabled-checkbox', auto);
     });
-    // ticks remains user-controlled
+    // ticks is always user-controllable
     if (showTicks) {
       showTicks.disabled = false;
       const tlabel = showTicks.closest('label');
@@ -303,12 +322,12 @@
   function applySpeedrunnerColor(ticksNow) {
     if (!speedrunnerMode?.checked) { displayEl.style.color = '#fff'; return; }
     if (running)                   { displayEl.style.color = '#00ff77'; return; } // green
-    if (ticksNow < 0)              { displayEl.style.color = '#c6c6c6'; return; } // light gray
+    if (ticksNow < 0)              { displayEl.style.color = '#777777'; return; } // light gray
     if (ticksNow > 0)              { displayEl.style.color = '#00aaff'; return; } // blue
     displayEl.style.color = '#fff';
   }
 
-  function toMonoHTML(text) {
+  function monoHTML(text) {
     return Array.from(text, ch => {
       const sep  = (ch === ':' || ch === '.') ? ' monochar--sep' : '';
       const safe = ch === ' ' ? '&nbsp;' : ch;
@@ -318,7 +337,7 @@
 
   function render() {
     const nowTicks = currentTotalTicks();
-    displayEl.innerHTML = toMonoHTML(formatFromTicks(nowTicks));
+    displayEl.innerHTML = monoHTML(formatFromTicks(nowTicks));
     applySpeedrunnerColor(nowTicks);
   }
 
@@ -366,7 +385,8 @@
       document.body.style.fontFamily = `'${familyName}', sans-serif`;
       return;
     }
-    document.body.style.fontFamily = "'FancyCatPX', sans-serif"; // default
+    // default
+    document.body.style.fontFamily = "'FancyCatPX', sans-serif";
   }
 
   async function loadCustomFontFromFile(file) {
@@ -397,16 +417,121 @@
     return familyName;
   }
 
+  // ---------- Keybinds (modifiers + base key) ----------
+  const PURE_MODS = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+
+  function normalizeKey(k) {
+    if (!k) return '';
+    if (k === 'Esc') return 'Escape';
+    if (k === 'Del') return 'Delete';
+    if (k === 'Spacebar') return ' ';
+    return k.length === 1 ? k.toUpperCase() : k;
+  }
+  function keyLabel(k) {
+    if (k === ' ') return 'Space';
+    if (k === 'Enter') return 'Return';
+    return k;
+  }
+  function describeBind(b) {
+    const mods = [];
+    if (b.ctrl)  mods.push('Ctrl');
+    if (b.alt)   mods.push('Alt');
+    if (b.shift) mods.push('Shift');
+    if (b.meta)  mods.push('Meta');
+    const base = keyLabel(b.key);
+    return (mods.length ? mods.join('+') + '+' : '') + base;
+  }
+  function isPureModifierKey(k) {
+    return PURE_MODS.has(k);
+  }
+
+  /** Convert a keydown event into a bind object.
+   *  IMPORTANT: returns null for pure-modifier presses (so we wait for the real base key). */
+  function eventToBind(e) {
+    const raw = e.key;
+    if (isPureModifierKey(raw)) return null; // wait for Delete/K/etc
+    return {
+      key:   normalizeKey(raw),
+      shift: !!e.shiftKey,
+      ctrl:  !!e.ctrlKey,
+      alt:   !!e.altKey,
+      meta:  !!e.metaKey
+    };
+  }
+
+  /** Does the current keydown match a stored binding? */
+  function matchKey(e, bind) {
+    if (!bind) return false;
+    const base = normalizeKey(e.key);
+    if (isPureModifierKey(base)) return false; // never trigger on mods alone
+    return base === bind.key &&
+           !!e.shiftKey === !!bind.shift &&
+           !!e.ctrlKey  === !!bind.ctrl &&
+           !!e.altKey   === !!bind.alt &&
+           !!e.metaKey  === !!bind.meta;
+  }
+
+  function saveLS(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch{} }
+  function loadLS(key, fallback){ try{ const raw = localStorage.getItem(key); return raw? JSON.parse(raw) : fallback; }catch{ return fallback; } }
+
+  function updateBindLabels() {
+    if (bindStartStopLabel) bindStartStopLabel.textContent = describeBind(binds.startStop);
+    if (bindResetLabel)     bindResetLabel.textContent     = describeBind(binds.reset);
+  }
+
+  /** Rebind flow with 3.0s countdown; only accepts non-modifier base key. */
+  function startRebind(which, btnEl, labelEl) {
+    if (!btnEl) return;
+    btnEl.classList.add('waiting');
+    if (labelEl) labelEl.textContent = 'Press keys…';
+    if (kbCountdown) kbCountdown.textContent = '3.0';
+
+    const t0 = performance.now();
+
+    function onKey(e) {
+      e.preventDefault();
+      const kb = eventToBind(e);
+      if (!kb) return; // ignore pure-modifier presses until base arrives
+      binds[which] = kb;
+      saveLS(LS_BINDS, binds);
+      cleanup(true);
+    }
+    function onEsc(e) {
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+    }
+    function onTick(){
+      const left = Math.max(0, 3000 - (performance.now() - t0));
+      if (kbCountdown) kbCountdown.textContent = (left/1000).toFixed(1);
+      if (left <= 0) { cleanup(false); return; }
+      raf = requestAnimationFrame(onTick);
+    }
+    function cleanup(){
+      document.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('keydown', onEsc, true);
+      cancelAnimationFrame(raf);
+      btnEl.classList.remove('waiting');
+      if (kbCountdown) kbCountdown.textContent = '';
+      updateBindLabels();
+    }
+
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('keydown', onEsc, true);
+    let raf = requestAnimationFrame(onTick);
+  }
+
   // ---------- Events ----------
   startStopBtn?.addEventListener('click', () => (running ? stop() : start()));
   resetBtn?.addEventListener('click', reset);
 
   // Settings modal
-  function openSettings(){ settingsModal?.classList.add('show'); settingsModal?.setAttribute('aria-hidden','false'); }
-  function closeSettingsModal(){ settingsModal?.classList.remove('show'); settingsModal?.setAttribute('aria-hidden','true'); }
-  settingsBtn?.addEventListener('click', openSettings);
-  closeSettings?.addEventListener('click', closeSettingsModal);
-  settingsModal?.addEventListener('click', (e)=>{ if (e.target === settingsModal) closeSettingsModal(); });
+  function openModal(el, show){
+    if (!el) return;
+    if (show) { el.classList.add('show'); el.setAttribute('aria-hidden','false'); }
+    else      { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); }
+  }
+  settingsBtn?.addEventListener('click', () => openModal(settingsModal, true));
+  closeSettings?.addEventListener('click', () => openModal(settingsModal, false));
+  settingsModal?.addEventListener('click', (e)=>{ if (e.target === settingsModal) openModal(settingsModal, false); });
 
   // Toggles (save + render)
   [showHours, showMinutes, showSeconds, showTicks, speedrunnerMode, showAuto].forEach(cb => {
@@ -444,28 +569,131 @@
     try { await loadCustomFontFromFile(file); } catch (err) { console.error(err); }
   });
 
-  // ---------- Init ----------
-  loadSettings();
+  // Keybinds modal
+  openKeybinds?.addEventListener('click', () => openModal(keybindsModal, true));
+  closeKeybinds?.addEventListener('click', () => openModal(keybindsModal, false));
+  keybindsModal?.addEventListener('click', (e)=>{ if (e.target === keybindsModal) openModal(keybindsModal, false); });
 
-  // show/hide custom input based on saved TPS mode
-  const custom = tpsSelect?.value === 'custom';
-  tpsCustom?.classList.toggle('hidden', !custom);
+  rebindStartStop?.addEventListener('click', () => startRebind('startStop', rebindStartStop, bindStartStopLabel));
+  rebindReset?.addEventListener('click', () => startRebind('reset', rebindReset, bindResetLabel));
+  kbResetDefaults?.addEventListener('click', () => {
+    binds = JSON.parse(JSON.stringify(defaultBinds));
+    saveLS(LS_BINDS, binds);
+    updateBindLabels();
+  });
 
-  // restore custom font (if one is saved); must happen before we choose family
-  const restored = await restoreCustomFontFromDB();
+  // Global key handler (tab-focused)
+  document.addEventListener('keydown', (e) => {
+    // Ignore typing in inputs/selects or when any modal is open
+    const target = e.target;
+    const isFormEl = target && (
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT'
+    );
+    const modalOpen = settingsModal?.classList.contains('show') || keybindsModal?.classList.contains('show');
+    if (isFormEl || modalOpen) return;
 
-  // TPS & AUTO & font apply
-  tickBase = readTPS();
-  syncAutoUI();
-  if (fontSelect) {
-    if (fontSelect.value === 'custom' && restored && currentFontFace) {
-      applyFontChoice('custom', currentFontFace.family);
-    } else {
-      applyFontChoice(fontSelect.value || 'default');
+    if (matchKey(e, binds.startStop)) {
+      e.preventDefault();
+      running ? stop() : start();
+    } else if (matchKey(e, binds.reset)) {
+      e.preventDefault();
+      reset();
     }
-  } else {
-    applyFontChoice('default');
+  }, { capture: true });
+
+  // ---------- Init ----------
+  (async function init(){
+    loadSettings();
+
+    // Show/hide custom TPS field based on saved mode
+    const custom = tpsSelect?.value === 'custom';
+    tpsCustom?.classList.toggle('hidden', !custom);
+
+    // Restore custom font (if present) *before* applying selection
+    const restored = await restoreCustomFontFromDB();
+
+    // TPS & AUTO & font apply
+    tickBase = readTPS();
+    syncAutoUI();
+    if (fontSelect) {
+      if (fontSelect.value === 'custom' && restored && currentFontFace) {
+        applyFontChoice('custom', currentFontFace.family);
+      } else {
+        applyFontChoice(fontSelect.value || 'default');
+      }
+    } else {
+      applyFontChoice('default');
+    }
+
+    updateBindLabels();
+    render(); // initial paint
+  })();
+// --- HOLD TO RESET KEYBINDS (3.0s, mobile-friendly) ---
+(() => {
+  if (!kbResetDefaults) return;
+
+  const HOLD_MS = 3000;
+  let raf = 0;
+  let downAt = 0;
+  let completed = false;
+  let origText = kbResetDefaults.textContent;
+
+  function startHold(e){
+    e.preventDefault();
+    completed = false;
+    origText = kbResetDefaults.textContent;
+    downAt = performance.now();
+
+    // capture pointer so we still get 'up' even if finger/mouse leaves
+    if (e.pointerId != null && kbResetDefaults.setPointerCapture) {
+      try { kbResetDefaults.setPointerCapture(e.pointerId); } catch {}
+    }
+
+    const tick = () => {
+      const elapsed = performance.now() - downAt;
+      const left = Math.max(0, HOLD_MS - elapsed);
+      kbResetDefaults.textContent =
+        `HOLD FOR ${(left/1000).toFixed(1)} MORE SECONDS TO RESET KEYBINDS`;
+      if (left <= 0) { complete(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
   }
 
-  render();
+  function cancelHold(){
+    if (completed) return; // already reset
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+    kbResetDefaults.textContent = origText;
+  }
+
+  function complete(){
+    completed = true;
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
+
+    // Perform the reset
+    binds = JSON.parse(JSON.stringify(defaultBinds));
+    saveLS(LS_BINDS, binds);
+    updateBindLabels();
+
+    kbResetDefaults.textContent = 'Keybinds reset!';
+    setTimeout(() => { kbResetDefaults.textContent = origText; }, 1200);
+  }
+
+  if ('onpointerdown' in window){
+    kbResetDefaults.addEventListener('pointerdown', startHold);
+    kbResetDefaults.addEventListener('pointerup', cancelHold);
+    kbResetDefaults.addEventListener('pointercancel', cancelHold);
+    kbResetDefaults.addEventListener('pointerleave', cancelHold);
+  } else {
+    // Fallback: mouse + touch
+    kbResetDefaults.addEventListener('mousedown', startHold);
+    kbResetDefaults.addEventListener('mouseup', cancelHold);
+    kbResetDefaults.addEventListener('mouseleave', cancelHold);
+    kbResetDefaults.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(e); }, {passive:false});
+    kbResetDefaults.addEventListener('touchend', cancelHold);
+    kbResetDefaults.addEventListener('touchcancel', cancelHold);
+  }
+})();
 })();

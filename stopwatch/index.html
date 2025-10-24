@@ -49,8 +49,6 @@
       <!-- Show on clock -->
       <div class="show-hide-row" style="margin-top:40px;">
         <span class="font-header-text" style="font-size:1.5em;margin-right:10px;">Show on clock:</span>
-
-  
         <label><input type="checkbox" id="showAuto"> Auto</label>
         <label><input type="checkbox" id="showHours" checked> Hours</label>
         <label><input type="checkbox" id="showMinutes" checked> Minutes</label>
@@ -81,7 +79,6 @@
           <option value="100">100 TPS</option>
           <option value="custom">Custom…</option>
         </select>
-
         <input
           type="number"
           id="tpsCustom"
@@ -90,6 +87,39 @@
           placeholder="10–100"
           aria-label="Custom TPS"
         />
+      </div>
+
+      <!-- KEYBINDS -->
+      <div class="show-hide-row">
+        <button id="openKeybinds" class="setting-input">KEYBINDS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keybinds Modal -->
+  <div id="keybindsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-content keybinds-gray system-font">
+      <button id="closeKeybinds" title="Close" class="icon-btn close-btn">
+        <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon"/>
+      </button>
+
+      <div class="settings-header">
+        <span class="font-header-text">KEYBINDS</span>
+      </div>
+
+      <div class="kb-row">
+        <span class="kb-label">START/STOP</span>
+        <button id="rebindStartStop" class="kb-bind-btn"><span class="kb-bind-text" id="bindStartStopLabel">Return</span></button>
+      </div>
+
+      <div class="kb-row">
+        <span class="kb-label">RESET</span>
+        <button id="rebindReset" class="kb-bind-btn"><span class="kb-bind-text" id="bindResetLabel">Shift+Delete</span></button>
+      </div>
+
+      <div class="kb-footer">
+        <button id="kbResetDefaults" class="setting-input danger">Reset to default bindings</button>
+        <span id="kbCountdown" class="kb-countdown" aria-live="polite"></span>
       </div>
     </div>
   </div>

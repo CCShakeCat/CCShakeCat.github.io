@@ -89,3 +89,30 @@ label.disabled-checkbox{ opacity:.35; pointer-events:none; filter:grayscale(1); 
 .modal-content.system-font{ font-family:'Segoe UI', Arial, sans-serif; }
 body[data-os="android"] .modal-content.system-font{ font-family:Roboto, Arial, sans-serif; }
 body[data-os="apple"]   .modal-content.system-font{ font-family:'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
+/* === Keybinds modal (gray variant) === */
+.modal-content.keybinds-gray{
+  background:#1e1e1e; color:#f4f4f4; border:12px solid #888; 
+}
+.kb-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; padding:10px 0; border-bottom:1px dashed #555;
+}
+.kb-row:last-of-type{ border-bottom:none; }
+.kb-label{ font-size:1.2em; font-weight:700; letter-spacing:.03em; }
+.kb-bind-btn{
+  font-size:1.05em; padding:.5em .9em; border-radius:.35em; border:2px solid #999;
+  background:#2b2b2b; color:#fff; cursor:pointer; min-width:200px; text-align:center;
+}
+.kb-bind-btn.waiting{
+  background:#3a3a3a; border-color:#bbb; box-shadow:0 0 0 3px rgba(255,255,255,.08) inset;
+}
+.kb-bind-text{ font-family:inherit; }
+.kb-footer{
+  display:flex; align-items:center; justify-content:space-between; margin-top:18px; gap:14px;
+}
+.kb-countdown{
+  min-width:6ch; text-align:right; font-size:1.1em; color:#ddd;
+}
+.setting-input.danger{ background:#bb3b3b; }
+.setting-input.danger:hover{ background:#e25555; color:#fff; }
