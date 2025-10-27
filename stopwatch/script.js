@@ -35,14 +35,19 @@
   const customFontName   = $('customFontName');
   const customFontNotice = $('customFontNotice');
 
-  // Keybinds UI (optional, if present in your HTML)
+  // Keybinds UI
   const openKeybinds        = $('openKeybinds');
   const keybindsModal       = $('keybindsModal');
   const closeKeybinds       = $('closeKeybinds');
+
   const rebindStartStop     = $('rebindStartStop');
   const rebindReset         = $('rebindReset');
+  const rebindClearPb       = $('rebindClearPb');        // <-- optional (add in HTML to rebind Clear PB)
+
   const bindStartStopLabel  = $('bindStartStopLabel');
   const bindResetLabel      = $('bindResetLabel');
+  const bindClearPbLabel    = $('bindClearPbLabel');     // <-- optional (label for Clear PB line)
+
   const kbResetDefaults     = $('kbResetDefaults');
   const kbCountdown         = $('kbCountdown');
 
@@ -68,15 +73,40 @@
     else if (/iphone|ipad|mac os x|macintosh/.test(ua)) document.body.dataset.os = 'apple';
   } catch {}
 
-  // ---------- Persistence (settings) ----------
+  // ---------- Persistence (settings + keybinds + PB) ----------
   const LS_KEY       = 'stopwatch:v1';
   const LS_BINDS     = 'stopwatch:keybinds:v1';
+  const LS_PB        = 'stopwatch:pbTicks:v1';       // PB in ticks at current TPS
 
   const defaultBinds = {
     startStop: { key: 'Enter',  shift: false, ctrl: false, alt: false, meta: false },
-    reset:     { key: 'Delete', shift: true,  ctrl: false, alt: false, meta: false }
+    reset:     { key: 'Delete', shift: true,  ctrl: false, alt: false, meta: false },
+    clearPb:   { key: 'Delete', shift: false, ctrl: false, alt: false, meta: false } // <-- new
   };
-  let binds = loadLS(LS_BINDS, defaultBinds);
+
+  let binds = mergeWithDefaults(loadLS(LS_BINDS, defaultBinds), defaultBinds);
+
+  let pbTicks = (() => {
+    try { const v = localStorage.getItem(LS_PB); return v == null ? null : parseInt(v, 10); }
+    catch { return null; }
+  })();
+
+  function mergeWithDefaults(saved, defs) {
+    // Ensure newly added actions exist even if user has older LS
+    const out = { ...defs, ...(saved || {}) };
+    // If a key is missing inside an action, fill from defaults
+    for (const k of Object.keys(defs)) {
+      out[k] = { ...defs[k], ...(out[k] || {}) };
+    }
+    return out;
+  }
+
+  function savePB() {
+    try {
+      if (pbTicks == null) localStorage.removeItem(LS_PB);
+      else localStorage.setItem(LS_PB, String(pbTicks));
+    } catch {}
+  }
 
   function saveSettings() {
     const data = {
@@ -241,6 +271,7 @@
     const newBase = readTPS();
     if (newBase === oldBase) { if (fromUser) saveSettings(); return; }
 
+    // Convert current reading
     if (running) {
       const nowOld = currentTotalTicks(oldBase);
       totalTicks   = convertTicksBase(nowOld, oldBase, newBase);
@@ -249,6 +280,13 @@
     } else {
       totalTicks = convertTicksBase(totalTicks, oldBase, newBase);
     }
+
+    // Convert PB as well
+    if (pbTicks != null) {
+      pbTicks = convertTicksBase(pbTicks, oldBase, newBase);
+      savePB();
+    }
+
     tickBase = newBase;
     render();
     if (fromUser) saveSettings();
@@ -319,12 +357,17 @@
     return sign + out;
   }
 
+  // ---- Speedrunner color with PB highlight ----
   function applySpeedrunnerColor(ticksNow) {
     if (!speedrunnerMode?.checked) { displayEl.style.color = '#fff'; return; }
-    if (running)                   { displayEl.style.color = '#00ff77'; return; } // green
-    if (ticksNow < 0)              { displayEl.style.color = '#777777'; return; } // light gray
-    if (ticksNow > 0)              { displayEl.style.color = '#00aaff'; return; } // blue
-    displayEl.style.color = '#fff';
+
+    if (running) { displayEl.style.color = '#52CC73'; return; }                 // running = green
+    if (pbTicks != null && ticksNow > 0 && ticksNow === pbTicks) {              // PB at stop
+      displayEl.style.color = '#16A6FF'; return;                                 // light blue
+    }
+    if (ticksNow < 0) { displayEl.style.color = '#acacac'; return; }            // negative
+    if (ticksNow > 0) { displayEl.style.color = '#7A7A7A'; return; }            // paused > 0
+    displayEl.style.color = '#acacac';
   }
 
   function monoHTML(text) {
@@ -364,11 +407,25 @@
     running = false;
     startStopBtn.textContent = 'Start';
     stopRAF();
+
+    // Record PB if better (>0 and lower)
+    if (totalTicks > 0 && (pbTicks == null || totalTicks < pbTicks)) {
+      pbTicks = totalTicks;
+      savePB();
+    }
+
     render();
   }
   function reset() {
     stop();
     totalTicks = 0;
+    render();
+  }
+
+  // --- Clear PB (shared action) ---
+  function doClearPB() {
+    pbTicks = null;
+    savePB();
     render();
   }
 
@@ -477,6 +534,7 @@
   function updateBindLabels() {
     if (bindStartStopLabel) bindStartStopLabel.textContent = describeBind(binds.startStop);
     if (bindResetLabel)     bindResetLabel.textContent     = describeBind(binds.reset);
+    if (bindClearPbLabel)   bindClearPbLabel.textContent   = describeBind(binds.clearPb);
   }
 
   /** Rebind flow with 3.0s countdown; only accepts non-modifier base key. */
@@ -569,17 +627,110 @@
     try { await loadCustomFontFromFile(file); } catch (err) { console.error(err); }
   });
 
-  // Keybinds modal
+  // Keybinds modal open/close
   openKeybinds?.addEventListener('click', () => openModal(keybindsModal, true));
   closeKeybinds?.addEventListener('click', () => openModal(keybindsModal, false));
   keybindsModal?.addEventListener('click', (e)=>{ if (e.target === keybindsModal) openModal(keybindsModal, false); });
 
+  // Rebind buttons
   rebindStartStop?.addEventListener('click', () => startRebind('startStop', rebindStartStop, bindStartStopLabel));
   rebindReset?.addEventListener('click', () => startRebind('reset', rebindReset, bindResetLabel));
-  kbResetDefaults?.addEventListener('click', () => {
-    binds = JSON.parse(JSON.stringify(defaultBinds));
-    saveLS(LS_BINDS, binds);
-    updateBindLabels();
+  rebindClearPb?.addEventListener('click', () => startRebind('clearPb', rebindClearPb, bindClearPbLabel)); // optional
+
+  // --- HOLD TO RESET KEYBINDS (3.0s, mobile-friendly) ---
+  (() => {
+    if (!kbResetDefaults) return;
+
+    const HOLD_MS = 3000;
+    let raf = 0;
+    let downAt = 0;
+    let completed = false;
+    let origText = kbResetDefaults.textContent || 'Reset to default bindings';
+
+    function startHold(e){
+      e.preventDefault();
+      completed = false;
+      origText = kbResetDefaults.textContent || origText;
+      downAt = performance.now();
+
+      if (e.pointerId != null && kbResetDefaults.setPointerCapture) {
+        try { kbResetDefaults.setPointerCapture(e.pointerId); } catch {}
+      }
+
+      const tick = () => {
+        const elapsed = performance.now() - downAt;
+        const left = Math.max(0, HOLD_MS - elapsed);
+        kbResetDefaults.textContent =
+          `HOLD FOR ${(left/1000).toFixed(1)} MORE SECONDS TO RESET KEYBINDS`;
+        if (left <= 0) { complete(); return; }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }
+
+    function cancelHold(){
+      if (completed) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      kbResetDefaults.textContent = origText;
+    }
+
+    function complete(){
+      completed = true;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+
+      // Perform the reset to defaults
+      binds = mergeWithDefaults(null, defaultBinds);
+      saveLS(LS_BINDS, binds);
+      updateBindLabels();
+
+      kbResetDefaults.textContent = 'Keybinds reset!';
+      setTimeout(() => { kbResetDefaults.textContent = origText; }, 1200);
+    }
+
+    if ('onpointerdown' in window){
+      kbResetDefaults.addEventListener('pointerdown', startHold);
+      kbResetDefaults.addEventListener('pointerup', cancelHold);
+      kbResetDefaults.addEventListener('pointercancel', cancelHold);
+      kbResetDefaults.addEventListener('pointerleave', cancelHold);
+    } else {
+      // Fallback: mouse + touch
+      kbResetDefaults.addEventListener('mousedown', startHold);
+      kbResetDefaults.addEventListener('mouseup', cancelHold);
+      kbResetDefaults.addEventListener('mouseleave', cancelHold);
+      kbResetDefaults.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(e); }, {passive:false});
+      kbResetDefaults.addEventListener('touchend', cancelHold);
+      kbResetDefaults.addEventListener('touchcancel', cancelHold);
+    }
+  })();
+
+  // --- CLEAR PB button wiring (auto-insert if missing) ---
+  const clearPbBtn = document.getElementById('clearPbBtn') || (() => {
+    const btn = document.createElement('button');
+    btn.id = 'clearPbBtn';
+    btn.type = 'button';
+    btn.textContent = 'CLEAR PB';
+    btn.style.marginLeft = '0.75rem';
+
+    const speedrunnerLabel = speedrunnerMode?.closest('label') || speedrunnerMode?.parentElement;
+    if (speedrunnerLabel && speedrunnerLabel.parentElement) {
+      speedrunnerLabel.parentElement.insertBefore(btn, speedrunnerLabel.nextSibling);
+    } else {
+      (settingsModal || document.body).appendChild(btn);
+    }
+    return btn;
+  })();
+
+  function flashPbClearedUI() {
+    const old = clearPbBtn.textContent;
+    clearPbBtn.textContent = 'PB CLEARED!';
+    setTimeout(() => { clearPbBtn.textContent = old; }, 1200);
+  }
+
+  clearPbBtn?.addEventListener('click', () => {
+    doClearPB();
+    flashPbClearedUI();
   });
 
   // Global key handler (tab-focused)
@@ -598,6 +749,10 @@
     } else if (matchKey(e, binds.reset)) {
       e.preventDefault();
       reset();
+    } else if (matchKey(e, binds.clearPb)) {
+      e.preventDefault();
+      doClearPB();
+      flashPbClearedUI();
     }
   }, { capture: true });
 
@@ -628,72 +783,5 @@
     updateBindLabels();
     render(); // initial paint
   })();
-// --- HOLD TO RESET KEYBINDS (3.0s, mobile-friendly) ---
-(() => {
-  if (!kbResetDefaults) return;
 
-  const HOLD_MS = 3000;
-  let raf = 0;
-  let downAt = 0;
-  let completed = false;
-  let origText = kbResetDefaults.textContent;
-
-  function startHold(e){
-    e.preventDefault();
-    completed = false;
-    origText = kbResetDefaults.textContent;
-    downAt = performance.now();
-
-    // capture pointer so we still get 'up' even if finger/mouse leaves
-    if (e.pointerId != null && kbResetDefaults.setPointerCapture) {
-      try { kbResetDefaults.setPointerCapture(e.pointerId); } catch {}
-    }
-
-    const tick = () => {
-      const elapsed = performance.now() - downAt;
-      const left = Math.max(0, HOLD_MS - elapsed);
-      kbResetDefaults.textContent =
-        `HOLD FOR ${(left/1000).toFixed(1)} MORE SECONDS TO RESET KEYBINDS`;
-      if (left <= 0) { complete(); return; }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-  }
-
-  function cancelHold(){
-    if (completed) return; // already reset
-    if (raf) cancelAnimationFrame(raf);
-    raf = 0;
-    kbResetDefaults.textContent = origText;
-  }
-
-  function complete(){
-    completed = true;
-    if (raf) cancelAnimationFrame(raf);
-    raf = 0;
-
-    // Perform the reset
-    binds = JSON.parse(JSON.stringify(defaultBinds));
-    saveLS(LS_BINDS, binds);
-    updateBindLabels();
-
-    kbResetDefaults.textContent = 'Keybinds reset!';
-    setTimeout(() => { kbResetDefaults.textContent = origText; }, 1200);
-  }
-
-  if ('onpointerdown' in window){
-    kbResetDefaults.addEventListener('pointerdown', startHold);
-    kbResetDefaults.addEventListener('pointerup', cancelHold);
-    kbResetDefaults.addEventListener('pointercancel', cancelHold);
-    kbResetDefaults.addEventListener('pointerleave', cancelHold);
-  } else {
-    // Fallback: mouse + touch
-    kbResetDefaults.addEventListener('mousedown', startHold);
-    kbResetDefaults.addEventListener('mouseup', cancelHold);
-    kbResetDefaults.addEventListener('mouseleave', cancelHold);
-    kbResetDefaults.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(e); }, {passive:false});
-    kbResetDefaults.addEventListener('touchend', cancelHold);
-    kbResetDefaults.addEventListener('touchcancel', cancelHold);
-  }
-})();
 })();

@@ -96,33 +96,56 @@
     </div>
   </div>
 
-  <!-- Keybinds Modal -->
-  <div id="keybindsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="modal-content keybinds-gray system-font">
-      <button id="closeKeybinds" title="Close" class="icon-btn close-btn">
-        <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon"/>
-      </button>
+<!-- Keybinds Modal -->
+<div id="keybindsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal-content keybinds-gray system-font">
+    <!-- Close -->
+    <button id="closeKeybinds" title="Close" class="icon-btn close-btn" aria-label="Close">
+      <img src="icons/cross-mark-button_274e(1).png" alt="" class="icon"/>
+    </button>
 
-      <div class="settings-header">
-        <span class="font-header-text">KEYBINDS</span>
-      </div>
+    <!-- Header -->
+    <div class="settings-header">
+      <span class="font-header-text">KEYBINDS</span>
+    </div>
 
+    <!-- Rows -->
+    <div class="kb-rows">
+      <!-- Start/Stop -->
       <div class="kb-row">
         <span class="kb-label">START/STOP</span>
-        <button id="rebindStartStop" class="kb-bind-btn"><span class="kb-bind-text" id="bindStartStopLabel">Return</span></button>
+        <button id="rebindStartStop" class="kb-bind-btn" type="button">
+          <span class="kb-bind-text" id="bindStartStopLabel">Return</span>
+        </button>
       </div>
 
+      <!-- Reset -->
       <div class="kb-row">
         <span class="kb-label">RESET</span>
-        <button id="rebindReset" class="kb-bind-btn"><span class="kb-bind-text" id="bindResetLabel">Shift+Delete</span></button>
+        <button id="rebindReset" class="kb-bind-btn" type="button">
+          <span class="kb-bind-text" id="bindResetLabel">Shift+Delete</span>
+        </button>
       </div>
 
-      <div class="kb-footer">
-        <button id="kbResetDefaults" class="setting-input danger">Reset to default bindings</button>
-        <span id="kbCountdown" class="kb-countdown" aria-live="polite"></span>
+      <!-- Clear Personal Best (matches structure/styles above) -->
+      <div class="kb-row">
+        <span class="kb-label">CLEAR PERSONAL BEST</span>
+        <button id="rebindClearPb" class="kb-bind-btn" type="button">
+          <span class="kb-bind-text" id="bindClearPbLabel">Delete</span>
+        </button>
       </div>
     </div>
+
+    <!-- Footer (bottom) -->
+    <div class="kb-footer">
+      <button id="kbResetDefaults" class="setting-input danger" type="button">
+        Reset to default bindings
+      </button>
+      <span id="kbCountdown" class="kb-countdown" aria-live="polite"></span>
+    </div>
   </div>
+</div>
+
 
   <script src="script.js"></script>
 </body>
