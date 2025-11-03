@@ -13,6 +13,28 @@ let is24Hour = (localStorage.getItem('is24Hour') ?? "1") === "1";
 let showAMPM = (localStorage.getItem('showAMPM') ?? "1") === "1";
 let clockMode = localStorage.getItem('clockMode') || "Standard [23:59:59]";
 
+// Laggy rendering state
+let laggyFrameCounter = 0;
+let lastLaggyRenderedTick = 0;
+let laggyFrozenOnesDigit = 0;
+
+// Badly Laggy rendering state
+let badlyLaggyFrameCounter = 0;
+let badlyLaggyFrameInterval = 5;
+let lastBadlyLaggyRenderedTick = 0;
+let badlyFrozenOnesDigit = 0;
+
+// Horrendously Laggy rendering state
+let horrendousFrameCounter = 0;
+let horrendousFrameInterval = 11;
+let lastHorrendousRenderedTick = 0;
+let horrendousFrozenOnesDigit = 0;
+
+// Max Laggy rendering state
+let maxLaggyFrameCounter = 0;
+let lastMaxLaggyRenderedTick = 0;
+let maxLaggyFrozenOnesDigit = 0;
+
 // --------- LAGGY STATE FOR LAG MODES ---------
 const laggyState = {
   "Laggy": { offset: 0, lastSec: null, justSwitched: false },
@@ -100,6 +122,7 @@ function getTimeOfDayAndColor(date = new Date()) {
   };
 }
 
+//---------Clock Modes Below--------//
 const clockModes = {
   "Standard [23:59:59]": {
     name: "Standard [23:59:59]",
@@ -150,56 +173,124 @@ const clockModes = {
       return String(unix).split('').map(ch => `<span class="monochar">${ch}</span>`).join('');
     },
   },
-  "Laggy": {
-    name: "Laggy (ticks +5)",
-    formatter: (d) => {
-      updateLaggyOffset("Laggy", d);
-      let t0 = laggyState.Laggy.offset;
+"Laggy": {
+  name: "Laggy",
+  formatter: (d) => {
+    updateLaggyOffset("Laggy", d);
+
+    laggyFrameCounter = (laggyFrameCounter + 1) % 5;
+    if (laggyFrameCounter === 0) {
       let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      let steps = ((currTick - t0 + 40) % 40) / 5 | 0;
-      let ticks = (t0 + steps * 5) % 40;
-      const { h } = getHourAMPM(d);
-      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") + "." + ticks.toString().padStart(2, "0");
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      lastLaggyRenderedTick = (Math.floor(currTick / 5) * 5) % 40;
+
+      // Freeze a new random ones digit
+      laggyFrozenOnesDigit = Math.floor(Math.random() * 10);
     }
-  },
-  "Badly Laggy": {
-    name: "Badly Laggy (ticks +10)",
-    formatter: (d) => {
-      updateLaggyOffset("Badly Laggy", d);
-      let t0 = laggyState["Badly Laggy"].offset;
+
+    const tens = Math.floor(lastLaggyRenderedTick / 10) * 10;
+    const noisyTick = (tens + laggyFrozenOnesDigit) % 40;
+
+    const { h } = getHourAMPM(d);
+    let out = [
+      pad(h),
+      pad(d.getMinutes()),
+      pad(d.getSeconds())
+    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
+
+    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+  }
+},
+
+"Badly Laggy": {
+  name: "Badly Laggy",
+  formatter: (d) => {
+    updateLaggyOffset("Badly Laggy", d);
+
+    badlyLaggyFrameCounter++;
+    if (badlyLaggyFrameCounter >= badlyLaggyFrameInterval) {
       let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      let steps = ((currTick - t0 + 40) % 40) / 10 | 0;
-      let ticks = (t0 + steps * 10) % 40;
-      const { h } = getHourAMPM(d);
-      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") + "." + ticks.toString().padStart(2, "0");
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      lastBadlyLaggyRenderedTick = (Math.floor(currTick / 10) * 10) % 40;
+
+      // Freeze a new random ones digit
+      badlyFrozenOnesDigit = Math.floor(Math.random() * 10);
+
+      badlyLaggyFrameCounter = 0;
+      badlyLaggyFrameInterval = (badlyLaggyFrameInterval === 5) ? 6 : 5;
     }
-  },
-  "Horrendously Laggy": {
-    name: "Horrendously Laggy (ticks +20)",
-    formatter: (d) => {
-      updateLaggyOffset("Horrendously Laggy", d);
-      let t0 = laggyState["Horrendously Laggy"].offset;
+
+    const tens = Math.floor(lastBadlyLaggyRenderedTick / 10) * 10;
+    const noisyTick = (tens + badlyFrozenOnesDigit) % 40;
+
+    const { h } = getHourAMPM(d);
+    let out = [
+      pad(h),
+      pad(d.getMinutes()),
+      pad(d.getSeconds())
+    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
+
+    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+  }
+},
+"Horrendously Laggy": {
+  name: "Horrendously Laggy",
+  formatter: (d) => {
+    updateLaggyOffset("Horrendously Laggy", d);
+
+    horrendousFrameCounter++;
+    if (horrendousFrameCounter >= horrendousFrameInterval) {
       let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      let steps = ((currTick - t0 + 40) % 40) / 20 | 0;
-      let ticks = (t0 + steps * 20) % 40;
-      const { h } = getHourAMPM(d);
-      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") + "." + ticks.toString().padStart(2, "0");
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      lastHorrendousRenderedTick = (Math.floor(currTick / 20) * 20) % 40;
+
+      // Freeze a new random ones digit
+      horrendousFrozenOnesDigit = Math.floor(Math.random() * 10);
+
+      horrendousFrameCounter = 0;
+      horrendousFrameInterval = (horrendousFrameInterval === 11) ? 12 : 11;
     }
-  },
-  "Max Laggy": {
-    name: "Max Laggy (ticks frozen)",
-    formatter: (d) => {
-      updateLaggyOffset("Max Laggy", d);
-      let ticks = laggyState["Max Laggy"].offset;
-      const { h } = getHourAMPM(d);
-      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") + "." + ticks.toString().padStart(2, "0");
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+
+    const tens = Math.floor(lastHorrendousRenderedTick / 10) * 10;
+    const noisyTick = (tens + horrendousFrozenOnesDigit) % 40;
+
+    const { h } = getHourAMPM(d);
+    let out = [
+      pad(h),
+      pad(d.getMinutes()),
+      pad(d.getSeconds())
+    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
+
+    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+  }
+},
+"Max Laggy": {
+  name: "Max Laggy",
+  formatter: (d) => {
+    updateLaggyOffset("Max Laggy", d);
+
+    maxLaggyFrameCounter++;
+    if (maxLaggyFrameCounter >= 40) { // Full second (assuming 25ms per tick)
+      let currTick = Math.floor(d.getMilliseconds() / msPerTick);
+      lastMaxLaggyRenderedTick = (Math.floor(currTick / 40) * 40) % 40;
+
+      // Freeze a new random ones digit
+      maxLaggyFrozenOnesDigit = Math.floor(Math.random() * 10);
+
+      maxLaggyFrameCounter = 0;
     }
-  },
-  "Upside Down": {
+
+    const tens = Math.floor(lastMaxLaggyRenderedTick / 10) * 10;
+    const noisyTick = (tens + maxLaggyFrozenOnesDigit) % 40;
+
+    const { h } = getHourAMPM(d);
+    let out = [
+      pad(h),
+      pad(d.getMinutes()),
+      pad(d.getSeconds())
+    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
+
+    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+  }
+},
+    "Upside Down": {
     name: "⮀ uʍop ǝpᴉsdn",
     formatter: (d) => {
       const { h } = getHourAMPM(d);

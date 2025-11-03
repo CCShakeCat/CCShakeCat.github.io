@@ -359,3 +359,111 @@ body[data-os="apple"] .modal-content.system-font { font-family: 'San Francisco',
   box-shadow: 0 2px 12px #000a;
   vertical-align: middle;
 }
+
+/* === Universal responsive modal tweaks (Stopwatch / RTC / Timer) === */
+:root {
+  --modal-max-w: 920px;
+  --modal-pad: 28px;
+  --modal-radius: 22px;
+  --close-btn-size: 44px; /* desktop */
+}
+
+/* Keep your existing .modal overlay rules; these just refine sizing */
+.modal .modal-content {
+  width: min(92vw, var(--modal-max-w));
+  max-height: 86dvh;              /* scroll within the modal, not the page */
+  overflow: auto;
+  padding: var(--modal-pad);
+  border-radius: var(--modal-radius);
+}
+
+/* Don’t let huge embeds overflow on small screens */
+.modal .media-embed,
+.modal iframe,
+.modal audio,
+.modal video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Rows gracefully wrap when there isn’t room */
+.modal .setting-row,
+.modal .show-hide-row,
+.modal .kb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Inputs can grow; labels stay compact */
+.modal .setting-row > *:not(.font-header-text) {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+/* Close button stays sane-sized (prevents the giant X) */
+.close-btn {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+  width: var(--close-btn-size);
+  height: var(--close-btn-size);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+.close-btn .icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* Lock the page behind the modal (optional but nice on mobile) */
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+/* ===== Phone portrait (narrow) ===== */
+@media (max-width: 560px) {
+  :root { --close-btn-size: 36px; }
+
+  /* Turn the modal into a tidy full-height sheet */
+  .modal { padding: 0; }
+  .modal .modal-content {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;              /* accounts for mobile browser UI */
+    max-height: 100dvh;
+    border-radius: 0;
+    padding: 18px;
+  }
+
+  .settings-header { margin-bottom: 10px; }
+  .font-header-text { font-size: 1.25rem; }
+
+  /* Stack rows vertically for easy tapping */
+  .modal .setting-row,
+  .modal .show-hide-row,
+  .modal .kb-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .modal .show-hide-row label { width: 100%; }
+
+  /* Comfortable tappable controls */
+  .modal select,
+  .modal input[type="text"],
+  .modal input[type="url"],
+  .modal button {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  .close-btn { right: 12px; top: 12px; }
+}
