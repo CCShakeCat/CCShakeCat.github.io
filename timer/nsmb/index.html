@@ -1,75 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NSMB Timer</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-      #customAudioInput {
-        font-size: 1em;
-        width: 22em;
-        max-width: 90vw;
-        padding: 0.4em;
-        border: 2px solid #000;
-        border-radius: 0.3em;
-        background: #eee;
-        color: #000;
-        font-family: inherit;
-        text-align: center;
-      }
-      #styleSelect {
-        font-size: 1em;
-        margin-top: 1em;
-        padding: 0.2em 0.7em;
-        border-radius: 0.3em;
-        border: 2px solid #5a5a5a;
-        background: #fff;
-        color: #222;
-        font-family: inherit;
-        cursor: pointer;
-      }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>NSMB Timer</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body>
-<!-- Style Dropdown -->
-<div style="text-align:center;">
-  <label for="styleSelect"><b>Timer Style:</b></label>
-  <select id="styleSelect">
-    <option value="ds">NSMBDS-esque (Default)</option>
-    <option value="wii">NSMBWii</option>
-    <option value="nsmb2">NSMB2</option>
-  </select>
-</div>
+<body class="ds-timer"><!-- default DS; JS will update based on select -->
 
-<!-- Custom Music Input (visible only when timer is stopped) -->
-<div id="customAudioBox" style="margin-top: 1em;">
-  <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
-  <button id="loadAudioBtn">Submit</button>
-  <div id="audioStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
-  <div id="mediaPreview" style="margin-top: 0.5em;"></div>
-</div>
-
-<!-- Main Timer Area -->
-<main class="main-center">
-    <div class="timer">
-        <div id="timerLabel">TIME</div>
-        <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
-        <p id="display" style="display:none;">400</p>
-        <div class="timer-controls">
-            <button id="startStopBtn">Start</button>
-            <button id="resetBtn">Reset</button>
-        </div>
+  <!-- Toolbar (simple, left-aligned) -->
+  <div class="toolbar">
+    <div class="row">
+      <label for="styleSelect" class="lbl">Style</label>
+      <select id="styleSelect">
+        <option value="ds" selected>New Super Mario Bros (DS)</option>
+        <option value="wii">New Super Mario Bros Wii</option>
+        <option value="nsmb2">New Super Mario Bros 2 (3DS)</option>
+      </select>
     </div>
-</main>
+  </div>
 
-<!-- NSMB Wii hurry-up audio -->
-<audio id="hurryAudio" preload="auto">
-  <source src="sounds/hurryup.ogg" type="audio/ogg">
-  <source src="sounds/hurryup.mp3" type="audio/mpeg">
-</audio>
+  <!-- Center stage -->
+  <main class="main-center">
+    <div class="timer">
+      <div id="hudRow" aria-label="Timer">
+        <span id="nsmbClockIcon" aria-hidden="true"></span>
 
-<script src="https://www.youtube.com/iframe_api"></script>
-<script src="script.js"></script>
+        <!-- View digits -->
+        <p id="display" class="digits" title="Click to edit">400</p>
+
+        <!-- Edit field (only shown in IDLE by JS) -->
+        <input id="timerInput" type="text" value="400"
+               inputmode="numeric" maxlength="3"
+               spellcheck="false" autocomplete="off"/>
+      </div>
+
+      <div class="timer-controls">
+        <button id="startStopBtn" type="button">Start</button>
+        <button id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Old Hurry-Up element (kept; JS will use this) -->
+  <audio id="hurryAudio" preload="auto">
+    <source src="./sound/hurryup.ogg" type="audio/ogg">
+    <source src="./sound/hurryup.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="script.js"></script>
 </body>
 </html>

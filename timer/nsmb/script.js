@@ -1,515 +1,218 @@
-// === Custom Audio/Video Enhancements with Submit and Status ===
-const customAudioInput = document.getElementById('customAudioInput');
-const customAudioBox = document.getElementById('customAudioBox');
-const loadAudioBtn = document.getElementById('loadAudioBtn');
-const audioStatus = document.getElementById('audioStatus');
-const mediaPreview = document.getElementById('mediaPreview');
-const hurryAudio = document.getElementById('hurryAudio');
+// NSMB Timer — old Hurry-Up element + edit only when IDLE + Reset to last idle value
+(() => {
+  // ---------- DOM ----------
+  const body        = document.body;
+  const display     = document.getElementById('display');
+  const input       = document.getElementById('timerInput');
+  const startBtn    = document.getElementById('startStopBtn');
+  const resetBtn    = document.getElementById('resetBtn');
+  const styleSelect = document.getElementById('styleSelect');
+  const hurryAudio  = document.getElementById('hurryAudio'); // uses <audio> from HTML
 
-let customAudio = null;           // For raw audio
-let youTubeVideoID = null;        // For YouTube
-let youTubePlayer = null;         // YouTube iframe API player object
-let spotifyURL = null;            // For Spotify embed
-let mediaType = null;             // 'audio', 'youtube', or 'spotify'
+  // ---------- Config ----------
+  const TICK_MS  = 680;   // NSMB family tick (~0.68s)
+  const HURRY_AT = 100;   // trigger at 100
 
-let isTimerRunning = false;
-let isInHurryUp = false;
-let hurryTriggered = false;
+  // ---------- State ----------
+  let state       = 'idle';  // 'idle' | 'running' | 'paused'
+  let value       = 400;     // current numeric value
+  let startValue  = 400;     // what Reset returns to
+  let timer       = null;
+  let hurryPrimed = false;
+  let hurryPlayed = false;
 
-let currentPlaybackRate = 1;
+  // ---------- Helpers ----------
+  const clamp = (n, lo, hi) => Math.min(Math.max(n, lo), hi);
+  const fmt   = n => String(clamp(n|0, 0, 999)).padStart(3, '0');
 
-// Helper: Extract YouTube video ID
-function extractYouTubeID(url) {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[7].length === 11) ? match[7] : null;
-}
+  function render() {
+    const html = fmt(value).split('')
+      .map(ch => `<span class="monochar">${ch}</span>`).join('');
+    display.innerHTML = html;
+  }
 
-loadAudioBtn.onclick = () => {
-  const url = customAudioInput.value.trim();
-  audioStatus.textContent = "";
-  youTubeVideoID = null;
-  spotifyURL = null;
-  mediaType = null;
-
-  if (!url) {
-    audioStatus.textContent = "Audio URL invalid. Please try again.";
-    mediaPreview.innerHTML = "";
-    if (customAudio) {
-      customAudio.pause();
-      customAudio.remove();
-      customAudio = null;
+  function setEditing(on) {
+    if (on) {
+      input.value = fmt(value);
+      input.style.display = 'inline-block';
+      display.style.display = 'none';
+      input.focus();
+      input.setSelectionRange(0, input.value.length);
+      body.classList.add('editing');
+    } else {
+      input.style.display = 'none';
+      display.style.display = 'inline';
+      body.classList.remove('editing');
     }
-    return;
   }
 
-  // Clear previous media preview and audio
-  mediaPreview.innerHTML = "";
-  if (customAudio) {
-    customAudio.pause();
-    customAudio.remove();
-    customAudio = null;
-  }
-  if (youTubePlayer) {
-    youTubePlayer.destroy();
-    youTubePlayer = null;
+  function setRunning(on) {
+    const running = !!on;
+    state = running ? 'running' : (state === 'running' ? 'paused' : state);
+    input.readOnly = running;
+    body.classList.toggle('is-running', running);
   }
 
-  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    const id = extractYouTubeID(url);
-    if (!id) {
-      audioStatus.textContent = "Youtube URL invalid. Please try again.";
-      return;
-    }
-    youTubeVideoID = id;
-    mediaType = 'youtube';
-    audioStatus.textContent = "Your YouTube video loaded and ready to play with the timer! If it's too loud you can pause the timer and adjust the volume from there";
-    return;
-  }
-
-  if (url.includes("spotify.com")) {
-    spotifyURL = url.replace("/track/", "/embed/track/");
-    mediaType = 'spotify';
-    audioStatus.textContent = "Your Spotify track loaded and ready to play with the timer!";
-    return;
-  }
-
-  // Raw audio
-  customAudio = new Audio(url);
-  customAudio.volume = 0.8;
-  customAudio.autoplay = false;
-  customAudio.preload = "metadata";
-  customAudio.loop = false;
-  customAudio.controls = false;
-  mediaType = 'audio';
-
-  customAudio.addEventListener("loadedmetadata", () => {
-    if (customAudio.duration < 10) {
-      customAudio.loop = true;
-    }
-    audioStatus.textContent = `Audio loaded! Duration: ${customAudio.duration.toFixed(2)}s`;
-  });
-
-  customAudio.addEventListener("error", () => {
-    audioStatus.textContent = "Your audio failed to load. This may be due to an invalid URL.";
-  });
-
-  customAudio.load();
-};
-
-// === YouTube Iframe API setup ===
-function onYouTubeIframeAPIReady() {
-  if (!youTubeVideoID) return;
-  if (youTubePlayer) {
-    youTubePlayer.destroy();
-    youTubePlayer = null;
-  }
-  mediaPreview.innerHTML = `<div id="youtubePlayerDiv"></div>`;
-  youTubePlayer = new YT.Player('youtubePlayerDiv', {
-    videoId: youTubeVideoID,
-    playerVars: {
-      autoplay: 1,
-      controls: 1,
-      loop: 1,
-      playlist: youTubeVideoID,
-      modestbranding: 1,
-      disablekb: 1,
-    },
-    events: {
-      'onReady': (event) => {
-        event.target.setPlaybackRate(currentPlaybackRate);
-        if (isTimerRunning) event.target.playVideo();
-      },
-      'onStateChange': (event) => {
-        // Optional: handle state changes if needed
+  // ---------- Hurry-Up (old <audio> element) ----------
+  function primeHurryOnce() {
+    if (hurryPrimed || !hurryAudio) return;
+    hurryPrimed = true;
+    // Silent prime on first user gesture to satisfy autoplay policies
+    const wasMuted = hurryAudio.muted;
+    const wasVol   = hurryAudio.volume;
+    try {
+      hurryAudio.muted  = true;
+      hurryAudio.volume = 0;
+      const p = hurryAudio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          hurryAudio.pause();
+          hurryAudio.currentTime = 0;
+          hurryAudio.muted  = wasMuted;
+          hurryAudio.volume = wasVol;
+        }).catch(() => {
+          hurryAudio.muted  = wasMuted;
+          hurryAudio.volume = wasVol;
+        });
+      } else {
+        hurryAudio.muted  = wasMuted;
+        hurryAudio.volume = wasVol;
       }
+    } catch {
+      hurryAudio.muted  = wasMuted;
+      hurryAudio.volume = wasVol;
     }
-  });
-}
-
-// Load YouTube API script once
-if (!window.YT) {
-  let tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  document.head.appendChild(tag);
-}
-
-// === Volume fade helper, returns Promise ===
-function fadeVolume(audioElem, targetVolume, duration) {
-  return new Promise((resolve) => {
-    if (!audioElem) {
-      resolve();
-      return;
-    }
-    const startVolume = audioElem.volume;
-    const volumeChange = targetVolume - startVolume;
-    const startTime = performance.now();
-
-    function step() {
-      const elapsed = performance.now() - startTime;
-      if (elapsed >= duration) {
-        audioElem.volume = targetVolume;
-        resolve();
-        return;
-      }
-      audioElem.volume = startVolume + (volumeChange * (elapsed / duration));
-      requestAnimationFrame(step);
-    }
-    step();
-  });
-}
-
-// Playback rate display helper
-function updatePlaybackRateDisplay(rate) {
-  let display = document.getElementById('playbackRateDisplay');
-  if (!display) {
-    display = document.createElement('div');
-    display.id = 'playbackRateDisplay';
-    display.style.fontWeight = 'bold';
-    display.style.marginTop = '10px';
-    document.body.appendChild(display);
-  }
-  if (rate <= 0) {
-    display.textContent = '';
-  } else if (rate === 1) {
-    display.textContent = 'Playback speed: Normal (1x)';
-  } else {
-    display.textContent = `Playback speed: ${rate.toFixed(2)}x`;
-  }
-}
-
-// === Audio/Video Control Functions ===
-
-function onTimerStart() {
-  isTimerRunning = true;
-  isInHurryUp = false;
-  hurryTriggered = false;
-  currentPlaybackRate = 1;
-
-  // Clear media preview and set up playback depending on type
-  mediaPreview.innerHTML = "";
-
-  if (mediaType === 'audio' && customAudio) {
-    customAudio.currentTime = 0;
-    customAudio.playbackRate = currentPlaybackRate;
-    customAudio.controls = true;
-    mediaPreview.appendChild(customAudio);
-    fadeVolume(customAudio, 0.8, 500).then(() => customAudio.play());
-  }
-  else if (mediaType === 'youtube' && youTubeVideoID) {
-    onYouTubeIframeAPIReady();
-  }
-  else if (mediaType === 'spotify' && spotifyURL) {
-    mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
-  }
-  updatePlaybackRateDisplay(currentPlaybackRate);
-  customAudioBox.style.display = "none";
-}
-
-function onTimerStop() {
-  isTimerRunning = false;
-
-  if (mediaType === 'audio' && customAudio) {
-    fadeVolume(customAudio, 0, 500).then(() => customAudio.pause());
-  }
-  else if (mediaType === 'youtube' && youTubePlayer) {
-    youTubePlayer.pauseVideo();
-  }
-  // Spotify iframe can’t be controlled to pause
-
-  customAudioBox.style.display = "";
-  updatePlaybackRateDisplay(0);
-}
-
-function onTimerReset() {
-  isTimerRunning = false;
-  isInHurryUp = false;
-  hurryTriggered = false;
-  currentPlaybackRate = 1;
-
-  if (customAudio) {
-    fadeVolume(customAudio, 0, 500).then(() => {
-      customAudio.pause();
-      customAudio.currentTime = 0;
-      customAudio.playbackRate = 1;
-    });
   }
 
-  if (youTubePlayer) {
-    youTubePlayer.stopVideo();
-    youTubePlayer.seekTo(0);
-    youTubePlayer.setPlaybackRate(1);
-  }
-
-  mediaPreview.innerHTML = "";
-  updatePlaybackRateDisplay(0);
-  customAudioBox.style.display = "";
-}
-
-// === Hurry Up Handler ===
-
-function triggerHurryUp() {
-  if (isInHurryUp) return;
-  isInHurryUp = true;
-
-  // Pause media first
-  if (mediaType === 'audio' && customAudio) {
-    fadeVolume(customAudio, 0, 500).then(() => {
-      customAudio.pause();
+  function playHurryOnce() {
+    if (hurryPlayed || !hurryAudio) return;
+    hurryPlayed = true;
+    try {
       hurryAudio.currentTime = 0;
-      hurryAudio.play();
-    });
-  }
-  else if (mediaType === 'youtube' && youTubePlayer) {
-    youTubePlayer.pauseVideo();
-    hurryAudio.currentTime = 0;
-    hurryAudio.play();
-  }
-  else if (mediaType === 'spotify') {
-    mediaPreview.innerHTML = "";
-    hurryAudio.currentTime = 0;
-    hurryAudio.play();
-  }
-  else {
-    hurryAudio.currentTime = 0;
-    hurryAudio.play();
+      hurryAudio.muted = false;
+      hurryAudio.play().catch(()=>{ /* ignore */ });
+    } catch { /* ignore */ }
   }
 
-  hurryAudio.onended = () => {
-    if (!isTimerRunning) return;
-
-    if (mediaType === 'audio' && customAudio) {
-      currentPlaybackRate = 1.25;
-      customAudio.currentTime = 0;
-      customAudio.playbackRate = currentPlaybackRate;
-      fadeVolume(customAudio, 0.8, 500).then(() => {
-        customAudio.play();
-        updatePlaybackRateDisplay(currentPlaybackRate);
-      });
-    }
-    else if (mediaType === 'youtube' && youTubePlayer) {
-      youTubePlayer.seekTo(0);
-      youTubePlayer.setPlaybackRate(1.25);
-      youTubePlayer.playVideo();
-      updatePlaybackRateDisplay(1.25);
-    }
-    else if (mediaType === 'spotify') {
-      mediaPreview.innerHTML = `<iframe style="border-radius:12px" src="${spotifyURL}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media" allow="autoplay" allowfullscreen></iframe>`;
-      updatePlaybackRateDisplay(1);
-    }
-  };
-}
-
-// === Timer Logic ===
-let running = false;
-let smbCounter = "400";
-let hurryPlayed = false;
-let finished = false;
-let timerStartTime = 0;
-let lastDisplayedTicks = null;
-const TICK_MS = 750; // 0.75s per tick for NSMB Wii
-let animationFrameId = null;
-
-const ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-function decrementSMBString(str) {
-  let arr = str.toUpperCase().split('');
-  for (let i = arr.length - 1; i >= 0; i--) {
-    let ch = arr[i];
-    if (ch === ' ') continue;
-    let idx = ALLOWED_CHARS.indexOf(ch);
-    if (idx > 0) {
-      arr[i] = ALLOWED_CHARS[idx - 1];
-      for (let j = i + 1; j < arr.length; j++) {
-        arr[j] = (arr[j] === ' ') ? ' ' : '9';
-      }
-      return arr.join('');
+  // ---------- Timer control ----------
+  function tick() {
+    if (value > 0) {
+      value -= 1;
+      render();
+      if (value === HURRY_AT) playHurryOnce();
+    } else {
+      pause();
     }
   }
-  return "000";
-}
 
-function normalizeInput(str) {
-  return (str.toUpperCase().replace(/[^A-Z0-9 ]/g, '').padEnd(3, ' ')).slice(0, 3);
-}
-function toLogicStr(str) {
-  return str.replace(/ /g, '0');
-}
-function toDisplayArr(str) {
-  return str.padEnd(3, ' ').slice(0, 3).split('');
-}
-function formatSMB(str) {
-  let sArr = toDisplayArr(str);
-  return sArr.map(ch => `<span class="monochar">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-}
+  function start() {
+    if (state === 'running') return;
+    setEditing(false);      // never edit while running/paused
+    primeHurryOnce();       // attach to same user gesture as Start
 
-function updateDisplay() {
-  const display = document.getElementById('display');
-  display.innerHTML = formatSMB(smbCounter);
-}
-function showInput(show) {
-  const timerInput = document.getElementById('timerInput');
-  timerInput.style.display = show ? '' : 'none';
-  document.getElementById('display').style.display = show ? 'none' : '';
-  if (show) {
-    timerInput.style.letterSpacing = '0.1em';
-    timerInput.style.width = '7.8em';
-    timerInput.style.textAlign = 'center';
+    state = 'running';
+    setRunning(true);
+    startBtn.textContent = 'Stop';
+
+    if (value <= HURRY_AT) playHurryOnce(); // fire immediately if already ≤100
+
+    tick();                                  // immediate step
+    clearInterval(timer);
+    timer = setInterval(tick, TICK_MS);
   }
-}
-function updateStartStopButton() {
-  const btn = document.getElementById('startStopBtn');
-  btn.textContent = running ? "Stop" : "Start";
-}
 
-// This function is called on every tick of the timer to check Hurry Up
-function onTimerTick(ticksLeft) {
-  if (!hurryTriggered && ticksLeft <= 100 && ticksLeft > 0) {
-    hurryTriggered = true;
-    triggerHurryUp();
+  function pause() {
+    if (state !== 'running') return;
+    clearInterval(timer); timer = null;
+    state = 'paused';
+    setRunning(false);
+    startBtn.textContent = 'Start';
+    setEditing(false);
   }
-}
 
-function wallClockUpdate() {
-  if (!running) return;
-  const now = performance.now();
-  const elapsed = now - timerStartTime;
-  const ticksPassed = Math.floor(elapsed / TICK_MS);
+  function reset() {
+    clearInterval(timer); timer = null;
 
-  if (lastDisplayedTicks === null) lastDisplayedTicks = 0;
-  let decrementsNeeded = ticksPassed - lastDisplayedTicks;
-  for (let i = 0; i < decrementsNeeded; i++) {
-    if (toLogicStr(smbCounter) !== "000") {
-      smbCounter = decrementSMBString(smbCounter);
+    // If idle and the user typed but didn't blur, capture it
+    if (state === 'idle') {
+      const n = parseInt(input.value.replace(/[^\d]/g, ''), 10);
+      if (!Number.isNaN(n)) startValue = clamp(n, 0, 999);
     }
+
+    value = startValue;     // return to last idle-set value
+    state = 'idle';
+    hurryPlayed = false;    // re-arm
+    startBtn.textContent = 'Start';
+    setEditing(false);
+    setRunning(false);
+    render();
   }
-  updateDisplay();
 
-  const ticksLeft = parseInt(toLogicStr(smbCounter), 10);
-  if (!isNaN(ticksLeft)) {
-    onTimerTick(ticksLeft);
-  }
-
-  lastDisplayedTicks = ticksPassed;
-
-  if (toLogicStr(smbCounter) !== "000") {
-    animationFrameId = requestAnimationFrame(wallClockUpdate);
-  } else {
-    running = false;
-    finished = true;
-    updateStartStopButton();
-    showInput(false);
-    document.body.classList.remove('running');
-    updateDisplay();
-    animationFrameId = null;
-
-    // Reset media on timer end
-    onTimerReset();
-  }
-}
-
-function startStop() {
-  if (finished && !running) return;
-
-  if (running) {
-    running = false;
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    updateStartStopButton();
-    showInput(false);
-    document.body.classList.remove('running');
-    onTimerStop();
-    finished = false;
-  } else {
-    let input = document.getElementById('timerInput');
-    smbCounter = normalizeInput(input.value);
-    hurryPlayed = false;
-    finished = false;
-    document.body.classList.add('nsmb-mode');
-    document.body.classList.add('running');
-    showInput(false);
-    updateDisplay();
-    timerStartTime = performance.now();
-    lastDisplayedTicks = 0;
-    running = true;
-    updateStartStopButton();
-
-    onTimerStart();
-
-    animationFrameId = requestAnimationFrame(wallClockUpdate);
-  }
-}
-
-function reset() {
-  if (animationFrameId) cancelAnimationFrame(animationFrameId);
-  running = false;
-  let input = document.getElementById('timerInput');
-  smbCounter = normalizeInput(input.value);
-  hurryPlayed = false;
-  finished = false;
-  document.body.classList.add('nsmb-mode');
-  showInput(true);
-  updateDisplay();
-  updateStartStopButton();
-  document.body.classList.remove('running');
-
-  onTimerReset();
-}
-
-function playHurryUp() {
-  if (hurryAudio) {
-    hurryAudio.currentTime = 0;
-    hurryAudio.play().catch(() => {});
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById('startStopBtn').addEventListener('click', startStop);
-  document.getElementById('resetBtn').addEventListener('click', reset);
-
-  const timerInput = document.getElementById('timerInput');
-  timerInput.addEventListener('focus', () => showInput(true));
-  timerInput.addEventListener('blur', () => {
-    timerInput.value = normalizeInput(timerInput.value);
-  });
-  timerInput.addEventListener('input', () => {
-    timerInput.value = timerInput.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 3);
-  });
-  timerInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') timerInput.blur();
+  // ---------- Events ----------
+  // Click-to-edit ONLY when idle
+  display.addEventListener('click', () => {
+    if (state !== 'idle') return;
+    setEditing(true);
   });
 
-  timerInput.value = "400";
-  reset();
+  input.addEventListener('focus', () => { if (state !== 'idle') input.blur(); });
 
-  document.querySelectorAll('audio').forEach(audio => {
-    audio.volume = 0.5;
+  // numeric-only, max 3 chars while idle
+  input.addEventListener('beforeinput', (e) => {
+    if (state !== 'idle') { e.preventDefault(); return; }
+    if (e.inputType === 'insertText' && /\D/.test(e.data ?? '')) e.preventDefault();
   });
-});
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D+/g, '').slice(0, 3);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') setEditing(false);
+  });
+  input.addEventListener('blur', () => {
+    const n = parseInt(input.value.replace(/[^\d]/g, ''), 10);
+    if (!Number.isNaN(n)) value = clamp(n, 0, 999);
+    render();
+    setEditing(false);
+    if (state === 'idle') startValue = value; // remember for Reset
+    hurryPlayed = false;                      // re-arm on manual edit
+  });
 
-// === Style Switcher for NSMB fonts ===
-const styleSelect = document.getElementById('styleSelect');
+  startBtn.addEventListener('click', () => {
+    primeHurryOnce();
+    if (state === 'running') pause();
+    else start(); // idle or paused -> start
+  });
+  resetBtn.addEventListener('click', reset);
 
-function applyNSTimerStyle() {
-  document.body.classList.remove("ds-timer", "wii-timer", "nsmb2-timer");
-  if (styleSelect) {
-    switch (styleSelect.value) {
-      case "wii":
-        document.body.classList.add("wii-timer");
-        break;
-      case "nsmb2":
-        document.body.classList.add("nsmb2-timer");
-        break;
-      default:
-        document.body.classList.add("ds-timer");
-    }
+  // Style -> body class (fonts)
+  function applyNSMBFontClass() {
+    body.classList.remove('ds-timer','wii-timer','nsmb2-timer');
+    const v = styleSelect?.value || 'ds';
+    if (v === 'wii') body.classList.add('wii-timer');
+    else if (v === 'nsmb2') body.classList.add('nsmb2-timer');
+    else body.classList.add('ds-timer');
+    try { localStorage.setItem('nsmb-style', v); } catch {}
   }
-}
-if (styleSelect) {
-  styleSelect.addEventListener("change", applyNSTimerStyle);
-  // Set on load
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyNSTimerStyle);
-  } else {
-    applyNSTimerStyle();
-  }
-}
+  styleSelect.addEventListener('change', applyNSMBFontClass);
+
+  // ---------- Init ----------
+  (function initFromDOM(){
+    try {
+      const v = localStorage.getItem('nsmb-style');
+      if (v) styleSelect.value = v;
+    } catch {}
+    applyNSMBFontClass();
+
+    // Prefer what's in the input; otherwise display; otherwise 400
+    let initial = 400;
+    if (input.value) initial = parseInt(input.value.replace(/[^\d]/g, ''), 10);
+    else if (display.textContent) initial = parseInt(display.textContent.replace(/[^\d]/g, ''), 10);
+    if (Number.isNaN(initial)) initial = 400;
+
+    value = clamp(initial, 0, 999);
+    startValue = value;   // Reset returns here
+    render();
+    setEditing(false);
+  })();
+})();
