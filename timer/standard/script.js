@@ -1,864 +1,572 @@
-// ========== TIMER APP SCRIPT.JS ==========
+// ======================= Timer (Standard) — stable boot + reliable fonts =======================
+(() => {
+  if (window.__STD_TIMER_BOOTED__) return;
+  window.__STD_TIMER_BOOTED__ = true;
 
-// --- Timer State & Settings ---
-let msPerTick = 25;
-let timerState = "stopped";
-let timerSetMs = 9 * 60 * 1000 + 59 * 1000;
-let timerLeftMs = timerSetMs;
-let wallStart = null;
-let wallEnd = null;
-let pausedAt = null;
-let rafId = null;
-let fontType = localStorage.getItem('timerFontType') || 'default';
-let customFontName = localStorage.getItem('timerCustomFontName') || '';
-let customFontData = localStorage.getItem('timerCustomFontData') || null;
+  (document.readyState === 'loading')
+    ? document.addEventListener('DOMContentLoaded', boot)
+    : boot();
 
-// Show/hide units
-let showAuto = (localStorage.getItem('timerShowAuto') ?? "0") === "1";
-let showHours = (localStorage.getItem('timerShowHours') ?? "1") === "1";
-let showMinutes = (localStorage.getItem('timerShowMinutes') ?? "1") === "1";
-let showSeconds = (localStorage.getItem('timerShowSeconds') ?? "1") === "1";
-let showTicks = (localStorage.getItem('timerShowTicks') ?? "1") === "1";
+  function boot() {
+    // ---------------- DOM ----------------
+    const $ = (id) => document.getElementById(id);
 
-// Music & Hurry Up
-let musicUrl = localStorage.getItem('musicUrl') || '';
-let hurryUpMain = localStorage.getItem('hurryUpMain') || 'ggd';
-let hurryUpSub = localStorage.getItem('hurryUpSub') || 'hurryup-ggdsabo_retro';
+    const timerInput     = $('timerInput');
+    const timerDisplay   = $('timerDisplay');
+    const startPauseBtn  = $('startPauseBtn');
+    const resetBtn       = $('resetBtn');
 
-// Clock mode for dropdown in settings
-let clockMode = localStorage.getItem('clockMode') || "Standard [23:59:59]";
-let clockModeInterval = null;
+    const settingsBtn    = $('settingsBtn');
+    const settingsModal  = $('settingsModal');
+    const closeSettings  = $('closeSettings');
 
-// For hurry up sound trigger precision
-let previousMsLeft = timerLeftMs;
+    const showAuto       = $('showAuto');
+    const showHours      = $('showHours');
+    const showMinutes    = $('showMinutes');
+    const showSeconds    = $('showSeconds');
+    const showTicks      = $('showTicks');
 
-// --- Hurry Up Flashing ---
-let hurryUpFlashInterval = null;
+    const tpsSelect      = $('tpsSelect');
 
-// ========== Music & Hurry Up Presets ==========
-const hurryUpPresets = {
-  none: {
-    label: "None",
-    sub: [
-      { value: "", label: "No Hurry Up", desc: "No hurry up sound will play." }
-    ]
-  },
-  ggd: {
-    label: "Goose Goose Duck",
-    sub: [
-      { value: "hurryup-ggdsabo_retro", label: "Goose Goose Duck Sabotage - Retro", desc: "Plays at 1m remaining" },
-      { value: "hurryup-ggdsabo_ship", label: "Goose Goose Duck Sabotage - Ship", desc: "Plays at 1m remaining, playing over music" },
-      { value: "hurryup-ggdsabo_victorian", label: "Goose Goose Duck Sabotage - Victorian", desc: "Plays at 1m remaining" }
-    ]
-  },
-  soniclw: {
-    label: "Sonic Lost World",
-    sub: [
-      { value: "hurryup-soniclw", label: "Sonic Lost World", desc: "Plays at 30s remaining" }
-    ]
-  },
-  mario: {
-    label: "Mario",
-    sub: [
-      { value: "hurryup-smbnes", label: "Super Mario Bros - NES", desc: "Plays at 1m remaining, restarts music at 1.25x speed" },
-      { value: "hurryup-smbgen", label: "Super Mario - Genesis", desc: "Plays at 1m remaining, restarts music at 1.25x speed" },
-      { value: "hurryup-smb3", label: "Super Mario Bros 3", desc: "Plays at 1m remaining, restarts music at 1.25x speed" },
-      { value: "hurryup-smw", label: "Super Mario World", desc: "Plays at 1m remaining, restarts music at 1.25x speed" },
-      { value: "hurryup-nsmb", label: "New Super Mario Bros", desc: "Plays at 1m remaining, restarts music at 1.25x speed" },
-      { value: "hurryup-sm3d", label: "Super Mario 3D Land", desc: "Plays at 1m remaining, restarts music at 1.25x speed" }
-    ]
-  }
-};
+    const musicUrlInput  = $('musicUrlInput');
+    const musicUrlSubmit = $('musicUrlSubmitBtn');
 
-function populateHurryUpDropdowns() {
-  const mainSel = document.getElementById('hurryUpMain');
-  const subSel = document.getElementById('hurryUpSub');
-  const descDiv = document.getElementById('hurryUpDesc');
-  // Populate main dropdown
-  mainSel.innerHTML = '';
-  Object.entries(hurryUpPresets).forEach(([key, obj]) => {
-    const o = document.createElement('option');
-    o.value = key;
-    o.textContent = obj.label;
-    mainSel.appendChild(o);
-  });
-  // Set main selection
-  mainSel.value = hurryUpMain;
+    const hurryUpMain    = $('hurryUpMain');
+    const hurryUpSub     = $('hurryUpSub');
+    const hurryUpDesc    = $('hurryUpDesc');
+    const disableFlashCB = $('disableFlash');
 
-  // Populate secondary dropdown
-  const subOpts = hurryUpPresets[hurryUpMain].sub;
-  subSel.innerHTML = '';
-  subOpts.forEach(opt => {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    subSel.appendChild(o);
-  });
-  // Select current or default
-  if (!subOpts.find(x => x.value === hurryUpSub)) {
-    hurryUpSub = subOpts[0].value;
-  }
-  subSel.value = hurryUpSub;
-  // Update description
-  const found = subOpts.find(opt => opt.value === subSel.value) || subOpts[0];
-  descDiv.textContent = found.desc;
-}
+    const fontSelect       = $('fontSelect');
+    const importFontBtn    = $('importCustomFont');
+    const customFontInput  = $('customFontFile');
+    const customFontName   = $('customFontName');
+    const customFontNotice = $('customFontNotice');
 
-function saveMusicAndHurryUpSettings() {
-  localStorage.setItem('musicUrl', musicUrl);
-  localStorage.setItem('hurryUpMain', hurryUpMain);
-  localStorage.setItem('hurryUpSub', hurryUpSub);
-}
-
-// ========== Formatting Helpers ==========
-function pad(num, len=2) { return num.toString().padStart(len, "0"); }
-
-// --- AUTO FORMAT TIMER ---
-function formatTimer(ms) {
-    // Always show all units when timer is zero
-    if (ms === 0) {
-        let out = [];
-        if (showAuto) {
-            out = [pad(0,2), pad(0,2), pad(0,2), pad(0,2)];
-            return `${out[0]}:${out[1]}:${out[2]}.${out[3]}`;
-        } else {
-            if (showHours) out.push(pad(0,2));
-            if (showMinutes) out.push(pad(0,2));
-            if (showSeconds) out.push(pad(0,2));
-            let joined = out.join((showHours || showMinutes) ? ":" : "");
-            if (showTicks) {
-                joined += (out.length ? "." : "") + pad(0,2);
-            }
-            return joined;
-        }
+    // Make absolutely sure the edit input starts hidden and cannot eat clicks
+    if (timerInput) {
+      timerInput.classList.add('is-hidden');
+      timerInput.style.display = 'none';
     }
-    // AUTO logic (hide leading zeros)
-    if (showAuto) {
-        let ticks = Math.floor((ms % 1000) / msPerTick);
-        let s = Math.floor(ms / 1000);
-        let sec = s % 60;
-        let min = Math.floor(s / 60) % 60;
-        let hr = Math.floor(s / 3600);
 
-        let values = [hr, min, sec, ticks];
-        // Find first non-zero (skip hours/minutes/seconds)
-        let firstNonZero = values.findIndex((v, idx) => idx < 3 && v !== 0);
-        if (firstNonZero === -1) firstNonZero = 2; // All zero, start at seconds
+    // ---------------- State ----------------
+    const LS_KEY = 'stdtimer:v6';
 
-        // Always show at least two units (sec, ticks)
-        let start = Math.max(0, firstNonZero);
+    let timerState   = 'stopped'; // 'stopped' | 'running' | 'paused'
+    let tickBase     = 40;
+    let msPerTick    = Math.round(1000 / tickBase);
 
-        let out = [];
-        for (let i = start; i <= 3; ++i) {
-            if (i === 3) { // ticks
-                if (out.length) out.push(".");
-                out.push(pad(values[i], 2));
-            } else {
-                if (out.length) out.push(":");
-                out.push(pad(values[i], 2));
-            }
-        }
-        return out.join("");
+    let timerSetMs   = 9*60*1000 + 59*1000; // 09:59.00
+    let timerLeftMs  = timerSetMs;
+
+    let rafId        = null;
+    let wallStart    = 0;
+    let wallEnd      = 0;
+    let previousMsLeft = timerLeftMs;
+
+    let hurryUpPlayed = false;
+    let flashTicker   = null;
+
+    // Fonts
+    let injectedStyleId = 'timerCustomFontStyle';
+
+    // ---------------- Presets ----------------
+    const hurryUpPresets = {
+      none: { label: "None", sub:[ { value:"", label:"No Hurry Up", desc:"No hurry up sound will play." } ] },
+      ggd:  { label: "Goose Goose Duck", sub:[
+        { value:"hurryup-ggdsabo_retro",     label:"Goose Goose Duck Sabotage - Retro",     desc:"Plays at 1m remaining" },
+        { value:"hurryup-ggdsabo_ship",      label:"Goose Goose Duck Sabotage - Ship",      desc:"Plays at 1m remaining, playing over music" },
+        { value:"hurryup-ggdsabo_victorian", label:"Goose Goose Duck Sabotage - Victorian", desc:"Plays at 1m remaining" }
+      ]},
+      soniclw: { label:"Sonic Lost World", sub:[
+        { value:"hurryup-soniclw", label:"Sonic Lost World", desc:"Plays at 1m remaining" }
+      ]},
+      mario:   { label:"Mario", sub:[
+        { value:"hurryup-smbnes", label:"Super Mario Bros - NES", desc:"Plays at 1m remaining, restarts music at 1.25x speed" },
+        { value:"hurryup-smbgen", label:"Super Mario - Genesis",  desc:"Plays at 1m remaining, restarts music at 1.25x speed" },
+        { value:"hurryup-smb3",   label:"Super Mario Bros 3",     desc:"Plays at 1m remaining, restarts music at 1.25x speed" },
+        { value:"hurryup-smw",    label:"Super Mario World",      desc:"Plays at 1m remaining, restarts music at 1.25x speed" },
+        { value:"hurryup-nsmb",   label:"New Super Mario Bros",   desc:"Plays at 1m remaining, restarts music at 1.25x speed" },
+        { value:"hurryup-sm3d",   label:"Super Mario 3D Land",    desc:"Plays at 1m remaining, restarts music at 1.25x speed" }
+      ]}
+    };
+
+    // ---------------- Music stubs (safe no-op) ----------------
+    const syncMusic   = (_cmd)=>{};
+    const setMusicRate= (_r)=>{};
+
+    // ---------------- Utils ----------------
+    const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+    const pad2  = (n)=>String(n).padStart(2,'0');
+
+    function readTPSFromUI(){
+      if (!tpsSelect) return tickBase;
+      const v = clamp(parseInt(tpsSelect.value||String(tickBase),10), 10, 100);
+      return v;
     }
-    // Manual show/hide logic
-    let ticks = Math.floor((ms % 1000) / msPerTick);
-    let s = Math.floor(ms / 1000);
-    let sec = s % 60;
-    let min = Math.floor(s / 60) % 60;
-    let hr = Math.floor(s / 3600);
 
-    let out = [];
-    if (showHours) out.push(pad(hr));
-    if (showMinutes) out.push(pad(min));
-    if (showSeconds) out.push(pad(sec));
-    let joined = out.join((showHours || showMinutes) ? ":" : "");
-    if (showTicks) {
-        joined += (out.length ? "." : "") + pad(ticks);
+    function msToParts(ms) {
+      const pos = Math.max(0, Math.floor(ms));
+      const totalSeconds = Math.floor(pos / 1000);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      const frac = pos % 1000;
+      const ticks = Math.floor(frac * tickBase / 1000);
+      return {h,m,s,ticks};
     }
-    return joined;
-}
 
-function displayTimer(ms) {
-    let s = formatTimer(ms);
-    // Flashing red effect: alternate between red and white every third of a second
-    let isHurryUp = (ms < 60000 && timerState === "running");
-    let flashPhase = Math.floor(Date.now() / 333) % 2; // 0,1 alternates every 333ms
-    return [...s].map((ch, i) => {
-        let style = "";
-        if (isHurryUp) {
-            let color = (flashPhase === 0) ? "#ff0000" : "#fff";
-            style = `color: ${color};`;
-        }
-        return `<span class="monochar" style="${style}">${ch === " " ? "&nbsp;" : ch}</span>`;
-    }).join("");
-}
-
-// --- Parse input timer string based on visible units ---
-function parseTimerInput(str) {
-    str = str.trim().replace(/,/g, '.');
-    // If AUTO, treat as all units enabled
-    let autoMode = showAuto;
-    let h=0, m=0, s=0, t=0;
-    let main = str.split(".");
-    let nums = main[0].split(":").map(x => parseInt(x,10));
-    if ((autoMode || showHours) && nums.length === 3) [h,m,s] = nums;
-    else if ((autoMode || !showHours) && nums.length === 2) [m,s] = nums;
-    else if (nums.length === 1) [s] = nums;
-    if (main.length > 1) {
-        t = parseInt(main[1].substring(0,2),10) || 0;
+    function partsToMs({h=0,m=0,s=0,ticks=0}) {
+      const baseMs = (h*3600 + m*60 + s) * 1000;
+      const fracMs = Math.round((ticks / tickBase) * 1000);
+      return baseMs + fracMs;
     }
-    return ((h||0)*3600 + (m||0)*60 + (s||0))*1000 + (t||0)*msPerTick;
-}
 
-// --- Timer logic ---
-function updateTimerDisplay() {
-    const disp = document.getElementById('timerDisplay');
-    if (!disp) return;
-    disp.innerHTML = formatClock(timerLeftMs);
-
-    // Hurry up flashing effect: add/remove .hurry-up-flash class and keep interval running
-    let isHurryUp = (timerLeftMs < 60000 && timerState === "running");
-    if (isHurryUp) {
-        disp.classList.add("hurry-up-flash");
-        if (!hurryUpFlashInterval) {
-            hurryUpFlashInterval = setInterval(() => {
-                // Force re-render for color cycling
-                updateTimerDisplay();
-            }, 333);
-        }
-    } else {
-        disp.classList.remove("hurry-up-flash");
-        if (hurryUpFlashInterval) {
-            clearInterval(hurryUpFlashInterval);
-            hurryUpFlashInterval = null;
-        }
+    function parseTimerStringToMs(text){
+      const s = (text||'').trim();
+      if (!s) return 0;
+      const [left, dotPart] = s.split('.');
+      const ticks = clamp(parseInt(dotPart ?? '0',10) || 0, 0, Math.max(0,tickBase-1));
+      const segs = (left||'').split(':').map(v=>parseInt(v,10)||0);
+      let h=0,m=0,sec=0;
+      if (segs.length===3){ [h,m,sec] = segs; }
+      else if (segs.length===2){ [m,sec] = segs; }
+      else { sec = segs[0]||0; }
+      return partsToMs({h,m,s:sec,ticks});
     }
-    if (clockMode === "Upside Down") {
-        disp.style.transform = "rotate(180deg)";
-    } else {
-        disp.style.transform = "";
-    }
-}
 
-function syncInputWithDisplay() {
-    document.getElementById('timerInput').value = formatTimer(timerLeftMs);
-}
-
-function setTimerFromInput() {
-    let val = document.getElementById('timerInput').value;
-    let ms = parseTimerInput(val);
-    timerSetMs = ms;
-    timerLeftMs = ms;
-    updateTimerDisplay();
-}
-
-function wallClockTick() {
-    if (timerState !== "running") return;
-    let now = performance.now();
-    let msLeft = Math.max(0, wallEnd - now);
-    timerLeftMs = msLeft;
-    updateTimerDisplay();
-    handleMusicAndHurryUp(msLeft, previousMsLeft); // pass previous value for precision
-    previousMsLeft = msLeft;
-    if (msLeft > 0) {
-        rafId = requestAnimationFrame(wallClockTick);
-    } else {
-        timerState = "stopped";
-        updateStartPauseBtn();
-        setClockInterval();
-        stopMusicAndHurryUp();
-    }
-}
-
-function startPause() {
-    if (timerState === "running") {
-        timerState = "paused";
-        pausedAt = performance.now();
-        cancelAnimationFrame(rafId);
-        updateStartPauseBtn();
-        setClockInterval();
-        updateTimerDisplay();
-        pauseMusic();
-    } else {
-        timerLeftMs = timerSetMs;
-        const ticksPerSec = Math.round(1000 / msPerTick);
-        let ticks = Math.floor((timerLeftMs % 1000) / msPerTick);
-        if (ticks === 0) {
-            timerLeftMs += msPerTick * (ticksPerSec - 1);
-        }
-        wallStart = performance.now();
-        wallEnd = wallStart + timerLeftMs;
-        timerState = "running";
-        pausedAt = null;
-        previousMsLeft = timerLeftMs;
-        updateStartPauseBtn();
-        rafId = requestAnimationFrame(wallClockTick);
-        if (clockModeInterval) clearInterval(clockModeInterval);
-        updateTimerDisplay();
-        playMusicIfNeeded();
-    }
-}
-function resetTimer() {
-    cancelAnimationFrame(rafId);
-    timerLeftMs = timerSetMs;
-    timerState = "stopped";
-    wallStart = null;
-    wallEnd = null;
-    pausedAt = null;
-    updateTimerDisplay();
-    updateStartPauseBtn();
-    setClockInterval();
-    stopMusicAndHurryUp();
-}
-function updateStartPauseBtn() {
-    const btn = document.getElementById('startPauseBtn');
-    btn.textContent = timerState === "running" ? "Pause" : "Start";
-}
-
-// --- Editable clock logic ---
-function enableTimerEditMode() {
-    document.getElementById('timerDisplay').style.display = "none";
-    const inp = document.getElementById('timerInput');
-    inp.style.display = "";
-    inp.focus();
-    inp.select();
-}
-function disableTimerEditMode() {
-    const inp = document.getElementById('timerInput');
-    inp.style.display = "none";
-    document.getElementById('timerDisplay').style.display = "";
-}
-
-// --- Font Settings ---
-function detectOS() {
-    const ua = navigator.userAgent;
-    if (/Windows/i.test(ua)) return "windows";
-    if (/Android/i.test(ua)) return "android";
-    if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
-    return "windows";
-}
-function applyFontFamily(fontType) {
-    const el = document.querySelector('.timer-app');
-    let fontStack;
-    if (fontType === 'custom') {
-        const fontData = localStorage.getItem('timerCustomFontData');
-        const fontName = (localStorage.getItem('timerCustomFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
-        if (fontData && fontName) {
-            if (!document.getElementById('timerCustomFontStyle')) {
-                const style = document.createElement('style');
-                style.id = 'timerCustomFontStyle';
-                style.innerHTML = `
-                  @font-face {
-                    font-family: '${fontName}';
-                    src: url(${fontData});
-                  }
-                `;
-                document.head.appendChild(style);
-            }
-            fontStack = `'${fontName}', sans-serif`;
-        } else {
-            fontStack = "'FancyCatPX', sans-serif";
-        }
-    } else if (fontType === 'system') {
-        const os = detectOS();
-        if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
-        else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
-        else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-    } else {
-        fontStack = "'FancyCatPX', sans-serif";
-    }
-    if (el) el.style.fontFamily = fontStack;
-}
-function updateFontUI() {
-    const sel = document.getElementById('fontSelect');
-    const nameElem = document.getElementById('customFontName');
-    sel.value = fontType;
-    nameElem.textContent = fontType === 'custom' ? customFontName : '';
-}
-
-// --- Show/hide settings ---
-function updateShowHideCheckboxUI() {
-    document.getElementById('showAuto').checked = showAuto;
-    const ids = ['showHours', 'showMinutes', 'showSeconds', 'showTicks'];
-    ids.forEach((id) => {
-        const box = document.getElementById(id);
-        const label = box.closest('label');
-        if (showAuto) {
-            box.disabled = true;
-            label.style.opacity = "0.5";
-        } else {
-            box.disabled = false;
-            label.style.opacity = "";
-        }
-    });
-}
-function saveShowHideSettings() {
-    localStorage.setItem('timerShowAuto', showAuto ? "1" : "0");
-    localStorage.setItem('timerShowHours', showHours ? "1" : "0");
-    localStorage.setItem('timerShowMinutes', showMinutes ? "1" : "0");
-    localStorage.setItem('timerShowSeconds', showSeconds ? "1" : "0");
-    localStorage.setItem('timerShowTicks', showTicks ? "1" : "0");
-}
-
-// ===== CLOCK MODES FOR STANDARD TIMER =====
-
-const clockModes = {
-  "Standard [23:59:59]": {
-    name: "Standard [23:59:59]",
-    formatter: (ms) => displayTimer(ms)
-  },
-  "Upside Down": {
-    name: "⮀ uʍop ǝpᴉsdn",
-    formatter: (ms) => {
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      let out = [h, m, s].filter(x=>x!==null).join((showHours || showMinutes) ? ":" : "");
-      if (showTicks) {
-        const ticks = Math.floor((ms % 1000) / msPerTick);
-        out += (out.length ? "." : "") + pad(ticks);
+    function decideVisibility(totalSeconds){
+      if (showAuto?.checked){
+        const showH = totalSeconds >= 3600;
+        const showM = showH || totalSeconds >= 60;
+        const showS = true;
+        const showT = !!showTicks?.checked;
+        return {showH,showM,showS,showT};
       }
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
-    }
-  },
-  "Backwards": {
-    name: "⮀ ƨbяɒwʞɔɒꓭ",
-    formatter: (ms) => {
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      let out = [h, m, s].filter(x=>x!==null).join((showHours || showMinutes) ? ":" : "");
-      if (showTicks) {
-        const ticks = Math.floor((ms % 1000) / msPerTick);
-        out += (out.length ? "." : "") + pad(ticks);
-      }
-      return `<span style="display:inline-block;transform:scaleX(-1);">` +
-        [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
-        `</span>`;
-    }
-  },
-  "esreveR": {
-    name: "esreveR",
-    formatter: (ms) => {
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      let out = [h, m, s].filter(x=>x!==null).join((showHours || showMinutes) ? ":" : "");
-      if (showTicks) {
-        const ticks = Math.floor((ms % 1000) / msPerTick);
-        out += (out.length ? "." : "") + pad(ticks);
-      }
-      let reversed = out.split('').reverse().join('');
-      return [...reversed].map(ch => `<span class="monochar">${ch}</span>`).join('');
-    }
-  },
-  "Marquee": {
-    name: "Marquee",
-    formatter: (() => {
-      let offset = 0;
-      let lastUpdate = Date.now();
-      const speed = 80;
-      return (ms) => {
-        const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-        const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-        const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-        let out = [h, m, s].filter(x=>x!==null).join((showHours || showMinutes) ? ":" : "");
-        if (showTicks) {
-          const ticks = Math.floor((ms % 1000) / msPerTick);
-          out += (out.length ? "." : "") + pad(ticks);
-        }
-        const now = Date.now();
-        const dt = (now - lastUpdate) / 1000;
-        lastUpdate = now;
-        offset -= speed * dt / 16;
-        if (offset < -out.length) offset = out.length;
-        const padLen = 10;
-        const scrollText = " ".repeat(padLen) + out + " ".repeat(padLen);
-        let start = Math.floor(offset) % (out.length + padLen);
-        if (start < 0) start += (out.length + padLen);
-        const visible = scrollText.substring(start, start + 10);
-        return [...visible].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      return {
+        showH: !!showHours?.checked,
+        showM: !!showMinutes?.checked,
+        showS: !!showSeconds?.checked,
+        showT: !!showTicks?.checked
       };
-    })()
-  },
-  "Rotating Time": {
-    name: "Rotating Time",
-    formatter: (ms) => {
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      const t = showTicks ? pad(Math.floor((ms % 1000) / msPerTick)) : null;
-      const hourAngle = ((h ? parseInt(h) : 0) % 24) * (360 / 24);
-      const minuteAngle = (m ? parseInt(m) : 0) * (360 / 60);
-      const secondAngle = (s ? parseInt(s) : 0) * (360 / 60);
-      const tickAngle = t !== null ? parseInt(t) * (360 / 40) : 0;
-      let out = [];
-      if (h) out.push(`<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${hourAngle}deg);">${h}</span>`);
-      if (m) {
-        out.push(`<span class="monochar">:</span>`);
-        out.push(`<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${minuteAngle}deg);">${m}</span>`);
-      }
-      if (s) {
-        out.push(`<span class="monochar">:</span>`);
-        out.push(`<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${secondAngle}deg);">${s}</span>`);
-      }
-      if (t) {
-        out.push(`<span class="monochar">.</span>`);
-        out.push(`<span class="rot-group" style="display:inline-block;width:2ch;text-align:center;transition:transform 0.1s;transform:rotate(${tickAngle}deg);">${t}</span>`);
-      }
-      return out.join('');
     }
-  },
-  "LGBTQ Pride": {
-    name: "LGBTQ Pride",
-    formatter: (ms) => {
-      const flagColors = [
-        "#E40303", "#FF8C00", "#FFED00", "#008026", "#004DFF", "#750787",
-        "#FFF430", "#7851A9", "#FFFFFF", "#F5A9B8", "#55CDFC", "#603813", "#000000"
-      ];
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      let timeStr = [h,m,s].filter(x=>x!==null).join(":");
-      if (showTicks) {
-        const ticks = Math.floor((ms % 1000) / msPerTick);
-        timeStr += "." + pad(ticks);
-      }
-      const offset = Math.floor(Date.now() / 250) % flagColors.length;
-      let html = "";
-      for (let i = 0; i < timeStr.length; ++i) {
-        const ch = timeStr[i];
-        if (!/[0-9.]/.test(ch)) {
-          html += `<span class="monochar" style="color:#cccccc;">${ch}</span>`;
-          continue;
-        }
-        const color = flagColors[(i + offset) % flagColors.length];
-        html += `<span class="monochar" style="color:${color};">${ch}</span>`;
-      }
-      return html;
+
+    function formatTimer(ms){
+      const pos = Math.max(0,Math.floor(ms));
+      const totalSeconds = Math.floor(pos/1000);
+      const vis = decideVisibility(totalSeconds);
+      const {h,m,s,ticks} = msToParts(pos);
+      const parts = [];
+      if (vis.showH) parts.push(pad2(h));
+      if (vis.showM) parts.push(vis.showH ? pad2(m) : String(m));
+      if (vis.showS) parts.push((vis.showH||vis.showM) ? pad2(s) : String(s));
+      let out = parts.join(':');
+      if (vis.showT) out += (out ? '.' : '') + pad2(ticks);
+      if (!out) out = `${pad2(m)}:${pad2(s)}.${pad2(ticks)}`;
+      return out;
     }
-  },
-  "Rainbow": {
-    name: "Rainbow Hurrah",
-    formatter: (ms) => {
-      const h = showHours ? pad(Math.floor(ms / 3600000)) : null;
-      const m = showMinutes ? pad(Math.floor((ms / 60000) % 60)) : null;
-      const s = showSeconds ? pad(Math.floor((ms / 1000) % 60)) : null;
-      let timeStr = [h,m,s].filter(x=>x!==null).join(":");
-      if (showTicks) {
-        const ticks = Math.floor((ms % 1000) / msPerTick);
-        timeStr += "." + pad(ticks);
-      }
-      let html = [...timeStr].map((ch, i) => {
-        let hue = (Date.now() / 8 + i * 40) % 360;
-        return `<span class="monochar" style="color:hsl(${hue},100%,60%);">${ch}</span>`;
+
+    function monoHTML(text, flashOn) {
+      const color = flashOn ? '#ff0000' : '#ffffff';
+      return Array.from(text, ch => {
+        const safe = ch === ' ' ? '&nbsp;' : ch;
+        return `<span class="monochar" style="color:${color};">${safe}</span>`;
       }).join('');
-      return html;
     }
-  }
-};
 
-const allowedClockModes = [
-  "Standard [23:59:59]",
-  "Upside Down",
-  "Backwards",
-  "esreveR",
-  "Marquee",
-  "Rotating Time",
-  "LGBTQ Pride",
-  "Rainbow"
-];
-
-const standardClockModes = {};
-for (const k of allowedClockModes) {
-    if (typeof clockModes[k] !== "undefined") standardClockModes[k] = clockModes[k];
-}
-
-function formatClock(ms) {
-  return (standardClockModes[clockMode] || standardClockModes["Standard [23:59:59]"]).formatter(ms);
-}
-
-function populateClockModesDropdown() {
-    const select = document.getElementById('clockModeSelect');
-    if (!select) return;
-    select.innerHTML = '';
-    Object.keys(standardClockModes).forEach(mode => {
-        const option = document.createElement('option');
-        option.value = mode;
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = standardClockModes[mode].name;
-        option.textContent = tempDiv.textContent;
-        if (mode === "Upside Down") {
-            option.textContent = "uʍop ǝpᴉsdn ⥃";
-        }
-        if (mode === "Backwards") {
-            option.textContent = "⮀ ƨbяɒwʞɔɒꓭ";
-        }
-        select.appendChild(option);
-    });
-    select.value = localStorage.getItem('clockMode') || "Standard [23:59:59]";
-}
-
-function setClockInterval() {
-    if (clockModeInterval) clearInterval(clockModeInterval);
-
-    let delay = 1000;
-    if (
-        clockMode === "Laggy" ||
-        clockMode === "Badly Laggy" ||
-        clockMode === "Horrendously Laggy" ||
-        clockMode === "Max Laggy"
-    ) delay = msPerTick;
-    else if (showTicks) delay = msPerTick;
-
-    clockModeInterval = setInterval(updateTimerDisplay, delay);
-}
-
-// --- Music & Hurry Up Playback Logic ---
-
-let musicAudio = null;
-let hurryUpAudio = null;
-let hurryUpTriggered = false;
-let hurryUpPlaying = false;
-let hurryUpSpeedupDone = false;
-
-function playMusicIfNeeded() {
-  if (musicUrl) {
-    if (musicAudio) {
-      musicAudio.pause();
-      musicAudio.currentTime = 0;
+    function shouldFlash(ms){
+      if (disableFlashCB?.checked) return false;
+      return timerState === 'running' && ms < 60000;
     }
-    musicAudio = new Audio(musicUrl);
-    musicAudio.loop = true;
-    musicAudio.volume = 1;
-    musicAudio.play().catch(err => {
-      // Show error in console for debugging
-      console.error("Music audio playback failed:", err);
-    });
-  }
-  hurryUpTriggered = false;
-  hurryUpPlaying = false;
-  hurryUpSpeedupDone = false;
-}
 
-function pauseMusic() {
-  if (musicAudio) musicAudio.pause();
-}
-
-function stopMusicAndHurryUp() {
-  if (musicAudio) {
-    musicAudio.pause(); musicAudio.currentTime = 0;
-    musicAudio = null;
-  }
-  if (hurryUpAudio) {
-    hurryUpAudio.pause(); hurryUpAudio.currentTime = 0;
-    hurryUpAudio = null;
-  }
-  hurryUpTriggered = false;
-  hurryUpPlaying = false;
-  hurryUpSpeedupDone = false;
-}
-
-function handleMusicAndHurryUp(msLeft, prevMsLeft) {
-  if (timerState !== "running") return;
-  let hurryUpTimeMs = 60000;
-  if (hurryUpMain === "soniclw") hurryUpTimeMs = 30000;
-  // Trigger exactly when crossing threshold
-  if (!hurryUpTriggered && prevMsLeft > hurryUpTimeMs && msLeft <= hurryUpTimeMs) {
-      hurryUpTriggered = true;
-      hurryUpPlaying = true;
-      playHurryUpSound();
-      if (hurryUpMain === "mario" && musicAudio && !hurryUpSpeedupDone) {
-          musicAudio.pause();
-          musicAudio.currentTime = 0;
-          musicAudio.playbackRate = 1.25;
-          musicAudio.play().catch(() => {});
-          hurryUpSpeedupDone = true;
-      }
-  }
-}
-
-function playHurryUpSound() {
-  if (!hurryUpSub) return; // Do nothing if NONE selected
-  if (hurryUpAudio) {
-    hurryUpAudio.pause();
-    hurryUpAudio = null;
-  }
-  let hurryupPath = "hurryup/" + hurryUpSub + ".mp3";
-  hurryUpAudio = new Audio(hurryupPath);
-  hurryUpAudio.volume = 1;
-  hurryUpAudio.play().catch(() => {});
-}
-
-// --- Settings UI listeners: music url & hurry up ---
-document.addEventListener('DOMContentLoaded', () => {
-  // Music URL
-  document.getElementById('musicUrlInput').value = musicUrl;
-
-  // Confirmation logic for music URL submit
-  const musicUrlRow = document.getElementById('musicUrlRow');
-  const submitBtn = document.getElementById('musicUrlSubmitBtn');
-  const confirmSpan = document.getElementById('musicUrlConfirm');
-  submitBtn.addEventListener('click', function() {
-    let input = document.getElementById('musicUrlInput');
-    let url = input.value.trim();
-    if (!url) {
-      confirmSpan.style.display = "block";
-      confirmSpan.style.color = "#ff7373";
-      confirmSpan.textContent = "Please enter a valid URL.";
-      setTimeout(() => { confirmSpan.style.display = "none"; }, 1600);
-      return;
+    function startFlashTicker(){
+      if (flashTicker) return;
+      flashTicker = setInterval(()=>updateTimerDisplay(true), 333); // 3 fps
     }
-    musicUrl = url;
-    saveMusicAndHurryUpSettings();
-    confirmSpan.style.display = "block";
-    confirmSpan.style.color = "#7fd87e";
-    confirmSpan.textContent = "Saved!";
-    setTimeout(() => { confirmSpan.style.display = "none"; }, 1300);
-  });
+    function stopFlashTicker(){
+      if (flashTicker){ clearInterval(flashTicker); flashTicker = null; }
+    }
 
-  // ... rest of DOMContentLoaded as before ...
-  populateHurryUpDropdowns();
-  document.getElementById('hurryUpMain').addEventListener('change', function() {
-    hurryUpMain = this.value;
-    saveMusicAndHurryUpSettings();
-    hurryUpSub = hurryUpPresets[hurryUpMain].sub[0].value;
-    saveMusicAndHurryUpSettings();
-    populateHurryUpDropdowns();
-  });
-  document.getElementById('hurryUpSub').addEventListener('change', function() {
-    hurryUpSub = this.value;
-    saveMusicAndHurryUpSettings();
-    populateHurryUpDropdowns();
-  });
-
-  // --- Rest of DOMContentLoaded (settings & timer logic) ---
-  applyFontFamily(fontType);
-  updateTimerDisplay();
-  syncInputWithDisplay();
-  updateStartPauseBtn();
-
-  document.getElementById('timerInput').style.display = "none";
-  document.getElementById('timerDisplay').style.display = "";
-
-  // Settings modal logic
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsModal = document.getElementById('settingsModal');
-  const closeSettings = document.getElementById('closeSettings');
-  settingsBtn.addEventListener('click', () => {
-      updateFontUI();
-      updateShowHideCheckboxUI();
-      populateClockModesDropdown();
-      document.getElementById('clockModeSelect').value = clockMode;
-      populateHurryUpDropdowns();
-      document.getElementById('musicUrlInput').value = musicUrl;
-      settingsModal.classList.add('show');
-  });
-  closeSettings.addEventListener('click', () => {
-      settingsModal.classList.remove('show');
-  });
-  settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) {
-          settingsModal.classList.remove('show');
-      }
-  });
-
-  document.getElementById('clockModeSelect').addEventListener('change', function() {
-      clockMode = this.value;
-      localStorage.setItem('clockMode', clockMode);
-      setClockInterval();
-      updateTimerDisplay();
-  });
-
-  document.getElementById('timerDisplay').addEventListener('click', () => {
-      if (timerState === "running") return;
-      enableTimerEditMode();
-  });
-  document.getElementById('timerDisplay').addEventListener('keydown', (e) => {
-      if (timerState === "running") return;
-      if (e.key === 'Enter' || e.key === ' ') enableTimerEditMode();
-  });
-  document.getElementById('timerInput').addEventListener('blur', () => {
-      setTimerFromInput();
-      disableTimerEditMode();
-      syncInputWithDisplay();
-  });
-  document.getElementById('timerInput').addEventListener('keydown', (e) => {
-      if (e.key === "Enter") {
-          setTimerFromInput();
-          disableTimerEditMode();
-          syncInputWithDisplay();
-      }
-  });
-
-  document.getElementById('startPauseBtn').addEventListener('click', () => {
-      if (timerState === "running") {
-          startPause();
+    function updateTimerDisplay(forceFlashFrame=false){
+      if (!timerDisplay) return;
+      const text = formatTimer(timerLeftMs);
+      let flashOn = false;
+      if (shouldFlash(timerLeftMs)){
+        flashOn = forceFlashFrame ? (Math.floor(Date.now()/333)%2===0)
+                                  : (Math.floor(Date.now()/333)%2===0);
+        startFlashTicker();
       } else {
-          setTimerFromInput();
-          disableTimerEditMode();
-          startPause();
+        stopFlashTicker();
       }
-  });
-  document.getElementById('resetBtn').addEventListener('click', () => {
-      resetTimer();
-      syncInputWithDisplay();
-  });
+      timerDisplay.innerHTML = monoHTML(text, flashOn);
+    }
 
-  document.getElementById('fontSelect').addEventListener('change', function() {
-      fontType = this.value;
-      localStorage.setItem('timerFontType', fontType);
-      applyFontFamily(fontType);
-      updateFontUI();
-  });
+    function updateStartPauseBtn(){
+      if (!startPauseBtn) return;
+      startPauseBtn.textContent = (timerState === 'running') ? 'Pause' : 'Start';
+    }
 
-  document.getElementById('importCustomFont').addEventListener('click', () => {
-      document.getElementById('customFontFile').value = '';
-      document.getElementById('customFontFile').click();
-  });
-  document.getElementById('customFontFile').addEventListener('change', function() {
-      const file = this.files[0];
-      if (!file) return;
-      customFontName = file.name;
-      localStorage.setItem('timerFontType', 'custom');
-      localStorage.setItem('timerCustomFontName', file.name);
+    // ---------------- Hurry-Up audio (pause/resume) ----------------
+    let hurryUpAudio = null;
+    let hurryState   = 'idle';    // 'idle' | 'playing' | 'done'
+    let hurryOverlay = false;
+    let hurryIsMario = false;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-          customFontData = e.target.result;
-          localStorage.setItem('timerCustomFontData', customFontData);
-          applyFontFamily('custom');
-          updateFontUI();
-          document.getElementById('customFontNotice').style.display = 'block';
+    const baseId = (v)=> (v||'').replace(/^.*\//,'').replace(/\.(mp3|ogg)$/i,'');
+    function pickSrc(base){
+      const probe = document.createElement('audio');
+      const mp3 = !!probe.canPlayType && probe.canPlayType('audio/mpeg') !== '';
+      return `hurryup/${base}.${mp3 ? 'mp3' : 'ogg'}`;
+    }
+    function stopHurryUp(){
+      try { if (hurryUpAudio){ hurryUpAudio.pause(); hurryUpAudio.currentTime=0; } } catch {}
+      hurryUpAudio=null; hurryState='idle'; hurryOverlay=false; hurryIsMario=false;
+    }
+    function pauseHurryUp(){ try{ if (hurryUpAudio && hurryState==='playing') hurryUpAudio.pause(); }catch{} }
+    function resumeHurryUp(){ try{ if (hurryUpAudio && hurryState==='playing') hurryUpAudio.play().catch(()=>{});}catch{} }
+
+    function beginHurryUp(mainKey, subVal){
+      const b = baseId(subVal);
+      if (!b) return;
+      hurryOverlay = (subVal === 'hurryup-ggdsabo_ship');
+      hurryIsMario = (mainKey === 'mario');
+      hurryState   = 'playing';
+
+      if (!hurryOverlay) syncMusic('pause');
+
+      try { if (hurryUpAudio) hurryUpAudio.pause(); } catch {}
+      hurryUpAudio = new Audio(pickSrc(b));
+      hurryUpAudio.onended = () => {
+        hurryUpAudio=null; hurryState='done';
+        if (!hurryOverlay) {
+          setMusicRate(hurryIsMario ? 1.25 : 1.0);
+          if (timerState === 'running') syncMusic('play');
+        }
       };
-      reader.readAsDataURL(file);
-  });
+      hurryUpAudio.onerror = hurryUpAudio.onended;
+      try { hurryUpAudio.play().catch(()=>{});}catch{}
+    }
 
-  document.getElementById('showAuto').addEventListener('change', function() {
-      showAuto = this.checked;
-      saveShowHideSettings();
-      updateShowHideCheckboxUI();
-      setTimerFromInput();
+    // ---------------- Persistence ----------------
+    function save(){
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+          tickBase,
+          tpsSelect: tpsSelect?.value || String(tickBase),
+          timerSetMs,
+          auto: !!showAuto?.checked,
+          showH: !!showHours?.checked,
+          showM: !!showMinutes?.checked,
+          showS: !!showSeconds?.checked,
+          showT: !!showTicks?.checked,
+          disableFlash: !!disableFlashCB?.checked,
+          musicUrl: (musicUrlInput?.value || ''),
+          huMain: hurryUpMain?.value || 'none',
+          huSub:  hurryUpSub?.value  || '',
+          fontMode: fontSelect?.value || 'default',
+          customFontData: localStorage.getItem('timerCustomFontData') || '',
+          customFontName: localStorage.getItem('timerCustomFontName') || ''
+        }));
+      } catch {}
+    }
+
+    function load(){
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+
+        tickBase  = clamp(parseInt(d.tickBase||40,10), 10, 100);
+        msPerTick = Math.round(1000 / tickBase);
+
+        if (typeof d.timerSetMs === 'number'){
+          timerSetMs = Math.max(0, d.timerSetMs);
+          timerLeftMs= timerSetMs;
+        }
+
+        if (tpsSelect && d.tpsSelect) tpsSelect.value = String(d.tpsSelect);
+
+        if (showAuto)    showAuto.checked    = !!d.auto;
+        if (showHours)   showHours.checked   = !!d.showH;
+        if (showMinutes) showMinutes.checked = !!d.showM;
+        if (showSeconds) showSeconds.checked = !!d.showS;
+        if (showTicks)   showTicks.checked   = !!d.showT;
+
+        if (disableFlashCB) disableFlashCB.checked = !!d.disableFlash;
+
+        if (musicUrlInput && typeof d.musicUrl === 'string') musicUrlInput.value = d.musicUrl;
+
+        if (hurryUpMain && d.huMain) hurryUpMain.value = d.huMain;
+        if (hurryUpSub  && d.huSub)  hurryUpSub.value  = baseId(d.huSub);
+
+        if (fontSelect && d.fontMode) fontSelect.value = d.fontMode;
+
+        // carry over custom font data (if any)
+        if (d.customFontData && d.customFontName) {
+          localStorage.setItem('timerCustomFontData', d.customFontData);
+          localStorage.setItem('timerCustomFontName', d.customFontName);
+        }
+      } catch {}
+    }
+
+    // ---------------- Fonts (robust injection) ----------------
+    function applyFontFamily(mode){
+      // remove old injected @font-face if any
+      const old = document.getElementById(injectedStyleId);
+      if (old) old.remove();
+
+      if (mode === 'custom'){
+        const dataUrl = localStorage.getItem('timerCustomFontData') || '';
+        const nameRaw = localStorage.getItem('timerCustomFontName') || 'CustomFont';
+        const family  = nameRaw.replace(/\.[^.]+$/, '');
+        if (dataUrl){
+          const st = document.createElement('style');
+          st.id = injectedStyleId;
+          st.textContent = `
+            @font-face{
+              font-family:'${family}';
+              src:url(${dataUrl});
+              font-weight:400; font-style:normal;
+            }`;
+          document.head.appendChild(st);
+          document.body.style.fontFamily = `'${family}', 'Segoe UI', Roboto, Arial, sans-serif`;
+          if (customFontName)   customFontName.textContent = `Loaded: ${family}`;
+          if (customFontNotice) customFontNotice.style.display = 'block';
+          return;
+        }
+      }
+      if (mode === 'system'){
+        document.body.style.fontFamily = "'Segoe UI', Roboto, Arial, sans-serif";
+      } else {
+        // DEFAULT
+        document.body.style.fontFamily = "'FancyCatPX', 'Segoe UI', Roboto, Arial, sans-serif";
+      }
+    }
+
+    importFontBtn?.addEventListener('click', ()=>customFontInput?.click());
+    customFontInput?.addEventListener('change', async ()=>{
+      const f = customFontInput.files?.[0]; if (!f) return;
+      const buf = await f.arrayBuffer();
+      const blob = new Blob([buf], { type: f.type || 'font/ttf' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          localStorage.setItem('timerCustomFontData', reader.result);
+          localStorage.setItem('timerCustomFontName', f.name);
+          if (fontSelect) fontSelect.value = 'custom';
+          applyFontFamily('custom');
+          save();
+        } catch {}
+      };
+      reader.readAsDataURL(blob);
+    });
+
+    // ---------------- UI wiring ----------------
+    startPauseBtn?.addEventListener('click', onStartPause);
+    resetBtn?.addEventListener('click', onReset);
+
+    timerDisplay?.addEventListener('click', enterEdit);
+    timerInput?.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter') commitEdit();
+      if (e.key === 'Escape') { timerInput.classList.add('is-hidden'); timerInput.style.display='none'; }
+    });
+    timerInput?.addEventListener('blur', commitEdit);
+
+    function openModal(el, show){
+      if (!el) return;
+      if (show){ el.classList.add('show'); el.setAttribute('aria-hidden','false'); }
+      else     { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); }
+    }
+    settingsBtn?.addEventListener('click', ()=>openModal(settingsModal,true));
+    closeSettings?.addEventListener('click', ()=>openModal(settingsModal,false));
+    settingsModal?.addEventListener('click', (e)=>{ if (e.target===settingsModal) openModal(settingsModal,false); });
+
+    [showAuto, showHours, showMinutes, showSeconds, showTicks, disableFlashCB].forEach(cb=>{
+      cb?.addEventListener('change', ()=>{ save(); updateTimerDisplay(true); });
+    });
+
+    tpsSelect?.addEventListener('change', ()=>{
+      const newBase = readTPSFromUI();
+      if (newBase === tickBase) return;
+      tickBase  = newBase;
+      msPerTick = Math.round(1000 / tickBase);
+      save();
+      updateTimerDisplay(true);
+    });
+
+    musicUrlSubmit?.addEventListener('click', ()=>save());
+    fontSelect?.addEventListener('change', ()=>{
+      applyFontFamily(fontSelect.value || 'default');
+      save();
+    });
+
+    // ---------------- Editing ----------------
+    function enterEdit(){
+      if (timerState !== 'stopped' || !timerInput) return;
+      timerInput.value = formatTimer(timerLeftMs);
+      timerInput.style.display = 'block';
+      timerInput.classList.remove('is-hidden');
+      timerInput.focus();
+      timerInput.select();
+    }
+    function commitEdit(){
+      if (!timerInput) return;
+      const ms = parseTimerStringToMs(timerInput.value);
+      timerSetMs  = ms;
+      timerLeftMs = ms;
+      hurryUpPlayed = false;
+      previousMsLeft = timerLeftMs;
+      timerInput.classList.add('is-hidden');
+      timerInput.style.display = 'none';
+      save();
+      updateTimerDisplay(true);
+    }
+
+    // ---------------- Timer controls ----------------
+    function setTimerFromInput(){
+      if (!timerInput) return;
+      const ms = parseTimerStringToMs(timerInput.value);
+      timerSetMs  = ms;
+      timerLeftMs = ms;
+      hurryUpPlayed = false;
+      previousMsLeft = timerLeftMs;
+      save();
+    }
+
+    function onStartPause(){
+      if (timerState === 'running'){
+        timerState = 'paused';
+        if (rafId) cancelAnimationFrame(rafId);
+        pauseHurryUp();
+        stopFlashTicker();
+        updateStartPauseBtn();
+        updateTimerDisplay(true);
+        syncMusic('pause');
+        return;
+      }
+
+      if (timerState === 'paused'){
+        const now = performance.now();
+        wallStart = now;
+        wallEnd   = now + timerLeftMs;
+
+        if (hurryUpAudio && hurryState==='playing'){
+          resumeHurryUp();
+          // overlay keeps bg going; non-overlay keeps bg paused until sfx ends
+        } else {
+          syncMusic('play');
+        }
+      } else {
+        // starting fresh
+        if (timerInput && timerInput.value) setTimerFromInput();
+        if (timerLeftMs > 0){
+          const fracMs = timerLeftMs % 1000;
+          if (fracMs === 0){
+            const ticksPerSec = tickBase;
+            timerLeftMs += msPerTick * (ticksPerSec - 1); // start at .(base-1)
+          }
+        }
+        const now = performance.now();
+        wallStart = now;
+        wallEnd   = now + timerLeftMs;
+        syncMusic('play');
+      }
+
+      timerState = 'running';
+      previousMsLeft = timerLeftMs;
+      updateStartPauseBtn();
+      rafId = requestAnimationFrame(loop);
+      updateTimerDisplay(true);
+    }
+
+    function loop(){
+      if (timerState !== 'running') return;
+      const now = performance.now();
+      const msLeft = Math.max(0, Math.floor(wallEnd - now));
+
+      if (!hurryUpPlayed && previousMsLeft >= 60000 && msLeft < 60000){
+        hurryUpPlayed = true;
+        const mainKey = hurryUpMain?.value || 'none';
+        const subVal  = hurryUpSub?.value  || '';
+        beginHurryUp(mainKey, subVal);
+      }
+
+      timerLeftMs = msLeft;
+      previousMsLeft = msLeft;
+
       updateTimerDisplay();
-      syncInputWithDisplay();
-  });
-  document.getElementById('showHours').addEventListener('change', function() {
-      showHours = this.checked;
-      saveShowHideSettings(); setTimerFromInput(); updateTimerDisplay(); syncInputWithDisplay(); updateShowHideCheckboxUI();
-  });
-  document.getElementById('showMinutes').addEventListener('change', function() {
-      showMinutes = this.checked;
-      saveShowHideSettings(); setTimerFromInput(); updateTimerDisplay(); syncInputWithDisplay(); updateShowHideCheckboxUI();
-  });
-  document.getElementById('showSeconds').addEventListener('change', function() {
-      showSeconds = this.checked;
-      saveShowHideSettings(); setTimerFromInput(); updateTimerDisplay(); syncInputWithDisplay(); updateShowHideCheckboxUI();
-  });
-  document.getElementById('showTicks').addEventListener('change', function() {
-      showTicks = this.checked;
-      saveShowHideSettings(); setTimerFromInput(); updateTimerDisplay(); syncInputWithDisplay(); updateShowHideCheckboxUI();
-  });
 
-  updateShowHideCheckboxUI();
-  setClockInterval();
-});
+      if (msLeft <= 0){
+        timerState = 'stopped';
+        updateStartPauseBtn();
+        setMusicRate(1.0);
+        syncMusic('pause');
+        stopHurryUp();
+        stopFlashTicker();
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function onReset(){
+      if (rafId) cancelAnimationFrame(rafId);
+      timerState = 'stopped';
+      if (timerInput && timerInput.value) setTimerFromInput();
+      setMusicRate(1.0);
+      syncMusic('pause');
+      stopHurryUp();
+      stopFlashTicker();
+      updateStartPauseBtn();
+      updateTimerDisplay(true);
+    }
+
+    // ---------------- Init ----------------
+    load();
+
+    // adopt TPS from saved value
+    if (tpsSelect) tpsSelect.value = String(tickBase);
+
+    // apply saved / default font once DOM is ready
+    applyFontFamily(fontSelect?.value || 'default');
+
+    // If HTML provided a value on first run, use it
+    if (timerInput && timerInput.value){
+      timerSetMs  = parseTimerStringToMs(timerInput.value);
+      timerLeftMs = timerSetMs;
+    }
+
+    // Populate hurry-up selects
+    if (hurryUpMain && hurryUpSub){
+      // main
+      hurryUpMain.innerHTML = '';
+      Object.entries(hurryUpPresets).forEach(([key,grp])=>{
+        const o = document.createElement('option');
+        o.value = key; o.textContent = grp.label;
+        hurryUpMain.appendChild(o);
+      });
+      // subs for current main
+      const setSubs = (key)=>{
+        const grp = hurryUpPresets[key] || hurryUpPresets.none;
+        hurryUpSub.innerHTML = '';
+        grp.sub.forEach(s=>{
+          const o = document.createElement('option');
+          o.value = s.value.replace(/^.*\//,'').replace(/\.(mp3|ogg)$/i,'');
+          o.textContent = s.label;
+          hurryUpSub.appendChild(o);
+        });
+        const first = hurryUpSub.querySelector('option');
+        if (first) hurryUpSub.value = first.value;
+        hurryUpDesc.textContent = (grp.sub[0]?.desc || '');
+      };
+      setSubs(hurryUpMain.value || 'none');
+      hurryUpMain.addEventListener('change', ()=>setSubs(hurryUpMain.value));
+      hurryUpSub.addEventListener('change', ()=>{
+        const grp = hurryUpPresets[hurryUpMain.value] || hurryUpPresets.none;
+        const sel = grp.sub.find(s=>s.value.includes(hurryUpSub.value));
+        hurryUpDesc.textContent = sel?.desc || '';
+      });
+    }
+
+    updateStartPauseBtn();
+    updateTimerDisplay(true);
+  }
+})();

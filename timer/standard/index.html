@@ -1,81 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timer</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Timer</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <!-- Settings button -->
-    <button id="settingsBtn" title="Settings" class="icon-btn">
-        <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon" />
-    </button>
-    <div class="timer-app">
-        <input id="timerInput" type="text" value="00:09:59.00" autocomplete="off" autocorrect="off" spellcheck="false" />
-        <p id="timerDisplay" tabindex="0">00:09:59.00</p>
-        <button id="startPauseBtn">Start</button>
-        <button id="resetBtn">Reset</button>
-    </div>
+  <!-- Settings -->
+  <button id="settingsBtn" title="Settings" class="icon-btn">
+    <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon" />
+  </button>
 
-    <div id="settingsModal" class="modal">
-      <div class="modal-content system-font">
-        <button id="closeSettings" title="Close" class="icon-btn close-btn">
-            <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon" />
-        </button>
-        <div class="settings-header">
-            <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
-            <span class="font-header-text">FONT OPTIONS</span>
-        </div>
-        <div class="setting-row">
-            <select id="fontSelect">
-              <option value="default">Default</option>
-              <option value="system">System</option>
-              <option value="custom">Custom</option>
-            </select>
-            <button id="importCustomFont">Import Custom Font...</button>
-            <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
-            <br>
-            <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
-        </div>
-        <div id="customFontNotice" style="display:none;font-size:0.9em;color:#f7d774;margin-top:4px;">
-            If the font doesn't apply right away, try refreshing the page
-        </div>
-        <div class="show-hide-row" style="margin-top:32px;">
-            <span class="font-header-text" style="font-size:1.5em;margin-right:10px;">Show on clock:</span>
-            <label style="margin-right:22px;"><input type="checkbox" id="showAuto"> Auto</label>
-            <label><input type="checkbox" id="showHours"> Hours</label>
-            <label><input type="checkbox" id="showMinutes"> Minutes</label>
-            <label><input type="checkbox" id="showSeconds"> Seconds</label>
-            <label><input type="checkbox" id="showTicks"> Ticks</label>
-        </div>
+  <!-- Timer -->
+  <div class="timer-app">
+    <!-- The input overlays the display when editing -->
+    <input id="timerInput" type="text" value="00:09:59.00"
+           autocomplete="off" autocorrect="off" spellcheck="false" />
+    <p id="timerDisplay" tabindex="0">00:09:59.00</p>
 
-        <!-- MUSIC URL (above hurry up section) -->
-        <div class="setting-row" id="musicUrlRow" style="margin-top:28px;">
-          <label for="musicUrlInput" class="font-header-text" style="font-size:1.1em;">Music URL:</label>
-          <input type="url" id="musicUrlInput" style="width: 60%;" placeholder="Paste direct audio URL or YouTube link (NOT WORKING AT THE MOMENT)">
-          <button id="musicUrlSubmitBtn" style="margin-left:12px;font-size:1.01em;padding:0.14em 1.4em;">Submit</button>
-          <span id="musicUrlConfirm" style="margin-left:18px;font-size:1em;color:#7fd87e;display:none;"></span>
-        </div>
+    <button id="startPauseBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+  </div>
 
-        <!-- HURRY UP section -->
-        <div class="setting-row" id="hurryUpRow" style="margin-top:18px;">
-          <span class="font-header-text" style="font-size:1.1em;">Hurry Up:</span>
-          <select id="hurryUpMain"></select>
-          <select id="hurryUpSub" style="margin-left:8px;"></select>
-          <div id="hurryUpDesc" class="hurryup-description" style="margin-top:4px;font-size:0.97em;color:#888;"></div>
-        </div>
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-content system-font">
+      <button id="closeSettings" title="Close" class="icon-btn close-btn">
+        <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon"/>
+      </button>
 
-        <div class="setting-row" style="margin-top:28px;">
-            <span class="font-header-text" style="font-size:1.1em;margin-right:18px;">Clock Mode:</span>
-            <select id="clockModeSelect"></select>
-        </div>
-        <button id="whatsNewBtn" class="setting-input" style="margin: 48px auto 0 auto; display: block; font-size: 1.4em; width: 270px;">
-          What's New?
-        </button>
+      <div class="settings-header">
+        <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
+        <span class="font-header-text">FONT OPTIONS</span>
+      </div>
+
+      <!-- Fonts -->
+      <div class="setting-row">
+        <select id="fontSelect" class="setting-input">
+          <option value="default">Default</option>
+          <option value="system">System</option>
+          <option value="custom">Custom</option>
+        </select>
+        <button id="importCustomFont">Import Custom Font...</button>
+        <input type="file" id="customFontFile" style="display:none;" accept=".ttf,.otf,.woff,.woff2"/>
+        <span id="customFontName" style="font-size:1.1em; color:#89f;"></span>
+      </div>
+      <div id="customFontNotice" style="display:none;font-size:0.9em;color:#f7d774;margin-top:4px;">
+        If the font doesn't apply right away, try refreshing the page
+      </div>
+
+      <!-- Show on clock -->
+      <div class="show-hide-row" style="margin-top:28px;">
+        <span class="font-header-text" style="font-size:1.4em;margin-right:10px;">Show on clock:</span>
+        <label><input type="checkbox" id="showAuto"> Auto</label>
+        <label><input type="checkbox" id="showHours"> Hours</label>
+        <label><input type="checkbox" id="showMinutes"> Minutes</label>
+        <label><input type="checkbox" id="showSeconds"> Seconds</label>
+        <label><input type="checkbox" id="showTicks"> Ticks</label>
+      </div>
+
+      <!-- TPS -->
+      <div class="setting-row" style="margin-top:18px;">
+        <label class="setting-label" for="tpsSelect">Tick rate (TPS)</label>
+        <select id="tpsSelect" class="setting-input">
+          <option>10</option><option>20</option><option>30</option><option selected>40</option>
+          <option>50</option><option>60</option><option>70</option><option>80</option>
+          <option>90</option><option>100</option>
+        </select>
+      </div>
+
+      <!-- Music URL (placeholder only; you said we can omit the player for now) -->
+      <div class="setting-row" id="musicUrlRow" style="margin-top:18px;">
+        <label for="musicUrlInput" class="font-header-text" style="font-size:1.1em;">Music URL:</label>
+        <input type="url" id="musicUrlInput" style="width:60%;" placeholder="Paste direct audio URL or YouTube link (TEMP DISABLED)">
+        <button id="musicUrlSubmitBtn" style="margin-left:12px;font-size:1.01em;padding:0.14em 1.4em;">Submit</button>
+        <span id="musicUrlConfirm" style="margin-left:18px;font-size:1em;color:#7fd87e;display:none;"></span>
+      </div>
+
+      <!-- Hurry Up -->
+      <div class="setting-row" id="hurryUpRow" style="margin-top:18px;">
+        <span class="font-header-text" style="font-size:1.1em;">Hurry Up:</span>
+        <select id="hurryUpMain" class="setting-input"></select>
+        <select id="hurryUpSub" class="setting-input"></select>
+      </div>
+      <div id="hurryUpDesc" class="hurryup-description" style="margin-top:6px;font-size:0.97em;color:#888;"></div>
+
+      <!-- Flash toggle -->
+      <div class="setting-row" id="flashRow" style="margin-top:18px;">
+        <span class="font-header-text" style="font-size:1.1em;">HURRY UP FLASH:</span>
+        <label style="margin-left:16px;"><input type="checkbox" id="disableFlash"> Disable red flash at 1:00</label>
       </div>
     </div>
+  </div>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
