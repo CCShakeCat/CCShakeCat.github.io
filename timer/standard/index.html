@@ -1,111 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Timer</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <!-- Settings button (top-left, fixed) -->
+  <!-- Settings button (top-left) -->
   <button id="settingsBtn" title="Settings" class="icon-btn">
     <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon"/>
   </button>
 
+  <!-- Clock row: prefix + time -->
   <div class="timer-app">
-    <!-- Input is stacked directly over the display while editing -->
-    <input id="timerInput" type="text" value="00:09:59.00"
-           autocomplete="off" autocorrect="off" spellcheck="false" />
-    <p id="timerDisplay" tabindex="0">00:09:59.00</p>
+    <div id="clockRow" class="clock-row">
+      <!-- Prefix (Text or Icon) -->
+      <span id="prefixText" class="prefix-text" style="display:none;">TIME</span>
+      <img id="prefixIcon" class="prefix-icon" src="./icons/clock.png" alt="" style="display:none"/>
+      <!-- Editable overlay input -->
+      <input id="timerInput" type="text" value="00:09:59.39" autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <!-- Rendered time -->
+      <p id="timerDisplay" tabindex="0" aria-label="Timer">00:09:59.39</p>
+    </div>
 
-    <button id="startPauseBtn">Start</button>
-    <button id="resetBtn">Reset</button>
+    <div class="controls">
+      <button id="startPauseBtn">Start</button>
+      <button id="resetBtn">Reset</button>
+    </div>
   </div>
 
-  <!-- Settings modal -->
+  <!-- Settings (no dim; centered card) -->
   <div id="settingsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-content system-font" id="modalCard">
-      <!-- drag handle (empty, non-interactive strip) -->
-      <div class="modal-dragpad" aria-hidden="true"></div>
-
-      <!-- Close (top-right) -->
+      <!-- Close -->
       <button id="closeSettings" title="Close" class="icon-btn close-btn">
         <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon"/>
       </button>
 
-      <div class="settings-header">
-        <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
-        <span class="font-header-text">FONT OPTIONS</span>
-      </div>
+        <h1>FONT OPTIONS</h1>
 
-      <!-- FONT ROW -->
-      <div class="row row-split">
-        <label class="stack">
+      <!-- FONT SELECTION -->
+      <div class="row row-split center">
+        <label class="stack full">
           <select id="fontSelect">
-            <option value="default">Default</option>
+            <option value="default" selected>Default</option>
             <option value="system">System</option>
             <option value="custom">Custom</option>
           </select>
-        </label><br>
-
-        <a id="importCustomFont" class="linkish">Import Custom Font...</a>
-        <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2" hidden />
+        </label>
+        <a id="importCustomFont" class="linkish">Import Custom Font…</a>
+        <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2" hidden/>
+      </div>
+      <div class="row center"><span id="customFontName" class="muted small"></span></div>
+      <div id="customFontNotice" class="muted tiny center" style="display:none;">
+        If the font doesn’t apply right away, try refreshing the page.
       </div>
 
-      <div class="row"><span id="customFontName" class="muted small"></span></div>
-      <div id="customFontNotice" class="muted tiny" style="display:none;">
-        If the font doesn't apply right away, try refreshing the page.
-      </div>
+<!-- SHOW ON CLOCK -->
+<h1>SHOW ON CLOCK:</h1>
 
-      <!-- SHOW ON CLOCK -->
-      <h3 class="section-title">SHOW ON CLOCK:</h3>
-      <div class="row wrap">
-        <label><input type="checkbox" id="showAuto"> Auto – hide what is zero</label>
-        <label><input type="checkbox" id="showHours"> Hours – HH:__:__.__</label>
-        <label><input type="checkbox" id="showMinutes"> Minutes – __:MM:__.__</label>
-        <label><input type="checkbox" id="showSeconds"> Seconds – __:__:SS.__</label>
-        <label><input type="checkbox" id="showTicks"> Ticks – __:__:__.TT</label>
-      </div>
+<div class="checks">
+  <!-- Auto (default: OFF) -->
+  <label class="check-auto">
+    <input type="checkbox" id="showAuto">
+    <span>Auto</span>
+  </label>
 
+  <!-- HH : MM : SS . TT (defaults: ON) -->
+  <div class="check-line" aria-label="Select parts to display">
+    <label><input type="checkbox" id="showHours" checked><span>HH</span></label>
+    <span class="sep">:</span>
+    <label><input type="checkbox" id="showMinutes" checked><span>MM</span></label>
+    <span class="sep">:</span>
+    <label><input type="checkbox" id="showSeconds" checked><span>SS</span></label>
+    <span class="sep">.</span>
+    <label><input type="checkbox" id="showTicks" checked><span>TT</span></label>
+  </div>
+</div>
+        
       <!-- TICK RATE -->
-      <h3 class="section-title">TICK RATE</h3>
-      <div class="row align-center">
+      <h1>TICK RATE</h1>
+      <div class="row center">
         <select id="tpsSelect">
-          <option>10</option><option>20</option><option>30</option><option selected>40</option>
-          <option>50</option><option>60</option><option>70</option><option>80</option>
-          <option>90</option><option>100</option>
+          <option>10</option><option>20</option><option>30</option>
+          <option selected>40 (Default)</option>
+          <option>50</option><option>60</option><option>70</option>
+          <option>80</option><option>90</option><option>100</option>
         </select>
-        <span class="muted">&nbsp;Ticks Per Second</span>
+        <span>&nbsp;Ticks Per Second</span>
+      </div>
+
+      <!-- STYLE (Prefix) -->
+      <h1>STYLE</h1>
+      <div class="row center">
+        <select id="styleSelect">
+          <option value="default" selected>Default</option>
+          <option value="time">Text</option>
+          <option value="icon">Icon</option>
+        </select>
+      </div>
+
+      <!-- CLOCK SIZE -->
+      <h1>CLOCK SIZE</h1>
+      <div class="row center">
+        <button id="sizePrev" class="chip">&lt;</button>
+        <span id="sizeLabel" class="size-label">3</span>
+        <button id="sizeNext" class="chip">&gt;</button>
       </div>
 
       <!-- TIMER DIRECTION -->
-      <h3 class="section-title">TIMER DIRECTION</h3>
-      <div class="row align-center">
+      <h1>TIMER DIRECTION</h1>
+      <div class="row center">
         <span>Count&nbsp;</span>
         <button id="directionBtn" class="chip">FROM</button>
         <span>&nbsp;</span>
-        <span id="directionTarget" class="target-time">00:09:59.00</span>
+        <span id="directionTarget" class="target-time">00:09:59.39</span>
         <span class="muted">&nbsp;(ends at <span id="directionEnds">00:00:00.00</span>)</span>
       </div>
 
-      <!-- BACKGROUND MUSIC (stored only) -->
-      <h3 class="section-title">BACKGROUND MUSIC</h3>
+      <!-- MUSIC URL (stored only) -->
+      <h1>BACKGROUND MUSIC</h1>
       <div class="row row-split">
-        <input type="url" id="musicUrlInput"
-               placeholder="Paste YouTube, Spotify, or direct audio URL…" />
+        <input type="url" id="musicUrlInput" placeholder="Paste YouTube, Spotify, or direct audio URL…"/>
         <button id="musicUrlSubmitBtn" class="setting-input">Submit</button>
       </div>
 
       <!-- HURRY UP -->
-      <h3 class="section-title">HURRY UP</h3>
+      <h1>HURRY UP</h1>
       <div class="row row-split">
         <select id="hurryUpMain"></select>
         <select id="hurryUpSub"></select>
       </div>
-      <div id="hurryUpDesc" class="muted tiny"></div>
+      <div id="hurryUpDesc" class="muted tiny center"></div>
 
-      <div class="row">
-        <label><input type="checkbox" id="disableFlash"> Disable red flash at 1:00</label>
+      <!-- FLASH -->
+      <h1>FLASH ON LAST MINUTE</h1>
+      <div class="row center">
+        <select id="flashMode">
+          <option value="nothing">Nothing</option>
+          <option value="prefix">Prefix</option>
+          <option value="time" selected>Time</option>
+          <option value="all">All</option>
+        </select>
       </div>
     </div>
   </div>

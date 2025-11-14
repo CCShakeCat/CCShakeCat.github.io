@@ -1,494 +1,638 @@
-// ======================= Timer (Standard) – Full Drop-in =======================
 (() => {
-  const $ = (id) => document.getElementById(id);
+  const $ = id => document.getElementById(id);
 
-  // Core UI
+  /* ---------- Core UI ---------- */
   const timerInput   = $('timerInput');
   const timerDisplay = $('timerDisplay');
   const startPauseBtn= $('startPauseBtn');
   const resetBtn     = $('resetBtn');
 
+  // Prefix
+  const prefixText   = $('prefixText');
+  const prefixIcon   = $('prefixIcon');
+
   // Modal
   const settingsBtn  = $('settingsBtn');
   const settingsModal= $('settingsModal');
   const closeSettings= $('closeSettings');
+  const modalCard    = $('modalCard');
 
-  // Show on clock
-  const showAuto=$('showAuto'), showHours=$('showHours'), showMinutes=$('showMinutes'),
-        showSeconds=$('showSeconds'), showTicks=$('showTicks');
+  // Show-on-clock
+  const showAuto     = $('showAuto');
+  const showHours    = $('showHours');
+  const showMinutes  = $('showMinutes');
+  const showSeconds  = $('showSeconds');
+  const showTicks    = $('showTicks');
 
-  // Tick rate
-  const tpsSelect = $('tpsSelect');
+  // Controls
+  const tpsSelect    = $('tpsSelect');
+  const styleSelect  = $('styleSelect');
+  const flashModeSel = $('flashMode');
+
+  // Size
+  const sizePrev     = $('sizePrev');
+  const sizeNext     = $('sizeNext');
+  const sizeLabel    = $('sizeLabel');
+
+  // Direction UI
+  const directionBtn = $('directionBtn');
+  const directionTarget = $('directionTarget');
+  const directionEnds   = $('directionEnds');
 
   // Music URL (store only)
-  const musicUrlInput=$('musicUrlInput'), musicUrlSubmit=$('musicUrlSubmitBtn');
-
-  // Hurry Up
-  const hurryUpMain=$('hurryUpMain'), hurryUpSub=$('hurryUpSub'),
-        hurryUpDesc=$('hurryUpDesc'), disableFlashCB=$('disableFlash');
+  const musicUrlInput  = $('musicUrlInput');
+  const musicUrlSubmit = $('musicUrlSubmitBtn');
 
   // Fonts
-  const fontSelect=$('fontSelect'), importFontBtn=$('importCustomFont'),
-        customFontInput=$('customFontFile'), customFontName=$('customFontName'),
-        customFontNotice=$('customFontNotice');
+  const fontSelect       = $('fontSelect');
+  const importFontBtn    = $('importCustomFont');
+  const customFontInput  = $('customFontFile');
+  const customFontName   = $('customFontName');
+  const customFontNotice = $('customFontNotice');
 
-  // Direction
-  const directionBtn=$('directionBtn'), directionTarget=$('directionTarget'), directionEnds=$('directionEnds');
+  // Hurry Up
+  const hurryUpMain    = $('hurryUpMain');
+  const hurryUpSub     = $('hurryUpSub');
+  const hurryUpDesc    = $('hurryUpDesc');
 
-  // ---------- State ----------
-  const LS_KEY='stdtimer:v6';
-  const DEFAULT_TPS=40;
-  const DEFAULT_TICKS=(9*60+59)*DEFAULT_TPS; // 09:59.00
+  /* ---------- Constants ---------- */
+  const LS_KEY = 'stdtimer:v10';
 
-  const st={
-    tickBase:DEFAULT_TPS,
-    initialTicks:DEFAULT_TICKS,
-    remainingTicks:DEFAULT_TICKS,
-    elapsedTicks:0,
-    running:false,
-    lastMs:0,
-    wasStarted:false,
+  const HURRY_DIR = './hurryup/';
+  const ICON_NORMAL = './icons/clock.png';
+  const ICON_FLASH  = './icons/clock_red.png';
 
-    huPlayed:false,
-    flashActive:false, flashOn:true, lastFlashToggleMs:0,
+  // Presets (keep names matching your files in ./hurryup/)
+  const hurryUpPresets = {
+    none:  { label:'None', sub:[{value:'',label:'No Hurry',desc:'No hurry up sound will play.'}] },
+    mario: { label:'Mario', sub:[
+      { value:'hurryup-smbnes', label:'Super Mario Bros - NES',    desc:'Last tick of 00:59' },
+      { value:'hurryup-smbgen', label:'Super Mario - Genesis',     desc:'Last tick of 00:59' },
+      { value:'hurryup-smb3',   label:'Super Mario Bros 3',        desc:'Last tick of 00:59' },
+      { value:'hurryup-smw',    label:'Super Mario World',         desc:'Last tick of 00:59' },
+      { value:'hurryup-nsmb',   label:'New Super Mario Bros',      desc:'Last tick of 00:59' },
+      { value:'hurryup-sm3d',   label:'Super Mario 3D Land',       desc:'Last tick of 00:59' },
+    ]},
+    soniclw:{ label:'Sonic Lost World', sub:[
+      { value:'hurryup-soniclw', label:'Sonic Lost World',         desc:'Last tick of 00:59' },
+    ]},
+    ggd:    { label:'Goose Goose Duck', sub:[
+      { value:'hurryup-ggdsabo_retro',     label:'Sabotage - Retro',     desc:'Last tick of 00:59' },
+      { value:'hurryup-ggdsabo_ship',      label:'Sabotage - Ship',      desc:'Last tick of 00:59' },
+      { value:'hurryup-ggdsabo_victorian', label:'Sabotage - Victorian', desc:'Last tick of 00:59' },
+    ]},
+  };
 
+  // Size mapping (vw)
+  const SIZE_VW = { 1:3.5, 2:5, 3:8, 4:14, 5:22 };
+
+  /* ---------- State ---------- */
+  const st = {
+    tickBase: 40,
+    initialTicks: 9*60*40 + 59*40 + 39,   // 09:59.39 @40 tps
+    remainingTicks: 0,
+    running: false,
+    lastMs: 0,
+
+    direction: 'from', // 'from' | 'to'
+
+    // display flags
     auto:false, showH:true, showM:true, showS:true, showT:true,
 
-    huKey:'none', huValue:'', huAudio:null, huPausedAt:0,
+    // style/flash
+    style:'default',          // default|time|icon
+    flashMode:'nothing',      // nothing|prefix|time|all
+    flashTimer:null,
 
-    disableFlash:false, musicUrl:'',
+    // size 1..5
+    size: 3,
 
-    fontMode:'default', customFontFamily:'',
+    // fonts
+    fontMode:'default',       // default|system|custom
+    customFontFamily:'',
 
-    direction:'from'
+    // music URL (not used for playback here)
+    musicUrl:'',
+
+    // hurry-up
+    huKey:'none',
+    huValue:'',
+    huAudio:null,
+    huPlayed:false,
+    huWasPaused:false,
   };
 
-  // ---------- Presets ----------
-  const hurryUpPresets={
-    none:{label:"None", sub:[{value:"",label:"No Hurry Up",desc:"No hurry up sound will play."}]},
-    ggd:{label:"Goose Goose Duck", sub:[
-      {value:"hurryup-ggdsabo_retro",label:"Goose Goose Duck Sabotage - Retro",desc:"Plays at 1m remaining"},
-      {value:"hurryup-ggdsabo_ship",label:"Goose Goose Duck Sabotage - Ship",desc:"Plays at 1m remaining, playing over music"},
-      {value:"hurryup-ggdsabo_victorian",label:"Goose Goose Duck Sabotage - Victorian",desc:"Plays at 1m remaining"}
-    ]},
-    soniclw:{label:"Sonic Lost World", sub:[{value:"hurryup-soniclw",label:"Sonic Lost World",desc:"Plays at 1m remaining"}]},
-    mario:{label:"Mario", sub:[
-      {value:"hurryup-smbnes",label:"Super Mario Bros - NES",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"},
-      {value:"hurryup-smbgen",label:"Super Mario - Genesis",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"},
-      {value:"hurryup-smb3",label:"Super Mario Bros 3",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"},
-      {value:"hurryup-smw",label:"Super Mario World",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"},
-      {value:"hurryup-nsmb",label:"New Super Mario Bros",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"},
-      {value:"hurryup-sm3d",label:"Super Mario 3D Land",desc:"Plays at 1m remaining, restarts music at 1.25x (if music used)"}
-    ]}
-  };
-  const HURRY_PATH='./hurryup/';
-  function syncMusic(_){ } function setMusicRate(_){ }
+  /* ---------- Utils ---------- */
+  const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+  const pad2  = n => String(n).padStart(2,'0');
 
-  // ---------- Utils ----------
-  const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
-  const pad2=(n)=>String(n).padStart(2,'0');
-
-  function convertTicksBase(absTicks,oldBase,newBase){
-    if(oldBase===newBase) return absTicks;
-    const sign=absTicks<0?-1:1; let a=Math.abs(absTicks);
-    const sec=Math.floor(a/oldBase), frac=a%oldBase;
-    return sign*(sec*newBase+Math.round(frac*newBase/oldBase));
-  }
-
-  function parseTimeToTicks(text,base){
+  function parseTimeToTicks(text, base=st.tickBase){
     const s=(text||'').trim(); if(!s) return 0;
     const parts=s.split(':'); let h=0,m=0,sec=0,tt=0;
     if(parts.length===3){ h=parseInt(parts[0],10)||0; m=parseInt(parts[1],10)||0; sec=parts[2]; }
-    else if(parts.length===2){ m=parseInt(parts[0],10)||0; sec=parts[1]; } else { sec=parts[0]; }
-    if(String(sec).includes('.')){ const [ss,ticks]=String(sec).split('.'); sec=parseInt(ss,10)||0; tt=clamp(parseInt(ticks,10)||0,0,base-1); }
+    else if(parts.length===2){ m=parseInt(parts[0],10)||0; sec=parts[1]; }
+    else { sec=parts[0]; }
+    if(String(sec).includes('.')){ const [ss,t]=String(sec).split('.'); sec=parseInt(ss,10)||0; tt=clamp(parseInt(t,10)||0,0,base-1); }
     else { sec=parseInt(sec,10)||0; tt=0; }
-    return ((h*3600+m*60+sec)*base)+tt;
+    return (h*3600+m*60+sec)*base+tt;
   }
 
-  function formatFromTicks(ticks,base=st.tickBase){
+  // format to string
+  function formatFromTicks(ticks, base=st.tickBase){
     let t=Math.max(0,ticks);
-    const totalSeconds=Math.floor(t/base), tickPart=t%base;
-    const h=Math.floor(totalSeconds/3600);
-    const m=Math.floor((totalSeconds%3600)/60);
-    const s=totalSeconds%60;
+    const totalSec = Math.floor(t/base);
+    const tickPart = t%base;
+    const h = Math.floor(totalSec/3600);
+    const m = Math.floor((totalSec%3600)/60);
+    const s = totalSec%60;
 
     let sh,sm,ss,stt;
-    if(st.auto){ sh=totalSeconds>=3600; sm=sh||totalSeconds>=60; ss=true; stt=!!st.showT; }
+    if(st.auto){ sh=totalSec>=3600; sm=sh||totalSec>=60; ss=true; stt=!!st.showT; }
     else { sh=!!st.showH; sm=!!st.showM; ss=!!st.showS; stt=!!st.showT; }
 
-    const parts=[];
-    if(sh) parts.push(pad2(h));
-    if(sm) parts.push(sh?pad2(m):String(m));
-    if(ss) parts.push((sh||sm)?pad2(s):String(s));
-    let out=parts.join(':');
+    const arr=[];
+    if(sh) arr.push(pad2(h));
+    if(sm) arr.push(sh?pad2(m):String(m));
+    if(ss) arr.push((sh||sm)?pad2(s):String(s));
+
+    let out=arr.join(':');
     if(stt) out+=(out?'.':'')+pad2(tickPart);
     if(!out) out=`${pad2(m)}:${pad2(s)}.${pad2(tickPart)}`;
     return out;
   }
 
-  function toMonoHTML(text){
-    return Array.from(text, ch=>{
-      const sep=(ch===':'||ch==='.')?' monochar--sep':'';
-      const safe=ch===' ' ? '&nbsp;' : ch;
-      return `<span class="monochar${sep}">${safe}</span>`;
-    }).join('');
+  // Render with monochar spans so variable fonts stay aligned
+  function renderMono(text){
+    const frag = document.createDocumentFragment();
+    for(const ch of text){
+      const span = document.createElement('span');
+      if(ch === ':' || ch === '.'){ span.className='monochar monochar--sep'; span.textContent = ch; }
+      else { span.className='monochar'; span.textContent = ch; }
+      frag.appendChild(span);
+    }
+    timerDisplay.replaceChildren(frag);
   }
 
-  // ---------- Persist ----------
+  // Remaining time (for HU/flash logic)
+  const timeLeftTicks = () =>
+    st.direction==='from' ? st.remainingTicks : Math.max(0, st.initialTicks - st.remainingTicks);
+
+  function render(){
+    const showTicks = st.direction==='from' ? st.remainingTicks : st.remainingTicks; // same
+    renderMono(formatFromTicks(showTicks));
+  }
+
+  /* ---------- Size ---------- */
+  function applySize(){
+    const vw = SIZE_VW[st.size] || 8;
+    document.documentElement.style.setProperty('--clock-vw', `${vw}vw`);
+    if(sizeLabel) sizeLabel.textContent = String(st.size);
+    save();
+  }
+  const sizeDelta = d => { st.size = clamp(st.size + d,1,5); applySize(); };
+
+  /* ---------- Style / Prefix ---------- */
+  function setPrefixIconVisible(show){ if(prefixIcon) prefixIcon.style.display = show ? 'block' : 'none'; }
+  function setPrefixIconFlashing(active){ if(prefixIcon) prefixIcon.src = active ? ICON_FLASH : ICON_NORMAL; }
+
+  function applyStyle(){
+    prefixText.style.display='none';
+    setPrefixIconVisible(false);
+    setPrefixIconFlashing(false);
+
+    if(st.style==='time'){
+      prefixText.style.display='block';
+    }else if(st.style==='icon'){
+      setPrefixIconVisible(true);
+    }
+  }
+
+  /* ---------- Flash (3 FPS) ---------- */
+  function stopFlash(){
+    if(st.flashTimer){ clearInterval(st.flashTimer); st.flashTimer=null; }
+    timerDisplay.classList.remove('flash-on');
+    prefixText.classList.remove('flash-on');
+    setPrefixIconFlashing(false);
+  }
+  function startFlashIfNeeded(){
+    if(st.flashMode==='nothing' || st.flashTimer) return;
+    let on=false;
+    st.flashTimer=setInterval(()=>{
+      on=!on;
+      const tf=st.flashMode;
+
+      const flashTime  = (tf==='time' || tf==='all') && on;
+      const flashText  = (tf==='prefix' || tf==='all') && on && st.style==='time';
+      const flashIcon  = (tf==='prefix' || tf==='all') && on && st.style==='icon';
+
+      timerDisplay.classList.toggle('flash-on', flashTime);
+      prefixText.classList.toggle('flash-on', flashText);
+      setPrefixIconFlashing(flashIcon);
+    },333);
+  }
+
+  /* ---------- Hurry-Up ---------- */
+  function can(type){ try{ return (new Audio()).canPlayType(type); }catch{ return ''; } }
+  const srcFor = id => id ? `${HURRY_DIR}${id}.${can('audio/mpeg')?'mp3':'ogg'}` : null;
+  function stopHU(){ if(st.huAudio){ try{ st.huAudio.pause(); }catch{} } }
+  async function doHurryUp(){
+    if(!st.huValue) return;
+    stopHU();
+    const a = new Audio(srcFor(st.huValue));
+    a.preload='auto';
+    st.huAudio=a;
+    try{ await a.play(); }catch{}
+  }
+
+  function populateHurryUp(){
+    // main
+    hurryUpMain.replaceChildren();
+    for(const key of Object.keys(hurryUpPresets)){
+      const opt=document.createElement('option');
+      opt.value=key; opt.textContent=hurryUpPresets[key].label;
+      hurryUpMain.appendChild(opt);
+    }
+    // sub
+    function fillSub(k,keepValue){
+      hurryUpSub.replaceChildren();
+      const group = hurryUpPresets[k] || hurryUpPresets.none;
+      for(const s of group.sub){
+        const o=document.createElement('option');
+        o.value=s.value; o.textContent=s.label; hurryUpSub.appendChild(o);
+      }
+      if(keepValue){
+        const found=[...hurryUpSub.options].some(o=>o.value===st.huValue);
+        if(found) hurryUpSub.value=st.huValue;
+      }else{
+        hurryUpSub.selectedIndex=0;
+        st.huValue=hurryUpSub.value || '';
+      }
+      hurryUpDesc.textContent = (group.sub.find(x=>x.value===hurryUpSub.value)?.desc) || 'No hurry up sound will play.';
+    }
+    hurryUpMain.addEventListener('change', ()=>{
+      st.huKey=hurryUpMain.value; fillSub(st.huKey,false); save();
+    });
+    hurryUpSub.addEventListener('change', ()=>{
+      st.huValue=hurryUpSub.value;
+      const group=hurryUpPresets[st.huKey]||hurryUpPresets.none;
+      hurryUpDesc.textContent=(group.sub.find(x=>x.value===st.huValue)?.desc)||'';
+      save();
+    });
+
+    // initial
+    hurryUpMain.value = st.huKey || 'none';
+    fillSub(hurryUpMain.value, true);
+  }
+
+  /* ---------- Persistence ---------- */
   function save(){
     try{
       localStorage.setItem(LS_KEY, JSON.stringify({
-        tickBase:st.tickBase, initial:st.initialTicks, remaining:st.remainingTicks, elapsed:st.elapsedTicks,
-        direction:st.direction, auto:!!st.auto, showH:!!st.showH, showM:!!st.showM, showS:!!st.showS, showT:!!st.showT,
-        disableFlash:!!st.disableFlash, musicUrl:st.musicUrl||'', huMode:st.huKey, huStyle:st.huValue,
-        fontMode:st.fontMode, customFontFamily:st.customFontFamily
+        tickBase:st.tickBase, initial:st.initialTicks, remaining:st.remainingTicks, direction:st.direction,
+        auto:st.auto, showH:st.showH, showM:st.showM, showS:st.showS, showT:st.showT,
+        style:st.style, flashMode:st.flashMode, size:st.size,
+        fontMode:st.fontMode, customFontFamily:st.customFontFamily,
+        musicUrl:st.musicUrl, huKey:st.huKey, huValue:st.huValue
       }));
     }catch{}
   }
-
   function load(){
     try{
-      const raw=localStorage.getItem(LS_KEY); if(!raw) return; const d=JSON.parse(raw);
-      st.tickBase=clamp(parseInt(d.tickBase||DEFAULT_TPS,10),10,100);
-      st.initialTicks=clamp(parseInt(d.initial||DEFAULT_TICKS,10),0,Number.MAX_SAFE_INTEGER);
-      st.remainingTicks=clamp(parseInt(d.remaining ?? st.initialTicks,10),0,Number.MAX_SAFE_INTEGER);
-      st.elapsedTicks=clamp(parseInt(d.elapsed ?? 0,10),0,Number.MAX_SAFE_INTEGER);
-      st.direction=(d.direction==='to')?'to':'from';
+      const d = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      st.tickBase = clamp(parseInt(d.tickBase ?? 40,10),10,100);
+      st.initialTicks = clamp(parseInt(d.initial ?? st.initialTicks,10),0,Number.MAX_SAFE_INTEGER);
+      st.remainingTicks = clamp(parseInt(d.remaining ?? st.initialTicks,10),0,Number.MAX_SAFE_INTEGER);
+      st.direction = (d.direction==='to'?'to':'from');
+
       st.auto=!!d.auto; st.showH=!!d.showH; st.showM=!!d.showM; st.showS=!!d.showS; st.showT=!!d.showT;
-      st.disableFlash=!!d.disableFlash; st.musicUrl=d.musicUrl||'';
-      st.huKey=d.huMode||'none'; st.huValue=d.huStyle||'';
+      st.style=d.style||'default'; st.flashMode=d.flashMode||'nothing';
+      st.size = clamp(parseInt(d.size||3,10),1,5);
+
       st.fontMode=d.fontMode||'default'; st.customFontFamily=d.customFontFamily||'';
+      st.musicUrl=d.musicUrl||'';
+      st.huKey=d.huKey||'none'; st.huValue=d.huValue||'';
     }catch{}
   }
 
-  // ---------- Fonts (IndexedDB) ----------
-  const DB_NAME='stdtimer-fonts', DB_STORE='fonts', FONT_KEY='customFont';
-  let currentFontFace=null, currentFontURL=null;
-
-  function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB_NAME,1);
-    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE); };
-    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
-  async function idbGet(key){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readonly'), os=tx.objectStore(DB_STORE), rq=os.get(key); rq.onsuccess=()=>res(rq.result??null); rq.onerror=()=>rej(rq.error); }); }
-  async function idbSet(key,val){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readwrite'), os=tx.objectStore(DB_STORE), rq=os.put(val,key); rq.onsuccess=()=>res(true); rq.onerror=()=>rej(rq.error); }); }
-
-  async function restoreCustomFontFromDB(){
-    try{
-      const rec=await idbGet(FONT_KEY); if(!rec||!rec.bytes) return false;
-      try{ if(currentFontFace){document.fonts.delete(currentFontFace); currentFontFace=null;} if(currentFontURL){URL.revokeObjectURL(currentFontURL); currentFontURL=null;} }catch{}
-      const blob=new Blob([rec.bytes],{type:rec.type||'font/ttf'}), url=URL.createObjectURL(blob), fam=rec.family||'CustomFont';
-      const face=new FontFace(fam,`url(${url})`); await face.load(); document.fonts.add(face);
-      currentFontFace=face; currentFontURL=url; st.customFontFamily=fam; return true;
-    }catch{ return false; }
-  }
-  async function persistCustomFontFile(file){
-    const bytes=await file.arrayBuffer(); const family=file.name.replace(/\.(ttf|otf|woff2?|)$/i,'');
-    await idbSet(FONT_KEY,{bytes:bytes,family,type:file.type||'font/ttf'}); return family;
-  }
-  function applyFontChoice(mode,familyName=''){
-    st.fontMode=mode;
-    if(mode==='system'){ document.body.style.fontFamily="'Segoe UI', Roboto, Arial, sans-serif"; }
-    else if(mode==='custom'&&familyName){ document.body.style.fontFamily=`'${familyName}', 'Segoe UI', Roboto, Arial, sans-serif`; st.customFontFamily=familyName; }
-    else{ document.body.style.fontFamily="'FancyCatPX', 'Segoe UI', Roboto, Arial, sans-serif"; st.customFontFamily=''; }
-    save();
-  }
-  window.addEventListener('beforeunload',()=>{ try{ if(currentFontURL) URL.revokeObjectURL(currentFontURL); }catch{} });
-
-  // ---------- Hurry-Up UI ----------
-  function populateHurryUpFromPresets(initialKey='none', initialVal=''){
-    if(!hurryUpMain||!hurryUpSub) return;
-
-    hurryUpMain.innerHTML='';
-    Object.entries(hurryUpPresets).forEach(([key,grp])=>{
-      const o=document.createElement('option'); o.value=key; o.textContent=grp.label; hurryUpMain.appendChild(o);
-    });
-
-    function fillSubs(key,val){
-      const group=hurryUpPresets[key]||hurryUpPresets.none;
-      hurryUpSub.innerHTML='';
-      group.sub.forEach(s=>{ const o=document.createElement('option'); o.value=s.value; o.textContent=s.label; hurryUpSub.appendChild(o); });
-      const choose=group.sub.find(s=>s.value===val)||group.sub[0];
-      hurryUpSub.value=choose.value; if(hurryUpDesc) hurryUpDesc.textContent=choose.desc||'';
-      st.huKey=key; st.huValue=choose.value;
-      hurryUpSub.style.display=(key==='none')?'none':'';
-      save();
-    }
-
-    const validKey=(initialKey in hurryUpPresets)?initialKey:'none';
-    hurryUpMain.value=validKey; fillSubs(validKey, initialVal);
-    hurryUpMain.addEventListener('change',()=>fillSubs(hurryUpMain.value,''));
-    hurryUpSub.addEventListener('change',()=>{
-      const group=hurryUpPresets[hurryUpMain.value]||hurryUpPresets.none;
-      const sel=group.sub.find(s=>s.value===hurryUpSub.value)||group.sub[0];
-      if(hurryUpDesc) hurryUpDesc.textContent=sel.desc||'';
-      st.huKey=hurryUpMain.value; st.huValue=hurryUpSub.value; save();
-    });
+  /* ---------- Direction UI & minute boundary ---------- */
+  function updateDirectionUI(){
+    directionBtn.textContent = st.direction.toUpperCase();
+    directionTarget.textContent = formatFromTicks(st.initialTicks);
+    directionEnds.textContent = (st.direction==='from') ? '00:00:00.00' : formatFromTicks(st.initialTicks);
   }
 
-  // ---------- Hurry-Up playback ----------
-  function stopHurrySfx(){ if(st.huAudio){ try{st.huAudio.pause();}catch{} st.huAudio=null; st.huPausedAt=0; } }
-  function pauseHurrySfx(){ if(st.huAudio && !st.huAudio.paused){ try{ st.huPausedAt=st.huAudio.currentTime||0; st.huAudio.pause(); }catch{} } }
-  function resumeHurrySfx(){ if(st.huAudio && st.huPausedAt){ try{ st.huAudio.currentTime=st.huPausedAt; st.huAudio.play().catch(()=>{}); st.huPausedAt=0; }catch{} } }
-  function playHurryUpSfx(basename){
-    return new Promise((resolve)=>{
-      if(!basename){ resolve(); return; }
-      stopHurrySfx();
-      const a=new Audio(); a.preload='auto'; a.src=HURRY_PATH+basename+'.mp3';
-      a.onended=()=>{ st.huAudio=null; resolve(); };
-      a.onerror=()=>{ const b=new Audio(); b.preload='auto'; b.src=HURRY_PATH+basename+'.ogg';
-        b.onended=()=>{ st.huAudio=null; resolve(); }; b.onerror=()=>{ st.huAudio=null; resolve(); };
-        st.huAudio=b; const p2=b.play(); if(p2&&p2.catch) p2.catch(()=>resolve()); };
-      st.huAudio=a; const p=a.play(); if(p&&p.catch) p.catch(()=>resolve());
-    });
-  }
-  async function triggerHurryUp(){ if(!st.huValue) return; syncMusic('pause'); await playHurryUpSfx(st.huValue); setMusicRate(1.0); syncMusic('play'); }
+  function syncMinuteState(){
+    const trigger = st.tickBase*60 - 1; // last tick of 00:59
+    const left = timeLeftTicks();
 
-  // ---------- 1:00 flash (3 FPS) ----------
-  function updateFlash(nowMs){
-    if(st.disableFlash){ st.flashActive=false; return; }
-    const remaining=(st.direction==='from')?st.remainingTicks:Math.max(0, st.initialTicks-st.elapsedTicks);
-    const remainingSec=Math.floor(remaining/st.tickBase);
-    st.flashActive=remainingSec<=60 && remaining>0;
-    if(!st.flashActive) return;
-    if((nowMs-st.lastFlashToggleMs)>=333){ st.flashOn=!st.flashOn; st.lastFlashToggleMs=nowMs; }
-  }
-  function applyFlashColor(){ timerDisplay.style.color = st.flashActive ? (st.flashOn ? '#FFFFFF' : '#FF0000') : ''; }
-
-  // ---------- Direction ----------
-  function setDirection(dir){
-    if(st.running) return;
-    dir=(dir==='to')?'to':'from';
-    if(dir==='to'){ st.elapsedTicks=Math.max(0, st.initialTicks-st.remainingTicks); }
-    else { st.remainingTicks=Math.max(0, st.initialTicks-st.elapsedTicks); }
-    st.direction=dir; st.huPlayed=false; st.flashActive=false; st.flashOn=true;
-    if(directionBtn) directionBtn.textContent = dir==='from' ? 'FROM' : 'TO';
-    if(directionTarget) directionTarget.textContent = formatFromTicks(st.initialTicks);
-    if(directionEnds) directionEnds.textContent = formatFromTicks(dir==='from'?0:st.initialTicks);
-    save(); render();
+    if(!st.huPlayed && left === trigger){ st.huPlayed=true; doHurryUp(); }
+    if(left <= trigger) startFlashIfNeeded(); else stopFlash();
   }
 
-  // ---------- Timer core ----------
+  /* ---------- Engine ---------- */
   function start(){
     if(st.running) return;
-    if(st.direction==='from' && !st.wasStarted){
-      if(st.remainingTicks>0 && (st.remainingTicks%st.tickBase)===0){
-        st.remainingTicks=Math.max(0, st.remainingTicks-1); // “last tick” start
-      }
-    }
-    st.wasStarted=true; st.running=true; st.lastMs=performance.now();
-    startPauseBtn.textContent='Pause'; timerInput.style.display='none';
-    syncMusic('play'); tick();
-    resumeHurrySfx();
+    if(st.direction==='from' && st.remainingTicks<=0) return;
+    if(st.direction==='to'   && st.remainingTicks>=st.initialTicks) return;
+
+    st.running=true; st.lastMs=performance.now();
+    startPauseBtn.textContent='Pause';
+
+    if(st.huAudio && st.huWasPaused){ try{ st.huAudio.play(); }catch{} st.huWasPaused=false; }
+
+    syncMinuteState();
+    tick();
   }
-  function pause(){ if(!st.running) return; st.running=false; startPauseBtn.textContent='Start'; syncMusic('pause'); pauseHurrySfx(); }
+  function pause(){
+    if(!st.running) return;
+    st.running=false; startPauseBtn.textContent='Start';
+    if(st.huAudio && !st.huAudio.paused){ try{ st.huAudio.pause(); }catch{} st.huWasPaused=true; }
+    stopFlash();
+  }
   function reset(){
     pause();
-    if(st.direction==='from'){ st.remainingTicks=st.initialTicks; st.elapsedTicks=0; }
-    else { st.elapsedTicks=0; st.remainingTicks=st.initialTicks; }
-    st.wasStarted=false; st.huPlayed=false; st.flashActive=false; st.flashOn=true;
-    stopHurrySfx(); setMusicRate(1.0); save(); render();
+    st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
+    st.huPlayed=false; st.huWasPaused=false;
+    stopHU(); stopFlash(); render(); save();
   }
 
   function tick(){
     if(!st.running) return;
     const now=performance.now();
-    const elapsedMs=now-st.lastMs;
-    const addTicks=Math.floor(elapsedMs*st.tickBase/1000);
-    if(addTicks>0){
-      st.lastMs += addTicks*1000/st.tickBase;
-      if(st.direction==='from'){ st.remainingTicks=Math.max(0, st.remainingTicks-addTicks); }
-      else { st.elapsedTicks=Math.min(st.initialTicks, st.elapsedTicks+addTicks); }
-
-      const remain=(st.direction==='from')?st.remainingTicks:Math.max(0, st.initialTicks-st.elapsedTicks);
-      if(!st.huPlayed && Math.floor(remain/st.tickBase)<=60 && remain>0){ st.huPlayed=true; triggerHurryUp(); }
-
-      if((st.direction==='from' && st.remainingTicks<=0) || (st.direction==='to' && st.elapsedTicks>=st.initialTicks)){
-        if(st.direction==='from') st.remainingTicks=0; else st.elapsedTicks=st.initialTicks; pause();
+    const elapsed=now - st.lastMs;
+    const ticks = Math.floor(elapsed * st.tickBase / 1000);
+    if(ticks>0){
+      if(st.direction==='from'){
+        st.remainingTicks = Math.max(0, st.remainingTicks - ticks);
+      }else{
+        st.remainingTicks = Math.min(st.initialTicks, st.remainingTicks + ticks);
       }
-      render();
+      st.lastMs += ticks * 1000 / st.tickBase;
+
+      syncMinuteState();
+
+      if(st.direction==='from' ? st.remainingTicks<=0 : st.remainingTicks>=st.initialTicks){
+        pause();
+      }
+      render(); save();
     }
-    updateFlash(now); applyFlashColor();
     requestAnimationFrame(tick);
   }
 
-  // ---------- Render ----------
-  function render(){
-    const showTicks=(st.direction==='from')?st.remainingTicks:st.elapsedTicks;
-    timerDisplay.innerHTML = toMonoHTML(formatFromTicks(showTicks));
-    if(directionTarget) directionTarget.textContent = formatFromTicks(st.initialTicks);
-    if(directionEnds) directionEnds.textContent = formatFromTicks(st.direction==='from'?0:st.initialTicks);
+  /* ---------- Edit overlay ---------- */
+  function atStartState(){
+    return st.direction==='from'
+      ? st.remainingTicks===st.initialTicks
+      : st.remainingTicks===0;
   }
-
-  // ---------- Edit overlay ----------
-  function canEnterEdit(){ if(st.running) return false; return st.direction==='from'? st.remainingTicks===st.initialTicks : st.elapsedTicks===0; }
-  function enterEdit(){ if(!canEnterEdit()) return; timerInput.value=formatFromTicks(st.initialTicks); timerInput.style.display='block'; timerInput.focus(); timerInput.select(); }
+  function placeInputAboveDisplay(){
+    // center over display
+    const r = timerDisplay.getBoundingClientRect();
+    timerInput.style.left = `${window.scrollX + r.left + r.width/2}px`;
+    timerInput.style.top  = `${window.scrollY + r.top  + r.height/2}px`;
+    timerInput.style.transform = 'translate(-50%,-50%)';
+  }
+  function enterEdit(){
+    if(st.running) return;
+    if(!atStartState()) return;
+    timerInput.value = formatFromTicks(st.initialTicks);
+    placeInputAboveDisplay();
+    timerInput.style.display='block';
+    timerInput.focus(); timerInput.select();
+  }
   function commitEdit(){
-    const newTicks=parseTimeToTicks(timerInput.value, st.tickBase);
-    if(Number.isFinite(newTicks)&&newTicks>=0){
-      st.initialTicks=newTicks; st.remainingTicks=newTicks; st.elapsedTicks=0; st.wasStarted=false;
-      st.huPlayed=false; st.flashActive=false; st.flashOn=true; setMusicRate(1.0); save(); render();
+    const nv=parseTimeToTicks(timerInput.value);
+    if(Number.isFinite(nv) && nv>=0){
+      st.initialTicks=nv; st.huPlayed=false; stopFlash();
+      st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
+      updateDirectionUI(); save(); render();
     }
     timerInput.style.display='none';
   }
 
-  // ---------- Events ----------
-  startPauseBtn?.addEventListener('click', ()=> (st.running?pause():start()));
-  resetBtn?.addEventListener('click', reset);
+  /* ---------- Fonts ---------- */
+  function applyClockFont(mode){
+    st.fontMode = mode;
+    let fam = "FancyCatPX, system-ui, 'Segoe UI', Arial, sans-serif"; // Default fixed
+    if(mode==='system'){
+      const ua = navigator.userAgent || '';
+      if(/Windows|Xbox/i.test(ua)) fam = "SystemWin, 'Segoe UI', system-ui, Arial, sans-serif";
+      else if(/Android/i.test(ua)) fam = "SystemAndroid, Roboto, system-ui, Arial, sans-serif";
+      else if(/Mac OS X|iPhone|iPad/i.test(ua)) fam = "SystemApple, -apple-system, system-ui, Arial, sans-serif";
+      else fam = "system-ui, 'Segoe UI', Arial, sans-serif";
+    }else if(mode==='custom' && st.customFontFamily){
+      fam = `'${st.customFontFamily}', system-ui, 'Segoe UI', Arial, sans-serif`;
+    }
+    document.documentElement.style.setProperty('--clock-font', fam);
+    save();
+  }
 
-  timerDisplay?.addEventListener('click', enterEdit);
-  timerInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') commitEdit(); if(e.key==='Escape') timerInput.style.display='none'; });
-  timerInput?.addEventListener('blur', commitEdit);
+  // load custom font file
+  importFontBtn?.addEventListener('click', ()=> customFontInput?.click());
+  customFontInput?.addEventListener('change', ()=>{
+    const f = customFontInput.files?.[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    const family = `UserFont_${Date.now()}`;
+    const face = new FontFace(family, `url(${url})`);
+    face.load().then(ff=>{
+      document.fonts.add(ff);
+      st.customFontFamily = family;
+      customFontName.textContent = `Loaded: ${f.name}`;
+      customFontNotice.style.display='block';
+      applyClockFont('custom');
+      fontSelect.value='custom';
+    }).catch(()=>{ customFontName.textContent='Failed to load font.'; });
+  });
+
+  fontSelect.addEventListener('change', ()=> applyClockFont(fontSelect.value));
+
+  /* ---------- Events ---------- */
+  startPauseBtn.addEventListener('click', ()=> (st.running?pause():start()));
+  resetBtn.addEventListener('click', reset);
+
+  timerDisplay.addEventListener('click', enterEdit);
+  timerInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter') commitEdit();
+    if(e.key==='Escape'){ timerInput.style.display='none'; }
+  });
+  window.addEventListener('resize', ()=>{ if(timerInput.style.display==='block') placeInputAboveDisplay(); });
+  timerInput.addEventListener('blur', commitEdit);
 
   // Modal open/close
-  function openModal(el,show){ if(!el) return; if(show){ el.classList.add('show'); el.setAttribute('aria-hidden','false'); } else { el.classList.remove('show'); el.setAttribute('aria-hidden','true'); } }
-  settingsBtn?.addEventListener('click', ()=>openModal(settingsModal,true));
-  closeSettings?.addEventListener('click', ()=>openModal(settingsModal,false));
-  settingsModal?.addEventListener('click', (e)=>{ if(e.target===settingsModal) openModal(settingsModal,false); });
+  const openModal = show => {
+    settingsModal.classList.toggle('show', !!show);
+    settingsModal.setAttribute('aria-hidden', show?'false':'true');
+  };
+  settingsBtn.addEventListener('click', ()=>openModal(true));
+  closeSettings.addEventListener('click', ()=>openModal(false));
+  // click outside card closes
+  settingsModal.addEventListener('mousedown', e=>{
+    if(e.target === settingsModal) openModal(false);
+  });
 
-  // Show-on-clock toggles
-  function syncAutoUI(){
-    const auto=!!st.auto;
-    [showHours,showMinutes,showSeconds].forEach(cb=>{
-      if(!cb) return; cb.disabled=auto;
-      const lbl=cb.closest('label'); if(lbl) lbl.classList.toggle('disabled-checkbox', auto);
-    });
-  }
-  showAuto?.addEventListener('change', ()=>{ st.auto=!!showAuto.checked; syncAutoUI(); save(); render(); });
-  showHours?.addEventListener('change', ()=>{ st.showH=!!showHours.checked; save(); render(); });
-  showMinutes?.addEventListener('change', ()=>{ st.showM=!!showMinutes.checked; save(); render(); });
-  showSeconds?.addEventListener('change', ()=>{ st.showS=!!showSeconds.checked; save(); render(); });
-  showTicks?.addEventListener('change', ()=>{ st.showT=!!showTicks.checked; save(); render(); });
+  // Show-on-clock
+  showAuto.addEventListener('change',()=>{ st.auto=!!showAuto.checked; save(); render(); });
+  showHours.addEventListener('change',()=>{ st.showH=!!showHours.checked; save(); render(); });
+  showMinutes.addEventListener('change',()=>{ st.showM=!!showMinutes.checked; save(); render(); });
+  showSeconds.addEventListener('change',()=>{ st.showS=!!showSeconds.checked; save(); render(); });
+  showTicks.addEventListener('change',()=>{ st.showT=!!showTicks.checked; save(); render(); });
 
   // TPS
-  function applyTPSChange(){
-    const newBase=clamp(parseInt(tpsSelect.value||st.tickBase,10),10,100);
-    const oldBase=st.tickBase; if(newBase===oldBase) return;
-    st.initialTicks=convertTicksBase(st.initialTicks,oldBase,newBase);
-    st.remainingTicks=convertTicksBase(st.remainingTicks,oldBase,newBase);
-    st.elapsedTicks=convertTicksBase(st.elapsedTicks,oldBase,newBase);
-    st.tickBase=newBase; st.lastMs=performance.now(); st.huPlayed=false; render(); save();
-  }
-  tpsSelect?.addEventListener('change', applyTPSChange);
+  tpsSelect.addEventListener('change', ()=>{
+    const newBase = clamp(parseInt(tpsSelect.value,10),10,100);
+    if(newBase===st.tickBase) return;
+    const secInit = st.initialTicks / st.tickBase;
+    const secNow  = st.remainingTicks / st.tickBase;
+    st.tickBase = newBase;
+    st.initialTicks = Math.round(secInit*newBase);
+    st.remainingTicks= Math.round(secNow*newBase);
+    stopFlash(); save(); render(); updateDirectionUI(); syncMinuteState();
+  });
 
-  // Music (store only)
-  musicUrlSubmit?.addEventListener('click', ()=>{ st.musicUrl=(musicUrlInput?.value||'').trim(); save(); });
+  // Size
+  sizePrev.addEventListener('click', ()=> sizeDelta(-1));
+  sizeNext.addEventListener('click', ()=> sizeDelta(+1));
 
-  // Flash disable
-  disableFlashCB?.addEventListener('change', ()=>{ st.disableFlash=!!disableFlashCB.checked; save(); });
+  // Style + Flash
+  styleSelect.addEventListener('change', ()=>{ st.style=styleSelect.value; applyStyle(); save(); });
+  flashModeSel.addEventListener('change', ()=>{ st.flashMode=flashModeSel.value; stopFlash(); syncMinuteState(); save(); });
 
   // Direction toggle
-  directionBtn?.addEventListener('click', ()=> setDirection(st.direction==='from' ? 'to' : 'from'));
+  directionBtn.addEventListener('click', ()=>{
+    if(st.running) return;
+    st.direction = (st.direction==='from') ? 'to' : 'from';
+    st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
+    st.huPlayed=false; stopFlash();
+    updateDirectionUI(); render(); save();
+  });
 
-  // ---------- Make the modal draggable by empty dark areas ----------
-  installDraggableModal(settingsModal);
+  // Music (store only)
+  musicUrlSubmit.addEventListener('click', ()=>{
+    st.musicUrl=(musicUrlInput.value||'').trim(); save();
+  });
 
-  // ---------- Init ----------
+  /* ---------- Init ---------- */
+  /* ---------- Init ---------- */
+  if(timerInput && timerInput.value){ st.initialTicks = parseTimeToTicks(timerInput.value, st.tickBase); }
   load();
-  if(tpsSelect) tpsSelect.value=String(st.tickBase);
-  if(disableFlashCB) disableFlashCB.checked=st.disableFlash;
-  if(showAuto) showAuto.checked=st.auto;
-  if(showHours) showHours.checked=st.showH;
-  if(showMinutes) showMinutes.checked=st.showM;
-  if(showSeconds) showSeconds.checked=st.showS;
-  if(showTicks) showTicks.checked=st.showT;
-  syncAutoUI();
 
-  if(directionBtn) directionBtn.textContent = st.direction==='from' ? 'FROM' : 'TO';
-  if(directionTarget) directionTarget.textContent = formatFromTicks(st.initialTicks);
-  if(directionEnds) directionEnds.textContent = formatFromTicks(st.direction==='from'?0:st.initialTicks);
+  // If first run, put remaining according to direction
+  if(st.direction==='from' && st.remainingTicks===0) st.remainingTicks=st.initialTicks;
+  if(st.direction==='to'   && st.remainingTicks>st.initialTicks) st.remainingTicks=0;
 
-  if(timerInput && timerInput.value){
-    st.initialTicks = parseTimeToTicks(timerInput.value, st.tickBase);
-    st.remainingTicks = st.initialTicks; st.elapsedTicks=0;
-  }
+  // UI reflect state
+  showAuto.checked = !!st.auto;
+  showHours.checked= !!st.showH;
+  showMinutes.checked=!!st.showM;
+  showSeconds.checked=!!st.showS;
+  showTicks.checked= !!st.showT;
 
-  (async ()=>{
-    const hadCustom=await restoreCustomFontFromDB();
-    if(st.fontMode==='custom' && !hadCustom) st.fontMode='default';
-    applyFontChoice(st.fontMode, st.customFontFamily);
-    if(fontSelect) fontSelect.value=st.fontMode;
-    if(st.fontMode==='custom' && customFontName && st.customFontFamily){
-      customFontName.textContent=`Loaded: ${st.customFontFamily}`;
-      if(customFontNotice) customFontNotice.style.display='block';
-    }
-    fontSelect?.addEventListener('change', ()=>{
-      const v=fontSelect.value;
-      if(v==='custom'){
-        if(!st.customFontFamily){ importFontBtn?.click(); return; }
-        applyFontChoice('custom', st.customFontFamily);
-      }else{ applyFontChoice(v); }
-    });
-    importFontBtn?.addEventListener('click', ()=> customFontInput?.click());
-    customFontInput?.addEventListener('change', async ()=>{
-      const f=customFontInput.files?.[0]; if(!f) return;
-      try{
-        const fam=await persistCustomFontFile(f);
-        const bytes=await f.arrayBuffer();
-        const url=URL.createObjectURL(new Blob([bytes],{type:f.type||'font/ttf'}));
-        const face=new FontFace(fam,`url(${url})`); await face.load(); document.fonts.add(face);
-        try{ if(currentFontFace) document.fonts.delete(currentFontFace); if(currentFontURL) URL.revokeObjectURL(currentFontURL); }catch{}
-        currentFontFace=face; currentFontURL=url;
-        st.customFontFamily=fam;
-        if(customFontName) customFontName.textContent=`Loaded: ${fam}`;
-        if(customFontNotice) customFontNotice.style.display='block';
-        if(fontSelect) fontSelect.value='custom';
-        applyFontChoice('custom', fam);
-      }catch(e){ console.error(e); }
-    });
-  })();
+  tpsSelect.value = String(st.tickBase);
+  styleSelect.value = st.style;
+  flashModeSel.value = st.flashMode;
 
-  populateHurryUpFromPresets(st.huKey||'none', st.huValue||'');
+  applySize();
+  applyStyle();
+  updateDirectionUI();
+  populateHurryUp();
+  applyClockFont(st.fontMode || 'default');
   render();
 })();
 
-// ---- Draggable by empty dark areas (mouse + touch) ----
-function installDraggableModal(modalEl){
-  if(!modalEl) return;
-  const panel=modalEl.querySelector('.modal-content');
-  if(!panel) return;
+// ===== Draggable modal (all black areas, mouse + touch, preserves position) =====
+(() => {
+  const modalCard = document.getElementById('modalCard');
+  if (!modalCard) return;
 
-  let down=false, startX=0, startY=0, baseDx=0, baseDy=0;
+  // Save/restore modal position so it doesn't re-center after the first drag
+  const POS_KEY = 'stdtimer:modalPos';
+  const savePos = (x, y) => {
+    try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch {}
+  };
+  const loadPos = () => {
+    try {
+      const d = JSON.parse(localStorage.getItem(POS_KEY) || '{}');
+      if (Number.isFinite(d.x) && Number.isFinite(d.y)) {
+        modalCard.style.setProperty('--modal-x', `${d.x}px`);
+        modalCard.style.setProperty('--modal-y', `${d.y}px`);
+      }
+    } catch {}
+  };
+  loadPos();
 
-  function isInteractive(t){ return !!(t.closest('input,select,textarea,button,a,label')); }
-  function xy(e){ return e.touches ? {x:e.touches[0].clientX, y:e.touches[0].clientY} : {x:e.clientX, y:e.clientY}; }
+  let dragging = false;
+  let startX = 0, startY = 0, baseX = 0, baseY = 0;
 
-  function onDown(e){
-    if(e.type==='mousedown' && e.button!==0) return;
-    if(isInteractive(e.target)) return;
-    down=true;
-    const p=xy(e); startX=p.x; startY=p.y;
-    const cs=getComputedStyle(panel);
-    baseDx=parseFloat(cs.getPropertyValue('--modal-dx'))||0;
-    baseDy=parseFloat(cs.getPropertyValue('--modal-dy'))||0;
-    panel.classList.add('modal-dragging');
-    window.addEventListener('mousemove', onMove, {passive:false});
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('touchmove', onMove, {passive:false});
-    window.addEventListener('touchend', onUp);
-  }
-  function onMove(e){
-    if(!down) return;
-    const p=xy(e);
-    panel.style.setProperty('--modal-dx', (baseDx + (p.x-startX)) + 'px');
-    panel.style.setProperty('--modal-dy', (baseDy + (p.y-startY)) + 'px');
-    e.preventDefault();
-  }
-  function onUp(){
-    down=false; panel.classList.remove('modal-dragging');
-    window.removeEventListener('mousemove', onMove);
-    window.removeEventListener('mouseup', onUp);
-    window.removeEventListener('touchmove', onMove);
-    window.removeEventListener('touchend', onUp);
-  }
-  panel.addEventListener('mousedown', onDown);
-  panel.addEventListener('touchstart', onDown, {passive:true});
+  const getVarPx = (name, fallback) => {
+    const v = getComputedStyle(modalCard).getPropertyValue(name).trim();
+    if (!v) return fallback;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
 
-  // Reset position when the modal opens
-  const obs=new MutationObserver(()=>{
-    if(modalEl.classList.contains('show')){
-      panel.style.setProperty('--modal-dx','0px');
-      panel.style.setProperty('--modal-dy','0px');
-      panel.style.setProperty('--modal-top','6vh');
+  // Anything interactive should NOT start a drag
+  const INTERACTIVE_SEL =
+    'input, select, textarea, button, label, a, [contenteditable="true"], .nodrag';
+
+  // Start dragging only if pressed directly on a “black area” (modal background)
+  const maybeStartDrag = (ev) => {
+    // If the exact target or any of its ancestors is interactive, do not drag
+    if (ev.target.closest(INTERACTIVE_SEL)) return;
+
+    // Only drag when the press is *on* the modal card (its black background / padding),
+    // not on the backdrop (if you have one)
+    const host = ev.target.closest('#modalCard');
+    if (!host) return;
+
+    dragging = true;
+
+    const p = ev instanceof PointerEvent ? ev : (ev.touches ? ev.touches[0] : ev);
+    startX = p.clientX; startY = p.clientY;
+    baseX = getVarPx('--modal-x', 0);
+    baseY = getVarPx('--modal-y', 0);
+
+    // helpful cursor feedback
+    modalCard.classList.add('dragging');
+
+    // Keep receiving events even if pointer leaves the card
+    if (ev.target.setPointerCapture && 'pointerId' in ev) {
+      try { ev.target.setPointerCapture(ev.pointerId); } catch {}
     }
-  });
-  obs.observe(modalEl,{attributes:true, attributeFilter:['class']});
-}
+
+    ev.preventDefault();
+    ev.stopPropagation();
+  };
+
+  const onMove = (ev) => {
+    if (!dragging) return;
+    const p = ev instanceof PointerEvent ? ev : (ev.touches ? ev.touches[0] : ev);
+    const dx = p.clientX - startX;
+    const dy = p.clientY - startY;
+    const x = baseX + dx;
+    const y = baseY + dy;
+    modalCard.style.setProperty('--modal-x', `${x}px`);
+    modalCard.style.setProperty('--modal-y', `${y}px`);
+    ev.preventDefault();
+  };
+
+  const endDrag = (ev) => {
+    if (!dragging) return;
+    dragging = false;
+    modalCard.classList.remove('dragging');
+
+    const x = getVarPx('--modal-x', 0);
+    const y = getVarPx('--modal-y', 0);
+    savePos(x, y);
+
+    if (ev && ev.target && ev.target.releasePointerCapture && ev.pointerId != null) {
+      try { ev.target.releasePointerCapture(ev.pointerId); } catch {}
+    }
+  };
+
+  // Start drag from ANY black area (non-interactive region) of the modal
+  modalCard.addEventListener('pointerdown', maybeStartDrag);
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+})();
