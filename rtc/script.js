@@ -77,7 +77,6 @@ function getHourAMPM(d) {
  * Helper for faded time-of-day color and label.
  */
 function getTimeOfDayAndColor(date = new Date()) {
-  // Define key times and their colors/labels
   const keyTimes = [
     { hour: 0,   label: "Midnight", color: "#020204" },
     { hour: 6,   label: "Sunrise",  color: "#c46744" },
@@ -87,14 +86,11 @@ function getTimeOfDayAndColor(date = new Date()) {
     { hour: 21,  label: "Night",    color: "#3c4a5f" },
     { hour: 24,  label: "Midnight", color: "#020204" }
   ];
-  // Current hour as decimal
   const h = date.getHours() + date.getMinutes()/60 + date.getSeconds()/3600;
-  // Find which interval we're in
   let i = 0;
   while (i < keyTimes.length - 1 && h >= keyTimes[i + 1].hour) i++;
   const prev = keyTimes[i];
   const next = keyTimes[i + 1];
-  // Interpolate color
   const t = (h - prev.hour) / (next.hour - prev.hour);
   function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
   function hexToRgb(hex) {
@@ -112,14 +108,9 @@ function getTimeOfDayAndColor(date = new Date()) {
   const rgb1 = hexToRgb(prev.color), rgb2 = hexToRgb(next.color);
   const faded = rgb1.map((c,i) => lerp(c, rgb2[i], t));
   const color = rgbToHex(faded);
-  // Find label for the current interval (snap to current or next if closer)
   let timeOfDay = prev.label;
   if (t >= 0.5 && i < keyTimes.length - 2) timeOfDay = next.label;
-  return {
-    hour: h,
-    label: timeOfDay,
-    color
-  };
+  return { hour: h, label: timeOfDay, color };
 }
 
 //---------Clock Modes Below--------//
@@ -153,15 +144,10 @@ const clockModes = {
       const m = d.getMinutes();
       const s = d.getSeconds();
       const ms = d.getMilliseconds();
-
-      // True milliseconds (first 3), fake 7 more for animation
       let fractional = ms.toString().padStart(3, '0');
       let extra = '';
-      for (let i = 0; i < 7; ++i) {
-        extra += Math.floor(Math.random() * 10).toString();
-      }
+      for (let i = 0; i < 7; ++i) extra += Math.floor(Math.random() * 10).toString();
       fractional += extra;
-
       let out = [pad(h), pad(m), pad(s)].join(":") + "." + fractional;
       return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
@@ -173,124 +159,84 @@ const clockModes = {
       return String(unix).split('').map(ch => `<span class="monochar">${ch}</span>`).join('');
     },
   },
-"Laggy": {
-  name: "Laggy",
-  formatter: (d) => {
-    updateLaggyOffset("Laggy", d);
-
-    laggyFrameCounter = (laggyFrameCounter + 1) % 5;
-    if (laggyFrameCounter === 0) {
-      let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      lastLaggyRenderedTick = (Math.floor(currTick / 5) * 5) % 40;
-
-      // Freeze a new random ones digit
-      laggyFrozenOnesDigit = Math.floor(Math.random() * 10);
+  "Laggy": {
+    name: "Laggy",
+    formatter: (d) => {
+      updateLaggyOffset("Laggy", d);
+      laggyFrameCounter = (laggyFrameCounter + 1) % 5;
+      if (laggyFrameCounter === 0) {
+        let currTick = Math.floor(d.getMilliseconds() / msPerTick);
+        lastLaggyRenderedTick = (Math.floor(currTick / 5) * 5) % 40;
+        laggyFrozenOnesDigit = Math.floor(Math.random() * 10);
+      }
+      const tens = Math.floor(lastLaggyRenderedTick / 10) * 10;
+      const noisyTick = (tens + laggyFrozenOnesDigit) % 40;
+      const { h } = getHourAMPM(d);
+      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") +
+                "." + noisyTick.toString().padStart(2, "0");
+      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
-
-    const tens = Math.floor(lastLaggyRenderedTick / 10) * 10;
-    const noisyTick = (tens + laggyFrozenOnesDigit) % 40;
-
-    const { h } = getHourAMPM(d);
-    let out = [
-      pad(h),
-      pad(d.getMinutes()),
-      pad(d.getSeconds())
-    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
-
-    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
-  }
-},
-
-"Badly Laggy": {
-  name: "Badly Laggy",
-  formatter: (d) => {
-    updateLaggyOffset("Badly Laggy", d);
-
-    badlyLaggyFrameCounter++;
-    if (badlyLaggyFrameCounter >= badlyLaggyFrameInterval) {
-      let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      lastBadlyLaggyRenderedTick = (Math.floor(currTick / 10) * 10) % 40;
-
-      // Freeze a new random ones digit
-      badlyFrozenOnesDigit = Math.floor(Math.random() * 10);
-
-      badlyLaggyFrameCounter = 0;
-      badlyLaggyFrameInterval = (badlyLaggyFrameInterval === 5) ? 6 : 5;
+  },
+  "Badly Laggy": {
+    name: "Badly Laggy",
+    formatter: (d) => {
+      updateLaggyOffset("Badly Laggy", d);
+      badlyLaggyFrameCounter++;
+      if (badlyLaggyFrameCounter >= badlyLaggyFrameInterval) {
+        let currTick = Math.floor(d.getMilliseconds() / msPerTick);
+        lastBadlyLaggyRenderedTick = (Math.floor(currTick / 10) * 10) % 40;
+        badlyFrozenOnesDigit = Math.floor(Math.random() * 10);
+        badlyLaggyFrameCounter = 0;
+        badlyLaggyFrameInterval = (badlyLaggyFrameInterval === 5) ? 6 : 5;
+      }
+      const tens = Math.floor(lastBadlyLaggyRenderedTick / 10) * 10;
+      const noisyTick = (tens + badlyFrozenOnesDigit) % 40;
+      const { h } = getHourAMPM(d);
+      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") +
+                "." + noisyTick.toString().padStart(2, "0");
+      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
-
-    const tens = Math.floor(lastBadlyLaggyRenderedTick / 10) * 10;
-    const noisyTick = (tens + badlyFrozenOnesDigit) % 40;
-
-    const { h } = getHourAMPM(d);
-    let out = [
-      pad(h),
-      pad(d.getMinutes()),
-      pad(d.getSeconds())
-    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
-
-    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
-  }
-},
-"Horrendously Laggy": {
-  name: "Horrendously Laggy",
-  formatter: (d) => {
-    updateLaggyOffset("Horrendously Laggy", d);
-
-    horrendousFrameCounter++;
-    if (horrendousFrameCounter >= horrendousFrameInterval) {
-      let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      lastHorrendousRenderedTick = (Math.floor(currTick / 20) * 20) % 40;
-
-      // Freeze a new random ones digit
-      horrendousFrozenOnesDigit = Math.floor(Math.random() * 10);
-
-      horrendousFrameCounter = 0;
-      horrendousFrameInterval = (horrendousFrameInterval === 11) ? 12 : 11;
+  },
+  "Horrendously Laggy": {
+    name: "Horrendously Laggy",
+    formatter: (d) => {
+      updateLaggyOffset("Horrendously Laggy", d);
+      horrendousFrameCounter++;
+      if (horrendousFrameCounter >= horrendousFrameInterval) {
+        let currTick = Math.floor(d.getMilliseconds() / msPerTick);
+        lastHorrendousRenderedTick = (Math.floor(currTick / 20) * 20) % 40;
+        horrendousFrozenOnesDigit = Math.floor(Math.random() * 10);
+        horrendousFrameCounter = 0;
+        horrendousFrameInterval = (horrendousFrameInterval === 11) ? 12 : 11;
+      }
+      const tens = Math.floor(lastHorrendousRenderedTick / 10) * 10;
+      const noisyTick = (tens + horrendousFrozenOnesDigit) % 40;
+      const { h } = getHourAMPM(d);
+      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") +
+                "." + noisyTick.toString().padStart(2, "0");
+      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
-
-    const tens = Math.floor(lastHorrendousRenderedTick / 10) * 10;
-    const noisyTick = (tens + horrendousFrozenOnesDigit) % 40;
-
-    const { h } = getHourAMPM(d);
-    let out = [
-      pad(h),
-      pad(d.getMinutes()),
-      pad(d.getSeconds())
-    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
-
-    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
-  }
-},
-"Max Laggy": {
-  name: "Max Laggy",
-  formatter: (d) => {
-    updateLaggyOffset("Max Laggy", d);
-
-    maxLaggyFrameCounter++;
-    if (maxLaggyFrameCounter >= 40) { // Full second (assuming 25ms per tick)
-      let currTick = Math.floor(d.getMilliseconds() / msPerTick);
-      lastMaxLaggyRenderedTick = (Math.floor(currTick / 40) * 40) % 40;
-
-      // Freeze a new random ones digit
-      maxLaggyFrozenOnesDigit = Math.floor(Math.random() * 10);
-
-      maxLaggyFrameCounter = 0;
+  },
+  "Max Laggy": {
+    name: "Max Laggy",
+    formatter: (d) => {
+      updateLaggyOffset("Max Laggy", d);
+      maxLaggyFrameCounter++;
+      if (maxLaggyFrameCounter >= 40) {
+        let currTick = Math.floor(d.getMilliseconds() / msPerTick);
+        lastMaxLaggyRenderedTick = (Math.floor(currTick / 40) * 40) % 40;
+        maxLaggyFrozenOnesDigit = Math.floor(Math.random() * 10);
+        maxLaggyFrameCounter = 0;
+      }
+      const tens = Math.floor(lastMaxLaggyRenderedTick / 10) * 10;
+      const noisyTick = (tens + maxLaggyFrozenOnesDigit) % 40;
+      const { h } = getHourAMPM(d);
+      let out = [pad(h), pad(d.getMinutes()), pad(d.getSeconds())].join(":") +
+                "." + noisyTick.toString().padStart(2, "0");
+      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
-
-    const tens = Math.floor(lastMaxLaggyRenderedTick / 10) * 10;
-    const noisyTick = (tens + maxLaggyFrozenOnesDigit) % 40;
-
-    const { h } = getHourAMPM(d);
-    let out = [
-      pad(h),
-      pad(d.getMinutes()),
-      pad(d.getSeconds())
-    ].join(":") + "." + noisyTick.toString().padStart(2, "0");
-
-    return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
-  }
-},
-    "Upside Down": {
+  },
+  "Upside Down": {
     name: "⮀ uʍop ǝpᴉsdn",
     formatter: (d) => {
       const { h } = getHourAMPM(d);
@@ -301,7 +247,9 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
         out += "." + msTick.toString().padStart(2, '0');
       }
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      return `<span style="display:inline-block;transform:rotate(180deg);">` +
+        [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
+      `</span>`;
     }
   },
   "Backwards": {
@@ -326,7 +274,7 @@ const clockModes = {
       if (showTicks) out += "." + Math.floor(ms / msPerTick).toString().padStart(2, '0');
       return `<span style="display:inline-block;transform:scaleX(-1);">` +
         [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
-        `</span>`;
+      `</span>`;
     }
   },
   "esreveR": {
@@ -340,7 +288,6 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
         out += "." + msTick.toString().padStart(2, '0');
       }
-      // Reverse the string, but keep the formatting (e.g., 23:59:59.39 -> 93.95.95:32)
       let reversed = out.split('').reverse().join('');
       return [...reversed].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
@@ -348,7 +295,6 @@ const clockModes = {
   "Session Timer": {
     name: "Session Timer",
     formatter: (() => {
-      // Store session start time in a closure (resets on page refresh)
       const sessionStart = Date.now();
       return () => {
         const elapsed = Date.now() - sessionStart;
@@ -591,10 +537,22 @@ const clockModes = {
         showSeconds ? pad(s) : null
       ].filter(x=>x!==null).join(":");
       if (showTicks) out += "." + Math.floor(ms / msPerTick).toString().padStart(2, '0');
+
       let outputHtml = '';
       let extraHtml = '';
+
+      // --- 11:19 — Birthday easter egg ---
+      if (h === 11 && m === 19) {
+        outputHtml = [
+          `<span class="monochar">🎂</span>`,
+          `<span class="monochar"> </span>`,
+          `<span class="monochar">:</span>`,
+          `<span class="monochar">🍰</span>`,
+          `<span class="monochar">🥳</span>`
+        ].join('');
+      }
       // 2:40 - pixelation
-      if (h === 2 && m === 40) {
+      else if (h === 2 && m === 40) {
         outputHtml = `<span style="image-rendering: pixelated; filter: blur(1.2px);">${[...out].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
       }
       // 4:03 - 403 forbidden
@@ -613,33 +571,27 @@ const clockModes = {
       }
       // 6:09 - remove zeros in hours and minutes only, but keep zeros in seconds (ones place) and ticks
       else if (((!use24 && ampm === "AM" && h === 6 && m === 9) || (use24 && h === 6 && m === 9))) {
-        // Split out into main time and ticks (if any)
         let [mainTime, tickPart] = out.split(".");
         let parts = mainTime.split(":");
         let processed = parts.map((part, idx) => {
-          if (idx === 0 || idx === 1) { // hours or minutes
-            // Hide all zeros in hours and minutes
+          if (idx === 0 || idx === 1) {
             return [...part].map(ch =>
               ch === "0"
                 ? `<span class="monochar" style="opacity:0;">0</span>`
                 : `<span class="monochar">${ch}</span>`
             ).join('');
           } else {
-            // For seconds and anything after, keep zeros visible
             return [...part].map(ch =>
               `<span class="monochar">${ch}</span>`
             ).join('');
           }
         }).join('<span class="monochar">:</span>');
-
-        // Add ticks (the part after a dot) if present
         if (typeof tickPart !== "undefined") {
           let tickHtml = [...tickPart].map(ch =>
             `<span class="monochar">${ch}</span>`
           ).join('');
           processed += `<span class="monochar">.</span>${tickHtml}`;
         }
-
         outputHtml = processed;
         extraHtml = `<div style="font-size:0.7em;opacity:0.5;">heh, nice</div>`;
       }
@@ -674,22 +626,19 @@ const clockModes = {
             ).join('');
           }
         }).join('<span class="monochar">:</span>');
-
         if (typeof tickPart !== "undefined") {
           let tickHtml = [...tickPart].map(ch =>
             `<span class="monochar">${ch}</span>`
           ).join('');
           processed += `<span class="monochar">.</span>${tickHtml}`;
         }
-
-        // Flip the whole clock and the message together, with the message below
         outputHtml = `
           <div style="display: inline-block; transform: scaleX(-1); text-align: center;">
             <div>${processed}</div>
             <div style="font-size:0.7em;opacity:0.5;margin-top:0.5em;">heh, nice</div>
           </div>
         `;
-        extraHtml = ""; // Do not use extraHtml for this effect
+        extraHtml = "";
       }
       // 9:11 - 🛩️🏢🏢
       else if (((!use24 && ampm === "AM" && h === 9 && m === 11) || (use24 && h === 9 && m === 11))) {
@@ -715,6 +664,7 @@ const clockModes = {
           return `<span class="monochar" style="color:hsl(${hue},100%,60%);">${ch}</span>`;
         }).join('');
       }
+
       if (!outputHtml && !extraHtml) extraHtml = `<div style="font-size:0.7em;opacity:0.5;">Crazycolors mode</div>`;
       return outputHtml + extraHtml;
     }
@@ -752,246 +702,233 @@ function formatClock(d) {
 }
 
 function detectOS() {
-    const ua = navigator.userAgent;
-    if (/Windows/i.test(ua)) return "windows";
-    if (/Android/i.test(ua)) return "android";
-    if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
-    return "windows";
+  const ua = navigator.userAgent;
+  if (/Windows/i.test(ua)) return "windows";
+  if (/Android/i.test(ua)) return "android";
+  if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
+  return "windows";
 }
 function applyFontFamily(fontType) {
-    const sw = document.querySelector('.stopwatch');
-    let fontStack;
-    if (fontType === 'custom') {
-        const fontData = localStorage.getItem('customFontData');
-        const fontName = (localStorage.getItem('customFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
-        if (fontData && fontName) {
-            if (!document.getElementById('customFontStyle')) {
-                const style = document.createElement('style');
-                style.id = 'customFontStyle';
-                style.innerHTML = `
-                  @font-face {
-                    font-family: '${fontName}';
-                    src: url(${fontData});
-                  }
-                `;
-                document.head.appendChild(style);
-            }
-            fontStack = `'${fontName}', sans-serif`;
-        } else {
-            fontStack = "'FancyCatPX', sans-serif";
-        }
-    } else if (fontType === 'system') {
-        const os = detectOS();
-        if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
-        else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
-        else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  const sw = document.querySelector('.stopwatch');
+  let fontStack;
+  if (fontType === 'custom') {
+    const fontData = localStorage.getItem('customFontData');
+    const fontName = (localStorage.getItem('customFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
+    if (fontData && fontName) {
+      if (!document.getElementById('customFontStyle')) {
+        const style = document.createElement('style');
+        style.id = 'customFontStyle';
+        style.innerHTML = `
+          @font-face { font-family: '${fontName}'; src: url(${fontData}); }
+        `;
+        document.head.appendChild(style);
+      }
+      fontStack = `'${fontName}', sans-serif`;
     } else {
-        fontStack = "'FancyCatPX', sans-serif";
+      fontStack = "'FancyCatPX', sans-serif";
     }
-    if (sw) sw.style.fontFamily = fontStack;
-    localStorage.setItem('stopwatchFont', fontStack);
+  } else if (fontType === 'system') {
+    const os = detectOS();
+    if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
+    else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
+    else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  } else {
+    fontStack = "'FancyCatPX', sans-serif";
+  }
+  if (sw) sw.style.fontFamily = fontStack;
+  localStorage.setItem('stopwatchFont', fontStack);
 }
 function applyAndSaveFont(type) {
-    if (type === 'system') {
-        applyFontFamily('system');
-        localStorage.setItem('stopwatchFont', 'system');
-    } else {
-        applyFontFamily('default');
-        localStorage.setItem('stopwatchFont', 'FancyCatPX');
-    }
+  if (type === 'system') {
+    applyFontFamily('system');
+    localStorage.setItem('stopwatchFont', 'system');
+  } else {
+    applyFontFamily('default');
+    localStorage.setItem('stopwatchFont', 'FancyCatPX');
+  }
 }
 
 function updateShowHideCheckboxUI() {
-    document.getElementById('showSeconds').checked = showSeconds;
-    document.getElementById('showTicks').checked = showTicks;
-    const ampmRow = document.getElementById('showAMPMRow');
-    if (!is24Hour && showHours) {
-        ampmRow.style.display = '';
-    } else {
-        ampmRow.style.display = 'none';
-    }
+  document.getElementById('showSeconds').checked = showSeconds;
+  document.getElementById('showTicks').checked = showTicks;
+  const ampmRow = document.getElementById('showAMPMRow');
+  if (!is24Hour && showHours) ampmRow.style.display = '';
+  else ampmRow.style.display = 'none';
 }
 function saveShowHideState() {
-    localStorage.setItem('showSeconds', showSeconds ? "1" : "0");
-    localStorage.setItem('showTicks', showTicks ? "1" : "0");
-    localStorage.setItem('is24Hour', is24Hour ? "1" : "0");
-    localStorage.setItem('showAMPM', showAMPM ? "1" : "0");
-    localStorage.setItem('clockMode', clockMode);
+  localStorage.setItem('showSeconds', showSeconds ? "1" : "0");
+  localStorage.setItem('showTicks', showTicks ? "1" : "0");
+  localStorage.setItem('is24Hour', is24Hour ? "1" : "0");
+  localStorage.setItem('showAMPM', showAMPM ? "1" : "0");
+  localStorage.setItem('clockMode', clockMode);
 }
 
 function updateDisplay() {
-    const display = document.getElementById('display');
-    if (!display) return;
-    display.innerHTML = formatClock(new Date());
-    // Rotate 180° for Upside Down mode, else reset
-    if (clockMode === "Upside Down") {
-        display.style.transform = "rotate(180deg)";
-    } else if (clockMode === "Backwards") {
-        display.style.transform = "";
-    } else if (clockMode === "Flipped") {
-        display.style.transform = "";
-    } else {
-        display.style.transform = "";
-    }
+  const display = document.getElementById('display');
+  if (!display) return;
+  display.innerHTML = formatClock(new Date());
+  if (clockMode === "Upside Down") {
+    display.style.transform = "rotate(180deg)";
+  } else if (clockMode === "Backwards") {
+    display.style.transform = "";
+  } else if (clockMode === "Flipped") {
+    display.style.transform = "";
+  } else {
+    display.style.transform = "";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const os = detectOS();
-    document.body.setAttribute('data-os', os);
+  const os = detectOS();
+  document.body.setAttribute('data-os', os);
 
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const fontSelect = document.getElementById('fontSelect');
-    const closeSettings = document.getElementById('closeSettings');
-    const importCustomFont = document.getElementById('importCustomFont');
-    const customFontFile = document.getElementById('customFontFile');
-    const customFontNameElem = document.getElementById('customFontName');
-    const customFontNotice = document.getElementById('customFontNotice');
-    const clock24Checkbox = document.getElementById('is24Hour');
-    const showAMPMCheckbox = document.getElementById('showAMPM');
-    const clockModeSelect = document.getElementById('clockModeSelect');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsModal = document.getElementById('settingsModal');
+  const fontSelect = document.getElementById('fontSelect');
+  const closeSettings = document.getElementById('closeSettings');
+  const importCustomFont = document.getElementById('importCustomFont');
+  const customFontFile = document.getElementById('customFontFile');
+  const customFontNameElem = document.getElementById('customFontName');
+  const customFontNotice = document.getElementById('customFontNotice');
+  const clock24Checkbox = document.getElementById('is24Hour');
+  const showAMPMCheckbox = document.getElementById('showAMPM');
+  const clockModeSelect = document.getElementById('clockModeSelect');
 
-    function populateClockModes() {
-      clockModeSelect.innerHTML = '';
-      Object.keys(clockModes).forEach(mode => {
-        const option = document.createElement('option');
-        option.value = mode;
-        // Remove HTML tags for <option> text, since most browsers don't render them in <option>
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = clockModes[mode].name;
-        option.textContent = tempDiv.textContent;
-        // For Upside Down and Backwards, try to visually flip the option using Unicode or upside down text
-        if (mode === "Upside Down") {
-          option.textContent = "uʍop ǝpᴉsdn ⥃";
-        }
-        if (mode === "Backwards") {
-          option.textContent = "⮀ ƨbяɒwʞɔɒꓭ";
-        }
-        clockModeSelect.appendChild(option);
-      });
-      clockModeSelect.value = clockMode;
+  function populateClockModes() {
+    clockModeSelect.innerHTML = '';
+    Object.keys(clockModes).forEach(mode => {
+      const option = document.createElement('option');
+      option.value = mode;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = clockModes[mode].name;
+      option.textContent = tempDiv.textContent;
+      if (mode === "Upside Down") option.textContent = "uʍop ǝpᴉsdn ⥃";
+      if (mode === "Backwards")  option.textContent = "⮀ ƨbяɒwʞɔɒꓭ";
+      clockModeSelect.appendChild(option);
+    });
+    clockModeSelect.value = clockMode;
+  }
+
+  settingsBtn.addEventListener('click', () => {
+    fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
+    customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
+    settingsModal.classList.add('show');
+    updateCustomFontNotice();
+    updateShowHideCheckboxUI();
+    clock24Checkbox.checked = is24Hour;
+    showAMPMCheckbox.checked = showAMPM;
+    populateClockModes();
+  });
+  closeSettings.addEventListener('click', () => {
+    settingsModal.classList.remove('show');
+  });
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+      settingsModal.classList.remove('show');
     }
+  });
 
-    settingsBtn.addEventListener('click', () => {
-        fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
-        customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
-        settingsModal.classList.add('show');
-        updateCustomFontNotice();
-        updateShowHideCheckboxUI();
-        clock24Checkbox.checked = is24Hour;
-        showAMPMCheckbox.checked = showAMPM;
-        populateClockModes();
-    });
-    closeSettings.addEventListener('click', () => {
-        settingsModal.classList.remove('show');
-    });
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            settingsModal.classList.remove('show');
-        }
-    });
+  importCustomFont.addEventListener('click', () => {
+    customFontFile.value = '';
+    customFontFile.click();
+  });
+  customFontFile.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    customFontNameElem.textContent = file.name;
+    localStorage.setItem('stopwatchFontType', 'custom');
+    localStorage.setItem('customFontName', file.name);
 
-    importCustomFont.addEventListener('click', () => {
-        customFontFile.value = '';
-        customFontFile.click();
-    });
-    customFontFile.addEventListener('change', function() {
-        const file = this.files[0];
-        if (!file) return;
-        customFontNameElem.textContent = file.name;
-        localStorage.setItem('stopwatchFontType', 'custom');
-        localStorage.setItem('customFontName', file.name);
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const fontData = e.target.result;
+      localStorage.setItem('customFontData', fontData);
+      localStorage.setItem('stopwatchFont', file.name.replace(/\.[^/.]+$/, ""));
+      applyFontFamily('custom');
+    };
+    reader.readAsDataURL(file);
+    fontSelect.value = 'custom';
+    updateCustomFontNotice();
+  });
+  fontSelect.addEventListener('change', function() {
+    localStorage.setItem('stopwatchFontType', this.value);
+    if (this.value === 'custom') {
+      applyFontFamily('custom');
+      customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
+    } else {
+      customFontNameElem.textContent = '';
+      applyAndSaveFont(this.value);
+    }
+    updateCustomFontNotice();
+  });
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const fontData = e.target.result;
-            localStorage.setItem('customFontData', fontData);
-            localStorage.setItem('stopwatchFont', file.name.replace(/\.[^/.]+$/, ""));
-            applyFontFamily('custom');
-        };
-        reader.readAsDataURL(file);
-        fontSelect.value = 'custom';
-        updateCustomFontNotice();
-    });
-    fontSelect.addEventListener('change', function() {
-        localStorage.setItem('stopwatchFontType', this.value);
-        if (this.value === 'custom') {
-            applyFontFamily('custom');
-            customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
-        } else {
-            customFontNameElem.textContent = '';
-            applyAndSaveFont(this.value);
-        }
-        updateCustomFontNotice();
-    });
+  clockModeSelect.addEventListener('change', function() {
+    clockMode = this.value;
+    saveShowHideState();
+    updateDisplay();
+    setClockInterval();
+    notifyLaggyModeSwitch(clockMode);
+  });
 
-    clockModeSelect.addEventListener('change', function() {
-      clockMode = this.value;
+  function updateCustomFontNotice() {
+    if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
+      customFontNotice.style.display = '';
+    } else {
+      customFontNotice.style.display = 'none';
+    }
+  }
+
+  if (savedFontType === 'custom') {
+    applyFontFamily('custom');
+  } else {
+    applyFontFamily(savedFontType);
+  }
+
+  ["showSeconds","showTicks"].forEach(id => {
+    document.getElementById(id).addEventListener('change', function() {
+      if (id === "showSeconds") showSeconds = this.checked;
+      if (id === "showTicks") showTicks = this.checked;
       saveShowHideState();
+      updateShowHideCheckboxUI();
       updateDisplay();
       setClockInterval();
-      notifyLaggyModeSwitch(clockMode);
     });
+  });
 
-    function updateCustomFontNotice() {
-        if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
-            customFontNotice.style.display = '';
-        } else {
-            customFontNotice.style.display = 'none';
-        }
-    }
-
-    if (savedFontType === 'custom') {
-        applyFontFamily('custom');
-    } else {
-        applyFontFamily(savedFontType);
-    }
-
-    ["showSeconds","showTicks"].forEach(id => {
-        document.getElementById(id).addEventListener('change', function() {
-            if (id === "showSeconds") showSeconds = this.checked;
-            if (id === "showTicks") showTicks = this.checked;
-            saveShowHideState();
-            updateShowHideCheckboxUI();
-            updateDisplay();
-            setClockInterval();
-        });
-    });
-
-    clock24Checkbox.addEventListener('change', function() {
-        is24Hour = this.checked;
-        saveShowHideState();
-        updateShowHideCheckboxUI();
-        updateDisplay();
-    });
-
-    showAMPMCheckbox.addEventListener('change', function() {
-        showAMPM = this.checked;
-        saveShowHideState();
-        updateDisplay();
-    });
-
-    populateClockModes();
+  clock24Checkbox.addEventListener('change', function() {
+    is24Hour = this.checked;
+    saveShowHideState();
     updateShowHideCheckboxUI();
     updateDisplay();
+  });
 
-    let interval = null;
-    function setClockInterval() {
-        if (interval) clearInterval(interval);
-        if (clockMode === "*Veryyyyyy* Accurate Clock [23:59:59.9999999999]") {
-            interval = setInterval(updateDisplay, 1); // as fast as possible (1 ms)
-        } else if (
-            clockMode === "Laggy" ||
-            clockMode === "Badly Laggy" ||
-            clockMode === "Horrendously Laggy" ||
-            clockMode === "Max Laggy"
-        ) {
-            interval = setInterval(updateDisplay, msPerTick); // tick-based
-        } else if (showTicks) {
-            interval = setInterval(updateDisplay, msPerTick);
-        } else {
-            interval = setInterval(updateDisplay, 1000);
-        }
+  showAMPMCheckbox.addEventListener('change', function() {
+    showAMPM = this.checked;
+    saveShowHideState();
+    updateDisplay();
+  });
+
+  populateClockModes();
+  updateShowHideCheckboxUI();
+  updateDisplay();
+
+  let interval = null;
+  function setClockInterval() {
+    if (interval) clearInterval(interval);
+    if (clockMode === "*Veryyyyyy* Accurate Clock [23:59:59.9999999999]") {
+      interval = setInterval(updateDisplay, 1);
+    } else if (
+      clockMode === "Laggy" ||
+      clockMode === "Badly Laggy" ||
+      clockMode === "Horrendously Laggy" ||
+      clockMode === "Max Laggy"
+    ) {
+      interval = setInterval(updateDisplay, msPerTick);
+    } else if (showTicks) {
+      interval = setInterval(updateDisplay, msPerTick);
+    } else {
+      interval = setInterval(updateDisplay, 1000);
     }
-    setClockInterval();
+  }
+  setClockInterval();
 });
