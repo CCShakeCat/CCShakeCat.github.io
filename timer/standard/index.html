@@ -23,7 +23,7 @@
     </div>
 
     <!-- Editable overlay -->
-    <input id="timerInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Set timer (HH:MM:SS.TT)" />
+    <input id="timerInput" type="text" autocomplete="off" spellcheck="false" aria-label="Set timer (HH:MM:SS.TT)" />
 
     <div class="buttons">
       <button id="startPauseBtn">Start</button>
@@ -32,7 +32,7 @@
   </div>
 
   <!-- Mini players -->
-  <audio id="bgAudio" controls style="display:none;"></audio>
+  <audio id="bgAudio" controls style="display:none;" loop></audio>
   <div id="ytWrap" style="display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:12px; width:280px; height:158px; background:#111; border:1px solid #444; border-radius:10px; overflow:hidden;">
     <div id="ytPlayer"></div>
   </div>
@@ -57,9 +57,14 @@
               <option value="default">Default (FancyCatPX)</option>
               <option value="custom">Custom</option>
             </select>
-            <button id="importCustomFont" class="chip">Import Custom font…</button>
-            <input id="customFontFile" type="file" accept=".ttf,.otf,.woff,.woff2" hidden />
+
+            <!-- Use label-for-file approach so native file picker opens reliably -->
+            <label id="importCustomFont" class="chip" for="customFontFile" role="button" tabindex="0" style="cursor:pointer;">
+              Import Custom font…
+            </label>
+            <input id="customFontFile" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none;" />
           </div>
+
           <div id="customFontNotice" class="tiny muted" style="display:none;text-align:center;">
             <span id="customFontName">Loaded: —</span><br>
             If the font doesn’t change immediately, try refreshing.
@@ -167,6 +172,16 @@
             <select id="hurryUpSub"></select>
           </div>
           <div id="hurryUpDesc" class="tiny faint" style="text-align:center;margin-top:-4px;"></div>
+
+          <div class="row center" style="margin-top:8px;">
+            <label class="lbl">Hurry-up volume:</label>
+            <select id="hurryVolume" class="chip">
+              <option value="0.25">25%</option>
+              <option value="0.5">50%</option>
+              <option value="0.75">75%</option>
+              <option value="1" selected>100%</option>
+            </select>
+          </div>
 
           <hr style="border:0;border-top:1px solid #333;margin:10px 0 0;">
 

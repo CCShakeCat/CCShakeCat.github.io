@@ -19,7 +19,7 @@ body{
 
 /* Clock */
 #timerDisplay{ font-size:var(--clock-vw); line-height:1; letter-spacing:.02em; color:#fff; user-select:none; text-align:center; }
-.monochar{display:inline-block;width:.62em;text-align:center}
+.monochar{display:inline-block;width:.775em;text-align:center}
 .monochar--sep{width:.36em}
 
 .clock-row{ display:flex; align-items:center; gap:min(3vw,48px); padding-top:6vh }
