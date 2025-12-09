@@ -1,638 +1,845 @@
-(() => {
+(async () => {
   const $ = id => document.getElementById(id);
 
-  /* ---------- Core UI ---------- */
-  const timerInput   = $('timerInput');
-  const timerDisplay = $('timerDisplay');
-  const startPauseBtn= $('startPauseBtn');
-  const resetBtn     = $('resetBtn');
+  /* ==== ELEMENTS ==== */
+  const timerDisplay = $('timerDisplay'), timerInput = $('timerInput');
+  const startPauseBtn = $('startPauseBtn'), resetBtn = $('resetBtn');
 
-  // Prefix
-  const prefixText   = $('prefixText');
-  const prefixIcon   = $('prefixIcon');
+  const prefixText = $('prefixText'), prefixIcon = $('prefixIcon');
 
-  // Modal
-  const settingsBtn  = $('settingsBtn');
-  const settingsModal= $('settingsModal');
-  const closeSettings= $('closeSettings');
-  const modalCard    = $('modalCard');
+  const settingsBtn = $('settingsBtn'), settingsModal = $('settingsModal');
+  const modalCard = $('modalCard'), closeSettings = $('closeSettings');
+  const pages = { main: $('page-main'), style: $('page-style'), hurry: $('page-hurry') };
 
-  // Show-on-clock
-  const showAuto     = $('showAuto');
-  const showHours    = $('showHours');
-  const showMinutes  = $('showMinutes');
-  const showSeconds  = $('showSeconds');
-  const showTicks    = $('showTicks');
+  const sizePrev = $('sizePrev'), sizeNext = $('sizeNext'), sizeLabel = $('sizeLabel');
+  const fontSelect = $('fontSelect'), importFontBtn = $('importCustomFont'), customFontInput = $('customFontFile');
+  const customFontName = $('customFontName'), customFontNotice = $('customFontNotice');
 
-  // Controls
-  const tpsSelect    = $('tpsSelect');
-  const styleSelect  = $('styleSelect');
-  const flashModeSel = $('flashMode');
+  const musicUrlInput = $('musicUrlInput'), musicUrlSubmit = $('musicUrlSubmitBtn');
+  const musicStatusBtn = $('musicStatusBtn'), musicStatusIcon = $('musicStatusIcon'), musicStatusTip = $('musicStatusTip');
+  const bgAudio = $('bgAudio'), ytWrap = $('ytWrap');
 
-  // Size
-  const sizePrev     = $('sizePrev');
-  const sizeNext     = $('sizeNext');
-  const sizeLabel    = $('sizeLabel');
+  const showAuto = $('showAuto'), showHours = $('showHours'), showMinutes = $('showMinutes'), showSeconds = $('showSeconds'), showTicks = $('showTicks');
+  const tpsSelect = $('tpsSelect'), styleSelect = $('styleSelect');
 
-  // Direction UI
-  const directionBtn = $('directionBtn');
-  const directionTarget = $('directionTarget');
-  const directionEnds   = $('directionEnds');
+  const directionBtn2 = $('directionBtn_style'), directionTarget2 = $('directionTarget_style'), directionEnds2 = $('directionEnds_style');
 
-  // Music URL (store only)
-  const musicUrlInput  = $('musicUrlInput');
-  const musicUrlSubmit = $('musicUrlSubmitBtn');
+  // HURRY page
+  const hurryUpMain = $('hurryUpMain'), hurryUpSub = $('hurryUpSub'), hurryUpDesc = $('hurryUpDesc');
+  const flashModeSel = $('flashMode'), flashTypeSel = $('flashType'), flashValueIn = $('flashValue');
 
-  // Fonts
-  const fontSelect       = $('fontSelect');
-  const importFontBtn    = $('importCustomFont');
-  const customFontInput  = $('customFontFile');
-  const customFontName   = $('customFontName');
-  const customFontNotice = $('customFontNotice');
+  // clock-row element (used to switch to stacked layouts for larger sizes)
+  const clockRow = document.querySelector('.clock-row');
 
-  // Hurry Up
-  const hurryUpMain    = $('hurryUpMain');
-  const hurryUpSub     = $('hurryUpSub');
-  const hurryUpDesc    = $('hurryUpDesc');
-
-  /* ---------- Constants ---------- */
-  const LS_KEY = 'stdtimer:v10';
-
+  /* ==== CONSTANTS / PRESETS ==== */
+  const LS_KEY = 'stdtimer:v18';
   const HURRY_DIR = './hurryup/';
   const ICON_NORMAL = './icons/clock.png';
-  const ICON_FLASH  = './icons/clock_red.png';
+  const ICON_FLASH = './icons/clock_red.png';
+  const FONT_DB_NAME = 'stdtimer-fonts';
+  const FONT_STORE = 'fonts';
+  const FONT_KEY = 'custom';
 
-  // Presets (keep names matching your files in ./hurryup/)
   const hurryUpPresets = {
-    none:  { label:'None', sub:[{value:'',label:'No Hurry',desc:'No hurry up sound will play.'}] },
-    mario: { label:'Mario', sub:[
-      { value:'hurryup-smbnes', label:'Super Mario Bros - NES',    desc:'Last tick of 00:59' },
-      { value:'hurryup-smbgen', label:'Super Mario - Genesis',     desc:'Last tick of 00:59' },
-      { value:'hurryup-smb3',   label:'Super Mario Bros 3',        desc:'Last tick of 00:59' },
-      { value:'hurryup-smw',    label:'Super Mario World',         desc:'Last tick of 00:59' },
-      { value:'hurryup-nsmb',   label:'New Super Mario Bros',      desc:'Last tick of 00:59' },
-      { value:'hurryup-sm3d',   label:'Super Mario 3D Land',       desc:'Last tick of 00:59' },
-    ]},
-    soniclw:{ label:'Sonic Lost World', sub:[
-      { value:'hurryup-soniclw', label:'Sonic Lost World',         desc:'Last tick of 00:59' },
-    ]},
-    ggd:    { label:'Goose Goose Duck', sub:[
-      { value:'hurryup-ggdsabo_retro',     label:'Sabotage - Retro',     desc:'Last tick of 00:59' },
-      { value:'hurryup-ggdsabo_ship',      label:'Sabotage - Ship',      desc:'Last tick of 00:59' },
-      { value:'hurryup-ggdsabo_victorian', label:'Sabotage - Victorian', desc:'Last tick of 00:59' },
-    ]},
-  };
+  none: { label: 'None', sub: [{ value: '', label: 'No Hurry', desc: 'No hurry up sound will play.' }] },
+  mario: {
+    label: 'Mario', sub: [
+      { value: './Mario/hurryup-smbnes', label: 'Super Mario Bros - NES', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+      { value: './Mario/hurryup-smbgen', label: 'Super Mario - Genesis', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+      { value: './Mario/hurryup-smb3', label: 'Super Mario Bros 3', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+      { value: './Mario/hurryup-smw', label: 'Super Mario World', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+      { value: './Mario/hurryup-nsmb', label: 'New Super Mario Bros', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+      { value: './Mario/hurryup-sm3d', label: 'Super Mario 3D Land', desc: 'Plays at Hurry Up start setting, then music 1.25×' },
+    ]
+  },
+  sonic: {
+    label: 'Sonic', sub: [
+      { value: './Sonic/sonicrumble-LavaMountainFinal',         label: 'Sonic Rumble - Lava Mountain (Final Battle)',        desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-PinballCarnivalFinal',      label: 'Sonic Rumble - Pinball Carnival (Final Battle)',     desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-PlanetWispFinal',           label: 'Sonic Rumble - Planet Wisp (Final Battle)',         desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-PopFineFinal',              label: 'Sonic Rumble - Pop Fine (Final Battle)',            desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-SeasideHillFinal',          label: 'Sonic Rumble - Seaside Hill (Final Battle)',        desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-ShibuyaCrossingFinal',      label: 'Sonic Rumble - Shibuya Crossing (Final Battle)',    desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-SkySanctuaryFinal',         label: 'Sonic Rumble - Sky Sanctuary (Final Battle)',       desc: 'Plays at Hurry Up start Hurry Up setting' },
+      { value: './Sonic/sonicrumble-SpaceColonyARKFinal',       label: 'Sonic Rumble - Space Colony ARK (Final Battle)',    desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-StarlightCarnivalFinal',    label: 'Sonic Rumble - Starlight Carnival (Final Battle)',  desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-SweetMountainFinal',        label: 'Sonic Rumble - Sweet Mountain (Final Battle)',      desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-ChemicalPlantFinal',        label: 'Sonic Rumble - Chemical Plant (Final Battle)',      desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-CityEscapeFinal',           label: 'Sonic Rumble - City Escape (Final Battle)',         desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-DesertRuinsFinal',          label: 'Sonic Rumble - Desert Ruins (Final Battle)',        desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-FancyCuteFinal',            label: 'Sonic Rumble - Fancy Cute (Final Battle)',         desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-FantasyAdventureFinal',     label: 'Sonic Rumble - Fantasy Adventure (Final Battle)',   desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-FrozenFactoryFinal',        label: 'Sonic Rumble - Frozen Factory (Final Battle)',      desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/sonicrumble-GreenHillFinal',            label: 'Sonic Rumble - Green Hill (Final Battle)',          desc: 'Plays at Hurry Up start setting' },
+      { value: './Sonic/hurryup-soniclw', label: 'Sonic Lost World', desc: 'Plays at Hurry Up start setting' }
+    ]
+  },
+  ggd: {
+    label: 'Goose Goose Duck', sub: [
+      { value: './Goose Goose Duck/hurryup-ggdsabo_retro', label: 'Sabotage - Retro', desc: 'Plays at Hurry Up start setting' },
+      { value: './Goose Goose Duck/hurryup-ggdsabo_ship', label: 'Sabotage - Ship', desc: 'Plays over music at start' },
+      { value: './Goose Goose Duck/hurryup-ggdsabo_victorian', label: 'Sabotage - Victorian', desc: 'Plays at Hurry Up start setting' },
+    ]
+  },
+};
 
-  // Size mapping (vw)
-  const SIZE_VW = { 1:3.5, 2:5, 3:8, 4:14, 5:22 };
+  const SIZE_VW = { 1: 3.5, 2: 5, 3: 8, 4: 14, 5: 22 };
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+  const pad2 = n => String(n).padStart(2, '0');
 
-  /* ---------- State ---------- */
+  /* ==== STATE ==== */
   const st = {
-    tickBase: 40,
-    initialTicks: 9*60*40 + 59*40 + 39,   // 09:59.39 @40 tps
-    remainingTicks: 0,
-    running: false,
-    lastMs: 0,
+    tickBase: 40, initialTicks: 0, remainingTicks: 0, direction: 'from',
+    running: false, lastMs: 0,
+    auto: false, showH: true, showM: true, showS: true, showT: true,
+    style: 'default', size: 3,
 
-    direction: 'from', // 'from' | 'to'
+    flashMode: 'nothing', flashType: 'time', flashValue: '00:01:00',
+    flashTimer: null, flashPhase: false,
 
-    // display flags
-    auto:false, showH:true, showM:true, showS:true, showT:true,
+    fontMode: 'system', customFontFamily: '', customFontData: '', // customFontData will be blob: URL when IDB used, or data URL fallback
+    customFontBlobPresent: false, // whether we stored a blob in IDB
 
-    // style/flash
-    style:'default',          // default|time|icon
-    flashMode:'nothing',      // nothing|prefix|time|all
-    flashTimer:null,
+    musicUrl: '', musicStatus: 'unknown',
+    ytId: '', ytReady: false, yt: null, ytAutoplayWhenReady: false,
 
-    // size 1..5
-    size: 3,
+    huKey: 'none', huValue: '', huAudio: null, huPlayed: false,
 
-    // fonts
-    fontMode:'default',       // default|system|custom
-    customFontFamily:'',
-
-    // music URL (not used for playback here)
-    musicUrl:'',
-
-    // hurry-up
-    huKey:'none',
-    huValue:'',
-    huAudio:null,
-    huPlayed:false,
-    huWasPaused:false,
+    modalX: 0, modalY: 0
   };
 
-  /* ---------- Utils ---------- */
-  const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
-  const pad2  = n => String(n).padStart(2,'0');
-
-  function parseTimeToTicks(text, base=st.tickBase){
-    const s=(text||'').trim(); if(!s) return 0;
-    const parts=s.split(':'); let h=0,m=0,sec=0,tt=0;
-    if(parts.length===3){ h=parseInt(parts[0],10)||0; m=parseInt(parts[1],10)||0; sec=parts[2]; }
-    else if(parts.length===2){ m=parseInt(parts[0],10)||0; sec=parts[1]; }
-    else { sec=parts[0]; }
-    if(String(sec).includes('.')){ const [ss,t]=String(sec).split('.'); sec=parseInt(ss,10)||0; tt=clamp(parseInt(t,10)||0,0,base-1); }
-    else { sec=parseInt(sec,10)||0; tt=0; }
-    return (h*3600+m*60+sec)*base+tt;
+  /* =======================
+     IndexedDB helpers
+     ======================= */
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
+      const r = indexedDB.open(FONT_DB_NAME, 1);
+      r.onupgradeneeded = () => { const db = r.result; if (!db.objectStoreNames.contains(FONT_STORE)) db.createObjectStore(FONT_STORE); };
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+  }
+  async function idbPutFont(blob) {
+    const db = await idbOpen();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(FONT_STORE, 'readwrite'); const store = tx.objectStore(FONT_STORE);
+      const rr = store.put(blob, FONT_KEY);
+      rr.onsuccess = () => { db.close(); res(true); };
+      rr.onerror = () => { db.close(); rej(rr.error); };
+    });
+  }
+  async function idbGetFont() {
+    const db = await idbOpen();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(FONT_STORE, 'readonly'); const store = tx.objectStore(FONT_STORE);
+      const rr = store.get(FONT_KEY);
+      rr.onsuccess = () => { db.close(); res(rr.result || null); };
+      rr.onerror = () => { db.close(); rej(rr.error); };
+    });
+  }
+  async function idbDeleteFont() {
+    const db = await idbOpen();
+    return new Promise((res, rej) => {
+      const tx = db.transaction(FONT_STORE, 'readwrite'); const store = tx.objectStore(FONT_STORE);
+      const rr = store.delete(FONT_KEY);
+      rr.onsuccess = () => { db.close(); res(true); };
+      rr.onerror = () => { db.close(); rej(rr.error); };
+    });
   }
 
-  // format to string
-  function formatFromTicks(ticks, base=st.tickBase){
-    let t=Math.max(0,ticks);
-    const totalSec = Math.floor(t/base);
-    const tickPart = t%base;
-    const h = Math.floor(totalSec/3600);
-    const m = Math.floor((totalSec%3600)/60);
-    const s = totalSec%60;
+  /* ==== HELPERS ==== */
+  const monoText = str => [...str].map(ch => {
+    const sep = (ch === ':' || ch === '.');
+    return `<span class="monochar${sep ? ' monochar--sep' : ''}">${ch}</span>`;
+  }).join('');
 
-    let sh,sm,ss,stt;
-    if(st.auto){ sh=totalSec>=3600; sm=sh||totalSec>=60; ss=true; stt=!!st.showT; }
-    else { sh=!!st.showH; sm=!!st.showM; ss=!!st.showS; stt=!!st.showT; }
+  function parseTimeToTicks(text, base) {
+    const s = (text || '').trim(); if (!s) return 0;
+    const parts = s.split(':'); let h = 0, m = 0, sec = 0, tt = 0;
+    if (parts.length === 3) { h = parseInt(parts[0], 10) || 0; m = parseInt(parts[1], 10) || 0; sec = parts[2]; }
+    else if (parts.length === 2) { m = parseInt(parts[0], 10) || 0; sec = parts[1]; }
+    else { sec = parts[0]; }
+    if (String(sec).includes('.')) { const [ss, t] = String(sec).split('.'); sec = parseInt(ss, 10) || 0; tt = clamp(parseInt(t, 10) || 0, 0, base - 1); }
+    else { sec = parseInt(sec, 10) || 0; tt = 0; }
+    return (h * 3600 + m * 60 + sec) * base + tt;
+  }
+  function formatFromTicks(ticks, base = st.tickBase) {
+    const t = Math.max(0, Math.floor(ticks));
+    const totalSeconds = Math.floor(t / base), tickPart = t % base;
+    const h = Math.floor(totalSeconds / 3600), m = Math.floor((totalSeconds % 3600) / 60), s = totalSeconds % 60;
 
-    const arr=[];
-    if(sh) arr.push(pad2(h));
-    if(sm) arr.push(sh?pad2(m):String(m));
-    if(ss) arr.push((sh||sm)?pad2(s):String(s));
+    let sh, sm, ss, stt;
+    if (st.auto) { sh = totalSeconds >= 3600; sm = sh || totalSeconds >= 60; ss = true; stt = !!st.showT; }
+    else { sh = !!st.showH; sm = !!st.showM; ss = !!st.showS; stt = !!st.showT; }
 
-    let out=arr.join(':');
-    if(stt) out+=(out?'.':'')+pad2(tickPart);
-    if(!out) out=`${pad2(m)}:${pad2(s)}.${pad2(tickPart)}`;
+    const arr = [];
+    if (sh) arr.push(pad2(h));
+    if (sm) arr.push(sh ? pad2(m) : String(m));
+    if (ss) arr.push((sh || sm) ? pad2(s) : String(s));
+    let out = arr.join(':');
+    if (stt) out += (out ? '.' : '') + pad2(tickPart);
+    if (!out) out = `${pad2(m)}:${pad2(s)}.${pad2(tickPart)}`;
     return out;
   }
 
-  // Render with monochar spans so variable fonts stay aligned
-  function renderMono(text){
-    const frag = document.createDocumentFragment();
-    for(const ch of text){
-      const span = document.createElement('span');
-      if(ch === ':' || ch === '.'){ span.className='monochar monochar--sep'; span.textContent = ch; }
-      else { span.className='monochar'; span.textContent = ch; }
-      frag.appendChild(span);
+  function partsFromTicks(ticks, base = st.tickBase) {
+    const t = Math.max(0, Math.floor(ticks));
+    const totalSeconds = Math.floor(t / base), tickPart = t % base;
+    const h = Math.floor(totalSeconds / 3600), m = Math.floor((totalSeconds % 3600) / 60), s = totalSeconds % 60;
+    return { h: pad2(h), m: pad2(m), s: pad2(s), tt: pad2(tickPart), totalSeconds };
+  }
+
+  const timeLeftTicks = () => st.direction === 'from' ? st.remainingTicks : Math.max(0, st.initialTicks - st.remainingTicks);
+
+  // preserve “last tick” when changing TPS (hoisted function to avoid ReferenceError)
+  function convertTicksPreserveLast(oldBase, newBase, ticks) {
+    const S = Math.floor(ticks / oldBase);
+    const r = ticks % oldBase;
+    const wasLast = r === (oldBase - 1);
+    let nt;
+    if (wasLast) nt = S * newBase + (newBase - 1);
+    else {
+      const secs = ticks / oldBase;
+      nt = Math.round(secs * newBase);
+      if (nt % newBase === 0 && r !== 0) nt -= 1;
     }
-    timerDisplay.replaceChildren(frag);
+    return Math.max(0, nt);
   }
 
-  // Remaining time (for HU/flash logic)
-  const timeLeftTicks = () =>
-    st.direction==='from' ? st.remainingTicks : Math.max(0, st.initialTicks - st.remainingTicks);
-
-  function render(){
-    const showTicks = st.direction==='from' ? st.remainingTicks : st.remainingTicks; // same
-    renderMono(formatFromTicks(showTicks));
+  /* ==== SIZE helpers (missing previously) ==== */
+  function applySize() {
+    document.documentElement.style.setProperty('--clock-vw', `${(SIZE_VW[st.size] || 8)}vw`);
+    sizeLabel.textContent = String(st.size);
+    save();
+    render();
+  }
+  function sizeDelta(d) {
+    st.size = clamp(st.size + d, 1, 5);
+    applySize();
   }
 
-  /* ---------- Size ---------- */
-  function applySize(){
-    const vw = SIZE_VW[st.size] || 8;
-    document.documentElement.style.setProperty('--clock-vw', `${vw}vw`);
-    if(sizeLabel) sizeLabel.textContent = String(st.size);
+  /* ==== RENDER ==== */
+  function render() {
+    // default single-line rendering for the main display (other stacked layouts handled elsewhere at size change)
+    timerDisplay.innerHTML = monoText(formatFromTicks(st.remainingTicks));
+    prefixText.style.display = (st.style === 'time') ? 'block' : 'none';
+    prefixIcon.style.display = (st.style === 'icon') ? 'block' : 'none';
+  }
+
+  /* ==== FONT: injection + persistent custom font via IndexedDB ==== */
+  function injectFace(name, src) {
+    const id = `face-${name}`;
+    const old = document.getElementById(id); if (old) old.remove();
+    const el = document.createElement('style'); el.id = id;
+    el.textContent = `@font-face{font-family:'${name}';src:url('${src}');font-display:swap;}`;
+    document.head.appendChild(el);
+  }
+
+  let _currentCustomBlobUrl = null;
+  function revokeCurrentCustomBlobUrl() {
+    if (_currentCustomBlobUrl) {
+      try { URL.revokeObjectURL(_currentCustomBlobUrl); } catch { }
+      _currentCustomBlobUrl = null;
+    }
+  }
+
+  async function loadCustomFontFromIDBAndInject() {
+    try {
+      const blob = await idbGetFont();
+      if (blob) {
+        revokeCurrentCustomBlobUrl();
+        const url = URL.createObjectURL(blob);
+        _currentCustomBlobUrl = url;
+        st.customFontData = url;
+        st.customFontBlobPresent = true;
+        const family = st.customFontFamily || 'CustomImportedFont';
+        injectFace(family, url);
+        // if user had previously selected custom mode, apply it now
+        if (st.fontMode === 'custom') applyFont('custom');
+        return true;
+      }
+    } catch (e) {
+      console.warn('Could not load custom font from IDB:', e);
+    }
+    return false;
+  }
+
+  async function handleCustomFontFile(file) {
+    if (!file) return;
+    const family = file.name.replace(/\.(ttf|otf|woff2?|TTF|OTF|WOFF2?)$/, '');
+    try {
+      await idbPutFont(file);
+      revokeCurrentCustomBlobUrl();
+      const blobUrl = URL.createObjectURL(file);
+      _currentCustomBlobUrl = blobUrl;
+      st.customFontFamily = family;
+      st.customFontData = blobUrl;
+      st.customFontBlobPresent = true;
+      injectFace(st.customFontFamily, blobUrl);
+      applyFont('custom');
+      customFontName.textContent = `Loaded: ${family}`;
+      customFontNotice.style.display = 'block';
+      save();
+      return;
+    } catch (err) {
+      console.warn('IndexedDB store failed; falling back to dataURL', err);
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            st.customFontFamily = family;
+            st.customFontData = reader.result; // data URL
+            st.customFontBlobPresent = false;
+            injectFace(st.customFontFamily, st.customFontData);
+            applyFont('custom');
+            customFontName.textContent = `Loaded: ${family}`;
+            customFontNotice.style.display = 'block';
+            save();
+          } catch (e) { console.warn('fallback inject failed', e); }
+        };
+        reader.readAsDataURL(file);
+      } catch (e) {
+        console.error('Custom font import failed', e);
+      }
+    }
+  }
+
+  async function removeCustomFont() {
+    revokeCurrentCustomBlobUrl();
+    const family = st.customFontFamily || 'CustomImportedFont';
+    const id = `face-${family}`;
+    const el = document.getElementById(id); if (el) el.remove();
+    st.customFontFamily = ''; st.customFontData = ''; st.customFontBlobPresent = false;
+    try { await idbDeleteFont(); } catch { }
     save();
   }
-  const sizeDelta = d => { st.size = clamp(st.size + d,1,5); applySize(); };
 
-  /* ---------- Style / Prefix ---------- */
-  function setPrefixIconVisible(show){ if(prefixIcon) prefixIcon.style.display = show ? 'block' : 'none'; }
-  function setPrefixIconFlashing(active){ if(prefixIcon) prefixIcon.src = active ? ICON_FLASH : ICON_NORMAL; }
+  function detectSystemFontFile() {
+    const ua = navigator.userAgent || '';
+    const plat = navigator.platform || '';
+    if (/Mac|iPhone|iPad|iPod/.test(plat) || /like Mac OS X|iPhone|iPad|Mac OS X/.test(ua)) return './fonts/Apple/SanFranciscoDisplay-Regular.otf';
+    if (/Win/.test(plat)) return './fonts/Windows/Segoe UI regular.ttf';
+    if (/Android/i.test(ua)) {
+      if (/Pixel/i.test(ua)) return './fonts/Android/Google_GoogleSans.ttf';
+      if (/OnePlus/i.test(ua)) return './fonts/Android/OnePlus_OnePlusSans.ttf';
+      if (/OPPO|Oppo/i.test(ua)) return './fonts/Android/Oppo_OPPOSans.ttf';
+      if (/SM-|Samsung/i.test(ua)) return './fonts/Android/Samsung_SamsungSans.ttf';
+      if (/Vivo/i.test(ua)) return './fonts/Android/Vivo_VivoSans.ttf';
+      if (/Xiaomi|Mi |Redmi/i.test(ua)) return './fonts/Android/Xaomi_MiSans.ttf';
+      return './fonts/Android/roboto.ttf';
+    }
+    return './fonts/Android/roboto.ttf';
+  }
 
-  function applyStyle(){
-    prefixText.style.display='none';
-    setPrefixIconVisible(false);
-    setPrefixIconFlashing(false);
+  function ensureVendorSystemForModal() {
+    try {
+      const sysFile = detectSystemFontFile();
+      injectFace('VendorSystem', sysFile);
+      const stack = `'VendorSystem', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+      document.documentElement.style.setProperty('--modal-font-stack', stack);
+    } catch (e) { /* noop */ }
+  }
 
-    if(st.style==='time'){
-      prefixText.style.display='block';
-    }else if(st.style==='icon'){
-      setPrefixIconVisible(true);
+  function applyFont(mode) {
+    st.fontMode = mode;
+    if (mode === 'custom' && st.customFontFamily) {
+      document.body.style.fontFamily = `'${st.customFontFamily}', system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+    } else if (mode === 'default') {
+      injectFace('FancyCatPX', './fonts/FancyCatPX.ttf');
+      document.body.style.fontFamily = `'FancyCatPX', system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+    } else {
+      const sysFile = detectSystemFontFile();
+      injectFace('VendorSystem', sysFile);
+      document.body.style.fontFamily = `'VendorSystem', system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+    }
+    ensureVendorSystemForModal();
+    save();
+  }
+
+  /* ==== FLASH / HURRY helpers ==== */
+  function sanitizeFlashValue() { st.flashValue = (flashValueIn.value || '').trim(); }
+  function parsePercentValue(raw) {
+    const s = (raw || '').toString().trim();
+    if (!s) return null;
+    if (s.includes('/')) {
+      const [a, b] = s.split('/').map(x => parseFloat(x));
+      if (Number.isFinite(a) && Number.isFinite(b) && b !== 0) return (a / b) * 100;
+      return NaN;
+    }
+    if (s.endsWith('%')) {
+      const n = parseFloat(s.slice(0, -1));
+      return Number.isFinite(n) ? n : NaN;
+    }
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function computeFlashTrigger() {
+    sanitizeFlashValue();
+    const base = st.tickBase;
+    if (!st.flashValue || st.flashValue.trim() === '') {
+      const oneMinuteTicks = 60 * base;
+      const sec = Math.floor(oneMinuteTicks / base) * base;
+      return Math.max(0, sec - 1);
+    }
+
+    if (st.flashType === 'percent') {
+      const parsed = parsePercentValue(st.flashValue);
+      const p = Number.isFinite(parsed) ? clamp(parsed, 0, 100) : 0;
+      const t = Math.floor(st.initialTicks * (p / 100));
+      const sec = Math.floor(t / base) * base;
+      return Math.max(0, sec - 1);
+    } else {
+      const t = parseTimeToTicks(st.flashValue, base);
+      const sec = Math.floor(t / base) * base;
+      return Math.max(0, sec - 1);
     }
   }
 
-  /* ---------- Flash (3 FPS) ---------- */
-  function stopFlash(){
-    if(st.flashTimer){ clearInterval(st.flashTimer); st.flashTimer=null; }
-    timerDisplay.classList.remove('flash-on');
-    prefixText.classList.remove('flash-on');
-    setPrefixIconFlashing(false);
-  }
-  function startFlashIfNeeded(){
-    if(st.flashMode==='nothing' || st.flashTimer) return;
-    let on=false;
-    st.flashTimer=setInterval(()=>{
-      on=!on;
-      const tf=st.flashMode;
+  function startFlashIfNeeded() {
+    if (st.flashTimer || st.flashMode === 'nothing') return;
+    st.flashTimer = setInterval(() => {
+      if (!st.running) return;
+      st.flashPhase = !st.flashPhase;
 
-      const flashTime  = (tf==='time' || tf==='all') && on;
-      const flashText  = (tf==='prefix' || tf==='all') && on && st.style==='time';
-      const flashIcon  = (tf==='prefix' || tf==='all') && on && st.style==='icon';
+      const wantTime = (st.flashMode === 'time' || st.flashMode === 'all');
+      const wantPrefix = (st.flashMode === 'prefix' || st.flashMode === 'all');
 
-      timerDisplay.classList.toggle('flash-on', flashTime);
-      prefixText.classList.toggle('flash-on', flashText);
-      setPrefixIconFlashing(flashIcon);
-    },333);
-  }
+      timerDisplay.classList.toggle('flash-face', wantTime && st.flashPhase);
 
-  /* ---------- Hurry-Up ---------- */
-  function can(type){ try{ return (new Audio()).canPlayType(type); }catch{ return ''; } }
-  const srcFor = id => id ? `${HURRY_DIR}${id}.${can('audio/mpeg')?'mp3':'ogg'}` : null;
-  function stopHU(){ if(st.huAudio){ try{ st.huAudio.pause(); }catch{} } }
-  async function doHurryUp(){
-    if(!st.huValue) return;
-    stopHU();
-    const a = new Audio(srcFor(st.huValue));
-    a.preload='auto';
-    st.huAudio=a;
-    try{ await a.play(); }catch{}
-  }
-
-  function populateHurryUp(){
-    // main
-    hurryUpMain.replaceChildren();
-    for(const key of Object.keys(hurryUpPresets)){
-      const opt=document.createElement('option');
-      opt.value=key; opt.textContent=hurryUpPresets[key].label;
-      hurryUpMain.appendChild(opt);
-    }
-    // sub
-    function fillSub(k,keepValue){
-      hurryUpSub.replaceChildren();
-      const group = hurryUpPresets[k] || hurryUpPresets.none;
-      for(const s of group.sub){
-        const o=document.createElement('option');
-        o.value=s.value; o.textContent=s.label; hurryUpSub.appendChild(o);
+      if (wantPrefix) {
+        if (st.style === 'time') {
+          prefixText.classList.toggle('flash-prefix-text', st.flashPhase);
+        } else if (st.style === 'icon') {
+          prefixIcon.src = st.flashPhase ? ICON_FLASH : ICON_NORMAL;
+        }
+      } else {
+        prefixText.classList.remove('flash-prefix-text');
+        if (st.style === 'icon') prefixIcon.src = ICON_NORMAL;
       }
-      if(keepValue){
-        const found=[...hurryUpSub.options].some(o=>o.value===st.huValue);
-        if(found) hurryUpSub.value=st.huValue;
-      }else{
-        hurryUpSub.selectedIndex=0;
-        st.huValue=hurryUpSub.value || '';
-      }
-      hurryUpDesc.textContent = (group.sub.find(x=>x.value===hurryUpSub.value)?.desc) || 'No hurry up sound will play.';
-    }
-    hurryUpMain.addEventListener('change', ()=>{
-      st.huKey=hurryUpMain.value; fillSub(st.huKey,false); save();
-    });
-    hurryUpSub.addEventListener('change', ()=>{
-      st.huValue=hurryUpSub.value;
-      const group=hurryUpPresets[st.huKey]||hurryUpPresets.none;
-      hurryUpDesc.textContent=(group.sub.find(x=>x.value===st.huValue)?.desc)||'';
-      save();
-    });
-
-    // initial
-    hurryUpMain.value = st.huKey || 'none';
-    fillSub(hurryUpMain.value, true);
+    }, 333);
   }
-
-  /* ---------- Persistence ---------- */
-  function save(){
-    try{
-      localStorage.setItem(LS_KEY, JSON.stringify({
-        tickBase:st.tickBase, initial:st.initialTicks, remaining:st.remainingTicks, direction:st.direction,
-        auto:st.auto, showH:st.showH, showM:st.showM, showS:st.showS, showT:st.showT,
-        style:st.style, flashMode:st.flashMode, size:st.size,
-        fontMode:st.fontMode, customFontFamily:st.customFontFamily,
-        musicUrl:st.musicUrl, huKey:st.huKey, huValue:st.huValue
-      }));
-    }catch{}
+  function stopFlash() {
+    if (st.flashTimer) { clearInterval(st.flashTimer); st.flashTimer = null; }
+    st.flashPhase = false;
+    timerDisplay.classList.remove('flash-face');
+    prefixText.classList.remove('flash-prefix-text');
+    if (st.style === 'icon') prefixIcon.src = ICON_NORMAL;
   }
-  function load(){
-    try{
-      const d = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-      st.tickBase = clamp(parseInt(d.tickBase ?? 40,10),10,100);
-      st.initialTicks = clamp(parseInt(d.initial ?? st.initialTicks,10),0,Number.MAX_SAFE_INTEGER);
-      st.remainingTicks = clamp(parseInt(d.remaining ?? st.initialTicks,10),0,Number.MAX_SAFE_INTEGER);
-      st.direction = (d.direction==='to'?'to':'from');
-
-      st.auto=!!d.auto; st.showH=!!d.showH; st.showM=!!d.showM; st.showS=!!d.showS; st.showT=!!d.showT;
-      st.style=d.style||'default'; st.flashMode=d.flashMode||'nothing';
-      st.size = clamp(parseInt(d.size||3,10),1,5);
-
-      st.fontMode=d.fontMode||'default'; st.customFontFamily=d.customFontFamily||'';
-      st.musicUrl=d.musicUrl||'';
-      st.huKey=d.huKey||'none'; st.huValue=d.huValue||'';
-    }catch{}
-  }
-
-  /* ---------- Direction UI & minute boundary ---------- */
-  function updateDirectionUI(){
-    directionBtn.textContent = st.direction.toUpperCase();
-    directionTarget.textContent = formatFromTicks(st.initialTicks);
-    directionEnds.textContent = (st.direction==='from') ? '00:00:00.00' : formatFromTicks(st.initialTicks);
-  }
-
-  function syncMinuteState(){
-    const trigger = st.tickBase*60 - 1; // last tick of 00:59
+  function syncMinuteState() {
+    const trigger = computeFlashTrigger();
     const left = timeLeftTicks();
-
-    if(!st.huPlayed && left === trigger){ st.huPlayed=true; doHurryUp(); }
-    if(left <= trigger) startFlashIfNeeded(); else stopFlash();
+    if (left <= trigger) startFlashIfNeeded(); else stopFlash();
   }
 
-  /* ---------- Engine ---------- */
-  function start(){
-    if(st.running) return;
-    if(st.direction==='from' && st.remainingTicks<=0) return;
-    if(st.direction==='to'   && st.remainingTicks>=st.initialTicks) return;
+  /* ==== HURRY AUDIO ==== */
+  const canPlay = type => { try { return (new Audio()).canPlayType(type); } catch { return ''; } };
+  const hurrySrcFor = id => id ? `${HURRY_DIR}${id}.${canPlay('audio/mpeg') ? 'mp3' : 'ogg'}` : null;
+  const stopHU = () => { if (st.huAudio) { try { st.huAudio.pause(); } catch { } } };
 
-    st.running=true; st.lastMs=performance.now();
-    startPauseBtn.textContent='Pause';
+  async function doHurryUp() {
+    if (!st.huValue) return;
+    stopHU();
+    const a = new Audio(hurrySrcFor(st.huValue));
+    a.preload = 'auto';
+    st.huAudio = a;
 
-    if(st.huAudio && st.huWasPaused){ try{ st.huAudio.play(); }catch{} st.huWasPaused=false; }
+    const wasPlaying = isYTActive() ? ytIsPlaying() : (!!bgAudio.src && !bgAudio.paused);
+    if (wasPlaying) stopAllBGM();
 
+    try { await a.play(); } catch { }
+    a.addEventListener('ended', () => {
+      if (wasPlaying) {
+        if (isYTActive() && st.yt) {
+          try { st.yt.setPlaybackRate(1.25); st.yt.seekTo(0, true); if (st.running) st.yt.playVideo(); } catch { }
+        } else if (bgAudio.src) {
+          try { bgAudio.playbackRate = 1.25; bgAudio.currentTime = 0; if (st.running) bgAudio.play(); } catch { }
+        }
+      }
+    }, { once: true });
+  }
+
+  /* ==== PERSISTENCE ==== */
+  function save() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        tickBase: st.tickBase, initial: st.initialTicks, remaining: st.remainingTicks, direction: st.direction,
+        auto: st.auto, showH: st.showH, showM: st.showM, showS: st.showS, showT: st.showT,
+        style: st.style, size: st.size,
+        flashMode: st.flashMode, flashType: st.flashType, flashValue: st.flashValue,
+        fontMode: st.fontMode, customFontFamily: st.customFontFamily, customFontBlobPresent: st.customFontBlobPresent,
+        musicUrl: st.musicUrl, ytId: st.ytId, huKey: st.huKey, huValue: st.huValue,
+        modalX: st.modalX, modalY: st.modalY
+      }));
+    } catch (e) { console.warn('save failed', e); }
+  }
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      st.tickBase = clamp(parseInt(d.tickBase || 40, 10), 10, 100);
+
+      const def = 9 * 60 * st.tickBase + 59 * st.tickBase + (st.tickBase - 1);
+      st.initialTicks = Number.isFinite(d.initial) ? d.initial : def;
+      st.remainingTicks = Number.isFinite(d.remaining) ? d.remaining : st.initialTicks;
+      st.direction = (d.direction === 'to' ? 'to' : 'from');
+
+      st.auto = !!d.auto; st.showH = d.showH !== false; st.showM = d.showM !== false; st.showS = d.showS !== false; st.showT = d.showT !== false;
+      st.style = d.style || 'default';
+      st.size = clamp(parseInt(d.size || 3, 10), 1, 5);
+
+      st.flashMode = d.flashMode || 'nothing';
+      st.flashType = d.flashType || 'time';
+      if ('flashValue' in d) st.flashValue = (d.flashValue === null ? '' : d.flashValue);
+      else st.flashValue = '00:01:00';
+
+      st.fontMode = d.fontMode || 'system';
+      st.customFontFamily = d.customFontFamily || '';
+      st.customFontBlobPresent = !!d.customFontBlobPresent;
+
+      st.musicUrl = d.musicUrl || ''; st.ytId = d.ytId || '';
+      st.huKey = d.huKey || 'none'; st.huValue = d.huValue || '';
+      st.modalX = parseFloat(d.modalX || 0); st.modalY = parseFloat(d.modalY || 0);
+    } catch (e) { console.warn('load failed', e); }
+  }
+
+  /* ==== DIRECTION ==== */
+  function updateDirectionUI() {
+    directionBtn2.textContent = st.direction.toUpperCase();
+    const target = formatFromTicks(st.initialTicks);
+    directionTarget2.textContent = target;
+    directionEnds2.textContent = (st.direction === 'from') ? '00:00:00.00' : target;
+  }
+  function flipDirection() {
+    if (st.running) return;
+    st.direction = (st.direction === 'from') ? 'to' : 'from';
+    st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
+    st.huPlayed = false; stopFlash();
+    updateDirectionUI(); render(); save();
+  }
+
+  /* ==== ENGINE ==== */
+  function start() {
+    if (st.running) return;
+    if (st.direction === 'from' && st.remainingTicks <= 0) return;
+    if (st.direction === 'to' && st.remainingTicks >= st.initialTicks) return;
+    st.running = true; st.lastMs = performance.now();
+    startPauseBtn.textContent = 'Pause';
+
+    if (st.ytId && !st.ytReady) st.ytAutoplayWhenReady = true;
+
+    playBGM();
     syncMinuteState();
     tick();
   }
-  function pause(){
-    if(!st.running) return;
-    st.running=false; startPauseBtn.textContent='Start';
-    if(st.huAudio && !st.huAudio.paused){ try{ st.huAudio.pause(); }catch{} st.huWasPaused=true; }
+  function pause() {
+    if (!st.running) return;
+    st.running = false; startPauseBtn.textContent = 'Start';
     stopFlash();
+    stopBGM();
   }
-  function reset(){
+  function reset() {
     pause();
-    st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
-    st.huPlayed=false; st.huWasPaused=false;
-    stopHU(); stopFlash(); render(); save();
+    st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
+    st.huPlayed = false; stopHU(); stopFlash(); render(); save();
   }
-
-  function tick(){
-    if(!st.running) return;
-    const now=performance.now();
-    const elapsed=now - st.lastMs;
+  function tick() {
+    if (!st.running) return;
+    const now = performance.now();
+    const elapsed = now - st.lastMs;
     const ticks = Math.floor(elapsed * st.tickBase / 1000);
-    if(ticks>0){
-      if(st.direction==='from'){
-        st.remainingTicks = Math.max(0, st.remainingTicks - ticks);
-      }else{
-        st.remainingTicks = Math.min(st.initialTicks, st.remainingTicks + ticks);
-      }
+    if (ticks > 0) {
+      if (st.direction === 'from') st.remainingTicks = Math.max(0, st.remainingTicks - ticks);
+      else st.remainingTicks = Math.min(st.initialTicks, st.remainingTicks + ticks);
       st.lastMs += ticks * 1000 / st.tickBase;
 
-      syncMinuteState();
+      const trigger = computeFlashTrigger();
+      const left = timeLeftTicks();
+      if (!st.huPlayed && left === trigger) { st.huPlayed = true; doHurryUp(); }
 
-      if(st.direction==='from' ? st.remainingTicks<=0 : st.remainingTicks>=st.initialTicks){
-        pause();
-      }
+      if (st.direction === 'from' ? st.remainingTicks <= 0 : st.remainingTicks >= st.initialTicks) pause();
       render(); save();
     }
     requestAnimationFrame(tick);
   }
 
-  /* ---------- Edit overlay ---------- */
-  function atStartState(){
-    return st.direction==='from'
-      ? st.remainingTicks===st.initialTicks
-      : st.remainingTicks===0;
-  }
-  function placeInputAboveDisplay(){
-    // center over display
-    const r = timerDisplay.getBoundingClientRect();
-    timerInput.style.left = `${window.scrollX + r.left + r.width/2}px`;
-    timerInput.style.top  = `${window.scrollY + r.top  + r.height/2}px`;
-    timerInput.style.transform = 'translate(-50%,-50%)';
-  }
-  function enterEdit(){
-    if(st.running) return;
-    if(!atStartState()) return;
+  /* ==== EDIT OVERLAY ==== */
+  const atStart = () => st.direction === 'from' ? st.remainingTicks === st.initialTicks : st.remainingTicks === 0;
+  function enterEdit() {
+    if (st.running || !atStart()) return;
     timerInput.value = formatFromTicks(st.initialTicks);
-    placeInputAboveDisplay();
-    timerInput.style.display='block';
+    document.body.classList.add('editing');
+    timerInput.style.display = 'block';
     timerInput.focus(); timerInput.select();
   }
-  function commitEdit(){
-    const nv=parseTimeToTicks(timerInput.value);
-    if(Number.isFinite(nv) && nv>=0){
-      st.initialTicks=nv; st.huPlayed=false; stopFlash();
-      st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
+  function commitEdit() {
+    const nv = parseTimeToTicks(timerInput.value, st.tickBase);
+    if (Number.isFinite(nv) && nv >= 0) {
+      st.initialTicks = nv;
+      st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
+      st.huPlayed = false; stopFlash();
       updateDirectionUI(); save(); render();
     }
-    timerInput.style.display='none';
+    timerInput.style.display = 'none';
+    document.body.classList.remove('editing');
   }
 
-  /* ---------- Fonts ---------- */
-  function applyClockFont(mode){
-    st.fontMode = mode;
-    let fam = "FancyCatPX, system-ui, 'Segoe UI', Arial, sans-serif"; // Default fixed
-    if(mode==='system'){
-      const ua = navigator.userAgent || '';
-      if(/Windows|Xbox/i.test(ua)) fam = "SystemWin, 'Segoe UI', system-ui, Arial, sans-serif";
-      else if(/Android/i.test(ua)) fam = "SystemAndroid, Roboto, system-ui, Arial, sans-serif";
-      else if(/Mac OS X|iPhone|iPad/i.test(ua)) fam = "SystemApple, -apple-system, system-ui, Arial, sans-serif";
-      else fam = "system-ui, 'Segoe UI', Arial, sans-serif";
-    }else if(mode==='custom' && st.customFontFamily){
-      fam = `'${st.customFontFamily}', system-ui, 'Segoe UI', Arial, sans-serif`;
+  /* ==== MODAL / PAGES ==== */
+  function setModalOffset(x = 0, y = 0) {
+    st.modalX = x; st.modalY = y;
+    modalCard.style.setProperty('--modal-x', `${x}px`);
+    modalCard.style.setProperty('--modal-y', `${y}px`);
+    modalCard.style.transform = 'translate(-50%,-50%) translate(var(--modal-x), var(--modal-y))';
+  }
+  const centerModal = () => setModalOffset(0, 0);
+  function showPage(name, { recenter = false } = {}) {
+    Object.values(pages).forEach(p => p.classList.remove('active'));
+    (pages[name] || pages.main).classList.add('active');
+    if (recenter) centerModal();
+  }
+
+  settingsBtn.addEventListener('click', () => {
+    const showing = settingsModal.classList.contains('show');
+    if (showing) {
+      settingsModal.classList.remove('show'); settingsModal.setAttribute('aria-hidden', 'true');
+    } else {
+      settingsModal.classList.add('show'); settingsModal.setAttribute('aria-hidden', 'false');
+      showPage('main', { recenter: true });
+      setModalOffset(0, 0);
     }
-    document.documentElement.style.setProperty('--clock-font', fam);
-    save();
-  }
-
-  // load custom font file
-  importFontBtn?.addEventListener('click', ()=> customFontInput?.click());
-  customFontInput?.addEventListener('change', ()=>{
-    const f = customFontInput.files?.[0];
-    if(!f) return;
-    const url = URL.createObjectURL(f);
-    const family = `UserFont_${Date.now()}`;
-    const face = new FontFace(family, `url(${url})`);
-    face.load().then(ff=>{
-      document.fonts.add(ff);
-      st.customFontFamily = family;
-      customFontName.textContent = `Loaded: ${f.name}`;
-      customFontNotice.style.display='block';
-      applyClockFont('custom');
-      fontSelect.value='custom';
-    }).catch(()=>{ customFontName.textContent='Failed to load font.'; });
   });
+  closeSettings.addEventListener('click', () => {
+    settingsModal.classList.remove('show'); settingsModal.setAttribute('aria-hidden', 'true');
+  });
+  $('openStyle').addEventListener('click', () => showPage('style', { recenter: false }));
+  $('openHurry').addEventListener('click', () => showPage('hurry', { recenter: false }));
+  $('backFromStyle').addEventListener('click', () => showPage('main', { recenter: false }));
+  $('backFromHurry').addEventListener('click', () => showPage('main', { recenter: false }));
 
-  fontSelect.addEventListener('change', ()=> applyClockFont(fontSelect.value));
+  // drag anywhere non-interactive; suppress pull-to-refresh while dragging
+  (() => {
+    let dragging = false, sx = 0, sy = 0, bx = 0, by = 0;
+    const isInteractive = el => ['INPUT', 'SELECT', 'BUTTON', 'A', 'LABEL', 'TEXTAREA', 'AUDIO', 'IFRAME'].includes(el.tagName) || el.closest('.status-tip');
+    modalCard.addEventListener('mousedown', e => {
+      if (isInteractive(e.target)) return;
+      dragging = true; e.preventDefault();
+      sx = e.clientX; sy = e.clientY; bx = st.modalX; by = st.modalY;
+    });
+    window.addEventListener('mousemove', e => { if (!dragging) return; setModalOffset(bx + (e.clientX - sx), by + (e.clientY - sy)); });
+    ['mouseup', 'mouseleave'].forEach(t => window.addEventListener(t, () => dragging = false));
 
-  /* ---------- Events ---------- */
-  startPauseBtn.addEventListener('click', ()=> (st.running?pause():start()));
+    modalCard.addEventListener('touchstart', ev => {
+      const t = ev.touches[0]; if (!t || isInteractive(ev.target)) return;
+      dragging = true; sx = t.clientX; sy = t.clientY; bx = st.modalX; by = st.modalY;
+    }, { passive: false });
+    window.addEventListener('touchmove', ev => {
+      if (!dragging) return;
+      ev.preventDefault();
+      const t = ev.touches[0]; if (!t) return;
+      setModalOffset(bx + (t.clientX - sx), by + (t.clientY - sy));
+    }, { passive: false });
+    window.addEventListener('touchend', () => dragging = false);
+    window.addEventListener('touchcancel', () => dragging = false);
+  })();
+
+  /* ==== EVENTS ==== */
+  startPauseBtn.addEventListener('click', () => (st.running ? pause() : start()));
   resetBtn.addEventListener('click', reset);
 
   timerDisplay.addEventListener('click', enterEdit);
-  timerInput.addEventListener('keydown', e=>{
-    if(e.key==='Enter') commitEdit();
-    if(e.key==='Escape'){ timerInput.style.display='none'; }
-  });
-  window.addEventListener('resize', ()=>{ if(timerInput.style.display==='block') placeInputAboveDisplay(); });
+  timerInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') { timerInput.style.display = 'none'; document.body.classList.remove('editing'); } });
   timerInput.addEventListener('blur', commitEdit);
 
-  // Modal open/close
-  const openModal = show => {
-    settingsModal.classList.toggle('show', !!show);
-    settingsModal.setAttribute('aria-hidden', show?'false':'true');
-  };
-  settingsBtn.addEventListener('click', ()=>openModal(true));
-  closeSettings.addEventListener('click', ()=>openModal(false));
-  // click outside card closes
-  settingsModal.addEventListener('mousedown', e=>{
-    if(e.target === settingsModal) openModal(false);
-  });
+  showAuto.addEventListener('change', () => { st.auto = !!showAuto.checked; save(); render(); });
+  showHours.addEventListener('change', () => { st.showH = !!showHours.checked; save(); render(); });
+  showMinutes.addEventListener('change', () => { st.showM = !!showMinutes.checked; save(); render(); });
+  showSeconds.addEventListener('change', () => { st.showS = !!showSeconds.checked; save(); render(); });
+  showTicks.addEventListener('change', () => { st.showT = !!showTicks.checked; save(); render(); });
 
-  // Show-on-clock
-  showAuto.addEventListener('change',()=>{ st.auto=!!showAuto.checked; save(); render(); });
-  showHours.addEventListener('change',()=>{ st.showH=!!showHours.checked; save(); render(); });
-  showMinutes.addEventListener('change',()=>{ st.showM=!!showMinutes.checked; save(); render(); });
-  showSeconds.addEventListener('change',()=>{ st.showS=!!showSeconds.checked; save(); render(); });
-  showTicks.addEventListener('change',()=>{ st.showT=!!showTicks.checked; save(); render(); });
-
-  // TPS
-  tpsSelect.addEventListener('change', ()=>{
-    const newBase = clamp(parseInt(tpsSelect.value,10),10,100);
-    if(newBase===st.tickBase) return;
-    const secInit = st.initialTicks / st.tickBase;
-    const secNow  = st.remainingTicks / st.tickBase;
-    st.tickBase = newBase;
-    st.initialTicks = Math.round(secInit*newBase);
-    st.remainingTicks= Math.round(secNow*newBase);
+  tpsSelect.addEventListener('change', () => {
+    const nb = clamp(parseInt(tpsSelect.value, 10), 10, 100);
+    if (nb === st.tickBase) return;
+    const ob = st.tickBase;
+    st.initialTicks = convertTicksPreserveLast(ob, nb, st.initialTicks);
+    st.remainingTicks = convertTicksPreserveLast(ob, nb, st.remainingTicks);
+    st.remainingTicks = Math.max(0, Math.min(st.remainingTicks, st.initialTicks));
+    st.tickBase = nb;
+    st.lastMs = performance.now();
     stopFlash(); save(); render(); updateDirectionUI(); syncMinuteState();
   });
 
-  // Size
-  sizePrev.addEventListener('click', ()=> sizeDelta(-1));
-  sizeNext.addEventListener('click', ()=> sizeDelta(+1));
+  sizePrev.addEventListener('click', () => sizeDelta(-1));
+  sizeNext.addEventListener('click', () => sizeDelta(+1));
 
-  // Style + Flash
-  styleSelect.addEventListener('change', ()=>{ st.style=styleSelect.value; applyStyle(); save(); });
-  flashModeSel.addEventListener('change', ()=>{ st.flashMode=flashModeSel.value; stopFlash(); syncMinuteState(); save(); });
+  styleSelect.addEventListener('change', () => { st.style = styleSelect.value; if (st.style !== 'icon') prefixIcon.src = ICON_NORMAL; save(); render(); });
 
-  // Direction toggle
-  directionBtn.addEventListener('click', ()=>{
-    if(st.running) return;
-    st.direction = (st.direction==='from') ? 'to' : 'from';
-    st.remainingTicks = (st.direction==='from') ? st.initialTicks : 0;
-    st.huPlayed=false; stopFlash();
-    updateDirectionUI(); render(); save();
+  flashModeSel.addEventListener('change', () => { st.flashMode = flashModeSel.value; stopFlash(); syncMinuteState(); save(); });
+  flashTypeSel.addEventListener('change', () => { st.flashType = flashTypeSel.value; flashValueIn.placeholder = (st.flashType === 'percent') ? '0–100 or 1/3' : 'HH:MM:SS'; stopFlash(); syncMinuteState(); save(); });
+  flashValueIn.addEventListener('input', () => { st.flashValue = flashValueIn.value; stopFlash(); syncMinuteState(); save(); });
+
+  directionBtn2.addEventListener('click', flipDirection);
+  directionBtn2.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') flipDirection(); });
+
+  // Music status + URL handling
+  const statusMap = {
+    unknown: { icon: './icons/question.png', tip: 'No music' },
+    loading: { icon: './icons/wait.gif', tip: 'Fetching URL…' },
+    saved: { icon: './icons/check.png', tip: 'URL saved' },
+    invalid: { icon: './icons/cross.png', tip: 'Invalid URL' }
+  };
+  function setMusicStatus(s) {
+    st.musicStatus = s;
+    const m = statusMap[s] || statusMap.unknown;
+    musicStatusIcon.src = m.icon; musicStatusTip.textContent = m.tip;
+  }
+  musicStatusBtn.addEventListener('mouseenter', () => {
+    const r = musicStatusBtn.getBoundingClientRect();
+    musicStatusTip.style.left = `${r.left}px`; musicStatusTip.style.top = `${r.top - 36}px`;
+    musicStatusTip.style.display = 'block';
+  });
+  musicStatusBtn.addEventListener('mouseleave', () => { musicStatusTip.style.display = 'none'; });
+
+  function looksLikeDirectAudio(u) { return /\.(mp3|ogg|wav|m4a|aac)(\?|#|$)/i.test(u); }
+  const ytRegex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]{11})/i;
+  const extractYTId = u => (ytRegex.exec(u || '') || [])[1] || '';
+
+  // IFrame API hook
+  window.onYouTubeIframeAPIReady = () => {
+    st.ytReady = true;
+    if (st.ytId) ensureYT(st.ytId);
+  };
+  function ensureYT(id) {
+    if (!st.ytReady || !id) return;
+    ytWrap.style.display = 'block';
+    if (st.yt) { try { st.yt.loadVideoById(id); } catch { } return; }
+    st.yt = new YT.Player('ytPlayer', {
+      width: '100%', height: '100%',
+      videoId: id,
+      playerVars: { rel: 0, modestbranding: 1, controls: 1, playsinline: 1 },
+      events: {
+        onReady: () => {
+          if (st.running || st.ytAutoplayWhenReady) {
+            st.ytAutoplayWhenReady = false;
+            try { st.yt.setPlaybackRate(1); st.yt.playVideo(); } catch { }
+          }
+        }
+      }
+    });
+  }
+  function isYTActive() { return !!(st.ytId && st.ytReady); }
+  function ytIsPlaying() { try { return st.yt && st.yt.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } }
+  function stopAllBGM() { if (bgAudio.src) { try { bgAudio.pause(); } catch { } } if (isYTActive()) { try { st.yt.pauseVideo(); } catch { } } }
+  function playBGM() {
+    if (bgAudio.src) { try { bgAudio.playbackRate = 1; if (st.running) bgAudio.play(); } catch { } }
+    if (isYTActive()) { try { st.yt.setPlaybackRate(1); if (st.running) st.yt.playVideo(); } catch { } }
+  }
+  function stopBGM() { if (bgAudio.src) { try { bgAudio.pause(); } catch { } } if (isYTActive()) { try { st.yt.pauseVideo(); } catch { } } }
+
+  musicUrlInput.addEventListener('input', () => setMusicStatus('loading'));
+  musicUrlSubmit.addEventListener('click', () => {
+    const url = (musicUrlInput.value || '').trim();
+    if (!url) {
+      st.musicUrl = ''; st.ytId = ''; setMusicStatus('unknown');
+      bgAudio.removeAttribute('src'); bgAudio.style.display = 'none';
+      ytWrap.style.display = 'none';
+      save(); return;
+    }
+    try {
+      new URL(url);
+      st.musicUrl = url;
+      const ytId = extractYTId(url);
+      if (ytId) {
+        st.ytId = ytId;
+        bgAudio.removeAttribute('src'); bgAudio.style.display = 'none';
+        ensureYT(ytId);
+        if (st.running && st.ytReady) { try { st.yt.playVideo(); } catch { } } else { st.ytAutoplayWhenReady = st.running; }
+        setMusicStatus('saved');
+      } else if (looksLikeDirectAudio(url)) {
+        st.ytId = ''; ytWrap.style.display = 'none';
+        bgAudio.src = url; bgAudio.style.display = 'block';
+        if (st.running) { try { bgAudio.play(); } catch { } }
+        setMusicStatus('saved');
+      } else {
+        st.ytId = '';
+        bgAudio.removeAttribute('src'); bgAudio.style.display = 'none';
+        ytWrap.style.display = 'none';
+        setMusicStatus('invalid');
+      }
+      save();
+    } catch {
+      setMusicStatus('invalid');
+    }
   });
 
-  // Music (store only)
-  musicUrlSubmit.addEventListener('click', ()=>{
-    st.musicUrl=(musicUrlInput.value||'').trim(); save();
-  });
+  /* ==== HURRY MENUS ==== */
+  function populateHurryUp() {
+    const set = (sel, opts) => { sel.innerHTML = ''; opts.forEach(o => { const e = document.createElement('option'); e.value = o.value; e.textContent = o.label; sel.appendChild(e); }); };
+    const groups = Object.entries(hurryUpPresets).map(([k, v]) => ({ value: k, label: v.label }));
+    set(hurryUpMain, groups);
+    function refreshSub() {
+      const g = hurryUpPresets[hurryUpMain.value] || hurryUpPresets.none;
+      set(hurryUpSub, g.sub.map(s => ({ value: s.value, label: s.label })));
+      const d = g.sub[0]; hurryUpDesc.textContent = d?.desc || ''; st.huKey = hurryUpMain.value; st.huValue = hurryUpSub.value; save();
+    }
+    hurryUpMain.addEventListener('change', refreshSub);
+    hurryUpSub.addEventListener('change', () => {
+      const g = hurryUpPresets[hurryUpMain.value] || hurryUpPresets.none;
+      const d = g.sub.find(s => s.value === hurryUpSub.value) || g.sub[0];
+      hurryUpDesc.textContent = d?.desc || ''; st.huKey = hurryUpMain.value; st.huValue = hurryUpSub.value; save();
+    });
+    hurryUpMain.value = st.huKey in hurryUpPresets ? st.huKey : 'none';
+    refreshSub(); if (st.huValue) hurryUpSub.value = st.huValue;
+  }
 
-  /* ---------- Init ---------- */
-  /* ---------- Init ---------- */
-  if(timerInput && timerInput.value){ st.initialTicks = parseTimeToTicks(timerInput.value, st.tickBase); }
+  /* ==== INIT ==== */
+  st.initialTicks = 9 * 60 * st.tickBase + 59 * st.tickBase + (st.tickBase - 1);
   load();
 
-  // If first run, put remaining according to direction
-  if(st.direction==='from' && st.remainingTicks===0) st.remainingTicks=st.initialTicks;
-  if(st.direction==='to'   && st.remainingTicks>st.initialTicks) st.remainingTicks=0;
-
-  // UI reflect state
-  showAuto.checked = !!st.auto;
-  showHours.checked= !!st.showH;
-  showMinutes.checked=!!st.showM;
-  showSeconds.checked=!!st.showS;
-  showTicks.checked= !!st.showT;
-
-  tpsSelect.value = String(st.tickBase);
-  styleSelect.value = st.style;
-  flashModeSel.value = st.flashMode;
-
-  applySize();
-  applyStyle();
-  updateDirectionUI();
-  populateHurryUp();
-  applyClockFont(st.fontMode || 'default');
-  render();
-})();
-
-// ===== Draggable modal (all black areas, mouse + touch, preserves position) =====
-(() => {
-  const modalCard = document.getElementById('modalCard');
-  if (!modalCard) return;
-
-  // Save/restore modal position so it doesn't re-center after the first drag
-  const POS_KEY = 'stdtimer:modalPos';
-  const savePos = (x, y) => {
-    try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch {}
-  };
-  const loadPos = () => {
-    try {
-      const d = JSON.parse(localStorage.getItem(POS_KEY) || '{}');
-      if (Number.isFinite(d.x) && Number.isFinite(d.y)) {
-        modalCard.style.setProperty('--modal-x', `${d.x}px`);
-        modalCard.style.setProperty('--modal-y', `${d.y}px`);
+  // Attempt to load font blob from IDB if user previously saved it
+  try {
+    if (st.customFontFamily && st.customFontBlobPresent) {
+      const ok = await loadCustomFontFromIDBAndInject();
+      if (!ok) {
+        st.customFontBlobPresent = false;
+        save();
       }
-    } catch {}
-  };
-  loadPos();
-
-  let dragging = false;
-  let startX = 0, startY = 0, baseX = 0, baseY = 0;
-
-  const getVarPx = (name, fallback) => {
-    const v = getComputedStyle(modalCard).getPropertyValue(name).trim();
-    if (!v) return fallback;
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : fallback;
-  };
-
-  // Anything interactive should NOT start a drag
-  const INTERACTIVE_SEL =
-    'input, select, textarea, button, label, a, [contenteditable="true"], .nodrag';
-
-  // Start dragging only if pressed directly on a “black area” (modal background)
-  const maybeStartDrag = (ev) => {
-    // If the exact target or any of its ancestors is interactive, do not drag
-    if (ev.target.closest(INTERACTIVE_SEL)) return;
-
-    // Only drag when the press is *on* the modal card (its black background / padding),
-    // not on the backdrop (if you have one)
-    const host = ev.target.closest('#modalCard');
-    if (!host) return;
-
-    dragging = true;
-
-    const p = ev instanceof PointerEvent ? ev : (ev.touches ? ev.touches[0] : ev);
-    startX = p.clientX; startY = p.clientY;
-    baseX = getVarPx('--modal-x', 0);
-    baseY = getVarPx('--modal-y', 0);
-
-    // helpful cursor feedback
-    modalCard.classList.add('dragging');
-
-    // Keep receiving events even if pointer leaves the card
-    if (ev.target.setPointerCapture && 'pointerId' in ev) {
-      try { ev.target.setPointerCapture(ev.pointerId); } catch {}
+    } else {
+      const blob = await idbGetFont().catch(() => null);
+      if (blob) {
+        await loadCustomFontFromIDBAndInject();
+        if (!st.customFontFamily) st.customFontFamily = 'CustomImportedFont';
+        st.customFontBlobPresent = true;
+        save();
+      }
     }
+  } catch (e) {
+    console.warn('custom font init err', e);
+  }
 
-    ev.preventDefault();
-    ev.stopPropagation();
-  };
+  sizeLabel.textContent = String(st.size);
+  fontSelect.value = st.fontMode;
 
-  const onMove = (ev) => {
-    if (!dragging) return;
-    const p = ev instanceof PointerEvent ? ev : (ev.touches ? ev.touches[0] : ev);
-    const dx = p.clientX - startX;
-    const dy = p.clientY - startY;
-    const x = baseX + dx;
-    const y = baseY + dy;
-    modalCard.style.setProperty('--modal-x', `${x}px`);
-    modalCard.style.setProperty('--modal-y', `${y}px`);
-    ev.preventDefault();
-  };
+  showAuto.checked = !!st.auto; showHours.checked = st.showH !== false; showMinutes.checked = st.showM !== false; showSeconds.checked = st.showS !== false; showTicks.checked = st.showT !== false;
+  tpsSelect.value = String(st.tickBase); styleSelect.value = st.style;
 
-  const endDrag = (ev) => {
-    if (!dragging) return;
-    dragging = false;
-    modalCard.classList.remove('dragging');
+  flashModeSel.value = st.flashMode;
+  flashTypeSel.value = st.flashType;
+  flashValueIn.value = st.flashValue || '';
+  flashValueIn.placeholder = (st.flashType === 'percent') ? '0–100 or 1/3' : 'HH:MM:SS';
 
-    const x = getVarPx('--modal-x', 0);
-    const y = getVarPx('--modal-y', 0);
-    savePos(x, y);
+  st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
 
-    if (ev && ev.target && ev.target.releasePointerCapture && ev.pointerId != null) {
-      try { ev.target.releasePointerCapture(ev.pointerId); } catch {}
-    }
-  };
+  ensureVendorSystemForModal();
+  applyFont(st.fontMode);
+  applySize(); // ensure CSS variable and label match the size on load
+  render();
+  populateHurryUp();
+  updateDirectionUI();
+  setModalOffset(st.modalX || 0, st.modalY || 0);
+  save();
 
-  // Start drag from ANY black area (non-interactive region) of the modal
-  modalCard.addEventListener('pointerdown', maybeStartDrag);
-  window.addEventListener('pointermove', onMove, { passive: false });
-  window.addEventListener('pointerup', endDrag);
-  window.addEventListener('pointercancel', endDrag);
+  // guard accidental double
+  startPauseBtn.addEventListener('dblclick', e => e.preventDefault());
+  resetBtn.addEventListener('dblclick', e => e.preventDefault());
+
 })();

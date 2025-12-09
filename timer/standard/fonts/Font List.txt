@@ -1,7 +1,13 @@
-Default = Fancy Cat PX
+Default - `./fonts/FancyCatPX.ttf`
 
-=OS Specifics=
-Apple = San Francisco
-Google = Roboto
-Microsoft = Segoe UI
-Other = Default Sans Serif
+SYSTEM: 
+Windows - `./fonts/Windows/Segoe UI regular.ttf`
+Android - `./fonts/Android/vendor_fontname.ttf`
+- `./fonts/Android/Google_GoogleSans.ttf`
+- `./fonts/Android/OnePlus_OnePlusSans.ttf`
+- `./fonts/Android/Oppo_OPPOSans.ttf`
+- `./fonts/Android/roboto.ttf`
+- `./fonts/Android/Samsung_SamsungSans.ttf`
+- `./fonts/Android/Vivo_VivoSans.ttf`
+- `./fonts/Android/Xaomi_MiSans.ttf`
+Apple (iOS, VisionOS, tvOS, MacOS, etc) - `./fonts/Apple/SanFranciscoDisplay-Regular.otf`

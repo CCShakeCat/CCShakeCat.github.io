@@ -1,152 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Timer</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Timer — Standard</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <!-- Settings button (top-left) -->
-  <button id="settingsBtn" title="Settings" class="icon-btn">
-    <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon"/>
+  <!-- Settings (gear) -->
+  <button id="settingsBtn" class="icon-btn" aria-label="Settings">
+    <img class="icon" src="./icons/gear.png" alt="" />
   </button>
 
-  <!-- Clock row: prefix + time -->
+  <!-- Timer UI -->
   <div class="timer-app">
-    <div id="clockRow" class="clock-row">
-      <!-- Prefix (Text or Icon) -->
-      <span id="prefixText" class="prefix-text" style="display:none;">TIME</span>
-      <img id="prefixIcon" class="prefix-icon" src="./icons/clock.png" alt="" style="display:none"/>
-      <!-- Editable overlay input -->
-      <input id="timerInput" type="text" value="00:09:59.39" autocomplete="off" autocorrect="off" spellcheck="false"/>
-      <!-- Rendered time -->
-      <p id="timerDisplay" tabindex="0" aria-label="Timer">00:09:59.39</p>
+    <div class="clock-row">
+      <div id="prefixWrap">
+        <div id="prefixText">TIME</div>
+        <img id="prefixIcon" src="./icons/clock.png" alt="" />
+      </div>
+      <div id="timerDisplay" aria-live="polite">00:09:59.39</div>
     </div>
 
-    <div class="controls">
+    <!-- Editable overlay -->
+    <input id="timerInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Set timer (HH:MM:SS.TT)" />
+
+    <div class="buttons">
       <button id="startPauseBtn">Start</button>
       <button id="resetBtn">Reset</button>
     </div>
   </div>
 
-  <!-- Settings (no dim; centered card) -->
-  <div id="settingsModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="modal-content system-font" id="modalCard">
-      <!-- Close -->
-      <button id="closeSettings" title="Close" class="icon-btn close-btn">
-        <img src="icons/cross-mark-button_274e(1).png" alt="Close" class="icon"/>
+  <!-- Mini players -->
+  <audio id="bgAudio" controls style="display:none;"></audio>
+  <div id="ytWrap" style="display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:12px; width:280px; height:158px; background:#111; border:1px solid #444; border-radius:10px; overflow:hidden;">
+    <div id="ytPlayer"></div>
+  </div>
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <!-- Modal -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <div id="modalCard" class="modal-content">
+      <button id="closeSettings" class="close-btn" aria-label="Close">
+        <img class="icon" src="./icons/cross-button.png" alt="×">
       </button>
 
-        <h1>FONT OPTIONS</h1>
+      <!-- MAIN PAGE -->
+      <section id="page-main" class="modal-page active">
+        <h2 class="lbl" style="text-align:center;margin:0 0 6px;">OPTIONS</h2>
 
-      <!-- FONT SELECTION -->
-      <div class="row row-split center">
-        <label class="stack full">
-          <select id="fontSelect">
-            <option value="default" selected>Default</option>
-            <option value="system">System</option>
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-        <a id="importCustomFont" class="linkish">Import Custom Font…</a>
-        <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2" hidden/>
-      </div>
-      <div class="row center"><span id="customFontName" class="muted small"></span></div>
-      <div id="customFontNotice" class="muted tiny center" style="display:none;">
-        If the font doesn’t apply right away, try refreshing the page.
-      </div>
+        <div class="stack">
+          <label class="lbl" for="fontSelect" style="text-align:center;">Font:</label>
+          <div class="row center">
+            <select id="fontSelect" class="grow">
+              <option value="system">SYSTEM</option>
+              <option value="default">Default (FancyCatPX)</option>
+              <option value="custom">Custom</option>
+            </select>
+            <button id="importCustomFont" class="chip">Import Custom font…</button>
+            <input id="customFontFile" type="file" accept=".ttf,.otf,.woff,.woff2" hidden />
+          </div>
+          <div id="customFontNotice" class="tiny muted" style="display:none;text-align:center;">
+            <span id="customFontName">Loaded: —</span><br>
+            If the font doesn’t change immediately, try refreshing.
+          </div>
 
-<!-- SHOW ON CLOCK -->
-<h1>SHOW ON CLOCK:</h1>
+          <div class="row center size-row" style="margin-top:6px;">
+            <span class="lbl">Size</span>
+          </div>
+          <div class="row center size-row">
+            <button id="sizePrev" class="chip">◀</button>
+            <span id="sizeLabel" class="size-label">3</span>
+            <button id="sizeNext" class="chip">▶</button>
+          </div>
 
-<div class="checks">
-  <!-- Auto (default: OFF) -->
-  <label class="check-auto">
-    <input type="checkbox" id="showAuto">
-    <span>Auto</span>
-  </label>
+          <div class="row center" style="margin-top:8px;">
+            <button id="openStyle" class="chip grow">Customize Style ></button>
+          </div>
 
-  <!-- HH : MM : SS . TT (defaults: ON) -->
-  <div class="check-line" aria-label="Select parts to display">
-    <label><input type="checkbox" id="showHours" checked><span>HH</span></label>
-    <span class="sep">:</span>
-    <label><input type="checkbox" id="showMinutes" checked><span>MM</span></label>
-    <span class="sep">:</span>
-    <label><input type="checkbox" id="showSeconds" checked><span>SS</span></label>
-    <span class="sep">.</span>
-    <label><input type="checkbox" id="showTicks" checked><span>TT</span></label>
-  </div>
-</div>
-        
-      <!-- TICK RATE -->
-      <h1>TICK RATE</h1>
-      <div class="row center">
-        <select id="tpsSelect">
-          <option>10</option><option>20</option><option>30</option>
-          <option selected>40 (Default)</option>
-          <option>50</option><option>60</option><option>70</option>
-          <option>80</option><option>90</option><option>100</option>
-        </select>
-        <span>&nbsp;Ticks Per Second</span>
-      </div>
+          <!-- Music URL + mini status -->
+          <div class="row center" style="margin-top:6px;">
+            <input id="musicUrlInput" class="grow" type="text" placeholder="Paste YouTube, or direct audio URL…" />
+            <button id="musicUrlSubmitBtn" class="chip">Submit</button>
+            <button id="musicStatusBtn" class="status-btn" aria-label="Music status">
+              <img id="musicStatusIcon" src="./icons/question.png" alt="" />
+            </button>
+          </div>
+          <div id="musicStatusTip" class="status-tip">No music</div>
 
-      <!-- STYLE (Prefix) -->
-      <h1>STYLE</h1>
-      <div class="row center">
-        <select id="styleSelect">
-          <option value="default" selected>Default</option>
-          <option value="time">Text</option>
-          <option value="icon">Icon</option>
-        </select>
-      </div>
+          <div class="row center" style="margin-top:6px;">
+            <button id="openHurry" class="chip grow">Customize Hurry-Up ></button>
+          </div>
+        </div>
+      </section>
 
-      <!-- CLOCK SIZE -->
-      <h1>CLOCK SIZE</h1>
-      <div class="row center">
-        <button id="sizePrev" class="chip">&lt;</button>
-        <span id="sizeLabel" class="size-label">3</span>
-        <button id="sizeNext" class="chip">&gt;</button>
-      </div>
+      <!-- STYLE PAGE -->
+      <section id="page-style" class="modal-page">
+        <h2 class="lbl" style="text-align:center;margin:0 0 6px;">Clock Customization</h2>
 
-      <!-- TIMER DIRECTION -->
-      <h1>TIMER DIRECTION</h1>
-      <div class="row center">
-        <span>Count&nbsp;</span>
-        <button id="directionBtn" class="chip">FROM</button>
-        <span>&nbsp;</span>
-        <span id="directionTarget" class="target-time">00:09:59.39</span>
-        <span class="muted">&nbsp;(ends at <span id="directionEnds">00:00:00.00</span>)</span>
-      </div>
+        <div class="stack">
+          <div class="lbl" style="text-align:center;">Show on Clock:</div>
+          <div class="row center inline-cb align-center">
+            <label><input id="showAuto" type="checkbox"> Auto — hide what is zero</label>
+          </div>
+          <div class="row center inline-cb align-center">
+            <label><input id="showHours" type="checkbox" checked> <b>HH</b></label>
+            <span class="sep">:</span>
+            <label><input id="showMinutes" type="checkbox" checked> <b>MM</b></label>
+            <span class="sep">:</span>
+            <label><input id="showSeconds" type="checkbox" checked> <b>SS</b></label>
+            <span class="sep">.</span>
+            <label><input id="showTicks" type="checkbox" checked> <b>TT</b></label>
+          </div>
 
-      <!-- MUSIC URL (stored only) -->
-      <h1>BACKGROUND MUSIC</h1>
-      <div class="row row-split">
-        <input type="url" id="musicUrlInput" placeholder="Paste YouTube, Spotify, or direct audio URL…"/>
-        <button id="musicUrlSubmitBtn" class="setting-input">Submit</button>
-      </div>
+          <div class="row center align-center" style="margin-top:8px;">
+            <label class="lbl" for="tpsSelect">Tick Rate:</label>
+            <select id="tpsSelect">
+              <option>10</option>
+              <option>20</option>
+              <option>30</option>
+              <option selected>40 (Default)</option>
+              <option>50</option>
+              <option>60</option>
+              <option>70</option>
+              <option>80</option>
+              <option>90</option>
+              <option>100</option>
+            </select>
+            <span>TPS</span>
+          </div>
 
-      <!-- HURRY UP -->
-      <h1>HURRY UP</h1>
-      <div class="row row-split">
-        <select id="hurryUpMain"></select>
-        <select id="hurryUpSub"></select>
-      </div>
-      <div id="hurryUpDesc" class="muted tiny center"></div>
+          <div class="row center align-center">
+            <label class="lbl" for="styleSelect">Prefix:</label>
+            <select id="styleSelect">
+              <option value="default">Default</option>
+              <option value="time">Text</option>
+              <option value="icon">Icon</option>
+            </select>
+          </div>
 
-      <!-- FLASH -->
-      <h1>FLASH ON LAST MINUTE</h1>
-      <div class="row center">
-        <select id="flashMode">
-          <option value="nothing">Nothing</option>
-          <option value="prefix">Prefix</option>
-          <option value="time" selected>Time</option>
-          <option value="all">All</option>
-        </select>
-      </div>
+          <!-- Direction summary -->
+          <div class="stack" style="margin-top:12px;">
+            <div class="row center align-center">
+              <span class="lbl">Count</span>
+              <button id="directionBtn_style" class="chip">FROM</button>
+              <span class="target-time" id="directionTarget_style">00:00:00.00</span>
+              <span class="muted"> (ends at <span id="directionEnds_style">00:00:00.00</span>)</span>
+            </div>
+          </div>
+
+          <div class="row center" style="margin-top:10px;">
+            <button id="backFromStyle" class="chip">&lt; Back</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- HURRY PAGE -->
+      <section id="page-hurry" class="modal-page">
+        <h2 class="lbl" style="text-align:center;margin:0 0 6px;">Hurry Up Customization</h2>
+
+        <div class="stack">
+          <div class="row center align-center">
+            <label class="lbl">Game style:</label>
+            <select id="hurryUpMain"></select>
+            <label class="lbl">Substyle:</label>
+            <select id="hurryUpSub"></select>
+          </div>
+          <div id="hurryUpDesc" class="tiny faint" style="text-align:center;margin-top:-4px;"></div>
+
+          <hr style="border:0;border-top:1px solid #333;margin:10px 0 0;">
+
+          <div class="row center align-center" style="margin-top:10px;">
+            <label class="lbl" for="flashMode">Flash on Last Minute</label>
+            <select id="flashMode" class="grow">
+              <option value="nothing">Nothing</option>
+              <option value="prefix">Prefix</option>
+              <option value="time">Time</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+
+          <div class="row center align-center">
+            <span class="lbl">Start flash at</span>
+            <select id="flashType">
+              <option value="time" selected>Time</option>
+              <option value="percent">%</option>
+            </select>
+            <input id="flashValue" type="text" placeholder="Default: 00:01:00 (One Minute)" />
+          </div>
+            
+          <div class="row center" style="margin-top:10px;">
+            <button id="backFromHurry" class="chip">&lt; Back</button>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="./script.js"></script>
 </body>
 </html>
