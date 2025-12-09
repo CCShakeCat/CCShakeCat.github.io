@@ -565,25 +565,60 @@
 
   /* ==== EDIT OVERLAY ==== */
   const atStart = () => st.direction === 'from' ? st.remainingTicks === st.initialTicks : st.remainingTicks === 0;
-  function enterEdit() {
-    if (st.running || !atStart()) return;
-    timerInput.value = formatFromTicks(st.initialTicks);
-    document.body.classList.add('editing');
-    timerInput.style.display = 'block';
-    timerInput.focus(); timerInput.select();
-  }
-  function commitEdit() {
-    const nv = parseTimeToTicks(timerInput.value, st.tickBase);
-    if (Number.isFinite(nv) && nv >= 0) {
-      st.initialTicks = nv;
-      st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
-      st.huPlayed = false; stopFlash();
-      updateDirectionUI(); save(); render();
-    }
-    timerInput.style.display = 'none';
-    document.body.classList.remove('editing');
+function enterEdit(){
+  if (st.running || !atStart()) return;
+
+  // ensure input accepts text keyboard (colon, period, etc.)
+  timerInput.type = 'text';
+  try { timerInput.setAttribute('inputmode', 'text'); } catch{}
+
+  // populate value
+  timerInput.value = formatFromTicks(st.initialTicks);
+
+  // match the visual font-size of the clock for a natural edit feel
+  const computedFontSize = getComputedStyle(timerDisplay).fontSize || getComputedStyle(document.documentElement).getPropertyValue('--clock-vw') || '4rem';
+  timerInput.style.fontSize = computedFontSize;
+
+  // make visible so measurements work
+  timerInput.style.display = 'block';
+  document.body.classList.add('editing');
+
+  // compute timerDisplay position and center the input horizontally & vertically on it
+  const rect = timerDisplay.getBoundingClientRect();
+  const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+
+  // prefer input width close to timer width but keep bounds
+  const desiredWidth = Math.min(Math.max(rect.width * 0.95, 160), window.innerWidth - 40);
+  timerInput.style.width = `${desiredWidth}px`;
+
+  // position: left center at rect center, top aligned to middle of display
+  const inputHeightEstimate = parseFloat(timerInput.style.fontSize) * 1.15 || (rect.height * 0.28);
+  const top = rect.top + scrollY + (rect.height / 2) - (inputHeightEstimate / 2);
+
+  timerInput.style.left = `${rect.left + (rect.width / 2)}px`;
+  timerInput.style.top = `${Math.max(8, top)}px`; // clamp to avoid off-screen at top
+  timerInput.style.transform = 'translate(-50%, 0)';
+
+  // select contents and focus (user gesture will bring up keyboard)
+  timerInput.focus();
+  try { timerInput.setSelectionRange(0, timerInput.value.length); } catch (e) { /* some mobile keyboards may not allow setSelectionRange */ }
+}
+
+function commitEdit(){
+  const nv = parseTimeToTicks(timerInput.value, st.tickBase);
+  if (Number.isFinite(nv) && nv >= 0){
+    st.initialTicks = nv;
+    st.remainingTicks = (st.direction === 'from') ? st.initialTicks : 0;
+    st.huPlayed = false; stopFlash();
+    updateDirectionUI(); save(); render();
   }
 
+  // hide & reset positioning
+  timerInput.style.display = 'none';
+  timerInput.style.top = ''; timerInput.style.left = ''; timerInput.style.width = '';
+  timerInput.style.transform = 'translateX(-50%)';
+  document.body.classList.remove('editing');
+}
   /* ==== MODAL / PAGES ==== */
   function setModalOffset(x = 0, y = 0) {
     st.modalX = x; st.modalY = y;

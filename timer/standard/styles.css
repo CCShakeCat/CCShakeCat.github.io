@@ -30,12 +30,26 @@ body{
 
 .timer-app{ display:grid; justify-items:center; align-items:center; gap:16px }
 #timerInput{
-  position:absolute; left:50%; top:0; transform:translateX(-50%);
-  display:none; z-index:2;
-  font:inherit; font-size:var(--clock-vw); line-height:1; letter-spacing:.04em; text-align:center;
-  color:#fff; background:#000; border:3px solid #58a6ff; border-radius:12px; padding:.2em .45em; outline:none;
-}
-.editing #timerDisplay{ visibility:hidden }
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  display:none;
+  z-index:10000;
+  font:inherit;
+  font-size:var(--clock-vw);
+  line-height:1;
+  letter-spacing:.04em;
+  text-align:center;
+  color:#fff;
+  background:#000;
+  border:3px solid #58a6ff;
+  border-radius:12px;
+  padding:.2em .45em;
+  outline:none;
+  box-sizing: border-box;
+  min-width: 30%;
+  max-width: 90%;
+}.editing #timerDisplay{ visibility:hidden }
 .buttons{ display:flex; gap:8px; margin-top:22px }
 button{ font:inherit }
 
