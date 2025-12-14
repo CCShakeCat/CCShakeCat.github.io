@@ -585,12 +585,22 @@ function ensureYT(id){
     }
 
     async function playTenSecondBeep(){
-      try {
-        const a = new Audio(`${HURRY_DIR}time_warning.wav`);
-        a.volume = 1.0;
-        a.preload='auto';
-        await a.play();
-      } catch {}
+      // Try multiple formats so exports don't break if the asset extension differs.
+      const sources = [
+        `${HURRY_DIR}time_warning.wav`,
+        `${HURRY_DIR}time_warning.mp3`,
+        `${HURRY_DIR}time_warning.ogg`
+      ];
+      for (const src of sources){
+        try {
+          const a = new Audio(src);
+          a.volume = 1.0;
+          a.preload = 'auto';
+          // Some browsers need a tiny delay for src assignment before play()
+          await a.play();
+          return;
+        } catch {}
+      }
     }
 
     /* ==== PERSISTENCE ==== */
@@ -671,14 +681,19 @@ function ensureYT(id){
       st.lastMs=performance.now();
       startPauseBtn.textContent='Pause';
 
-      if (st.ytId && !st.ytReady) st.ytAutoplayWhenReady = true;
-      playBGM();
 
       const trigger = computeFlashTrigger();
       const left = timeLeftTicks();
-      if (!st.huPlayed && st.huValue && left <= trigger){
-        st.huPlayed=true;
+      const willHurryNow = (!st.huPlayed && st.huValue && left <= trigger);
+
+      // If the timer starts already inside the Hurry-Up window (e.g., a 00:00:30 timer),
+      // do NOT start the normal music first — let Hurry-Up logic take over.
+      if (willHurryNow){
+        st.huPlayed = true;
         doHurryUp();
+      } else {
+        if (st.ytId && !st.ytReady) st.ytAutoplayWhenReady = true;
+        playBGM();
       }
 
       syncMinuteState();
