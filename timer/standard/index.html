@@ -31,11 +31,7 @@
     </div>
   </div>
 
-  <!-- Mini players -->
-  <audio id="bgAudio" controls style="display:none;" loop></audio>
-  <div id="ytWrap" style="display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:12px; width:280px; height:158px; background:#111; border:1px solid #444; border-radius:10px; overflow:hidden;">
-    <div id="ytPlayer"></div>
-  </div>
+  <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <!-- Modal -->
@@ -53,12 +49,11 @@
           <label class="lbl" for="fontSelect" style="text-align:center;">Font:</label>
           <div class="row center">
             <select id="fontSelect" class="grow">
-              <option value="system">SYSTEM</option>
-              <option value="default">Default (FancyCatPX)</option>
+              <option value="default">Default</option>
+              <option value="system">System</option>
               <option value="custom">Custom</option>
             </select>
 
-            <!-- Use label-for-file approach so native file picker opens reliably -->
             <label id="importCustomFont" class="chip" for="customFontFile" role="button" tabindex="0" style="cursor:pointer;">
               Import Custom font…
             </label>
@@ -83,20 +78,31 @@
             <button id="openStyle" class="chip grow">Customize Style ></button>
           </div>
 
-          <!-- Music URL + mini status -->
+          <!-- Music URL + status -->
           <div class="row center" style="margin-top:6px;">
             <input id="musicUrlInput" class="grow" type="text" placeholder="Paste YouTube, or direct audio URL…" />
             <button id="musicUrlSubmitBtn" class="chip">Submit</button>
-            <button id="musicStatusBtn" class="status-btn" aria-label="Music status">
-              <img id="musicStatusIcon" src="./icons/question.png" alt="" />
-            </button>
+
+            <div class="status-wrapper">
+              <button id="musicStatusBtn" class="status-btn" aria-label="Music status">
+                <img id="musicStatusIcon" src="./icons/question.png" alt="" />
+              </button>
+              <div id="musicStatusTip" class="status-tip">No music</div>
+            </div>
           </div>
-          <div id="musicStatusTip" class="status-tip">No music</div>
+
+          <!-- Mini players INSIDE the modal -->
+          <div class="music-players" style="margin-top:6px;">
+            <audio id="bgAudio" controls style="display:none; width:100%;"></audio>
+            <div id="ytWrap" style="display:none; width:100%; margin-top:6px; border-radius:10px; overflow:hidden;">
+              <!-- Centered mini player -->
+              <div id="ytPlayer" style="width:50%; aspect-ratio:16 / 9; margin:0 auto;"></div>
+            </div>
+          </div>
 
           <div class="row center" style="margin-top:6px;">
             <button id="openHurry" class="chip grow">Customize Hurry-Up ></button>
           </div>
-        </div>
       </section>
 
       <!-- STYLE PAGE -->
@@ -173,16 +179,29 @@
           </div>
           <div id="hurryUpDesc" class="tiny faint" style="text-align:center;margin-top:-4px;"></div>
 
-          <div class="row center" style="margin-top:8px;">
-            <label class="lbl">Hurry-up volume:</label>
-            <select id="hurryVolume" class="chip">
-              <option value="0.25">25%</option>
-              <option value="0.5">50%</option>
-              <option value="0.75">75%</option>
-              <option value="1" selected>100%</option>
-            </select>
+          <!-- Hurry-Up Volume -->
+          <div class="row center align-center" style="margin-top:10px;">
+            <label class="lbl" for="hurryVolume">Hurry Up Volume</label>
+            <input
+              id="hurryVolume"
+              type="range"
+              min="0"
+              max="100"
+              value="100"
+              style="flex:1;max-width:260px;margin:0 8px;"
+            />
+            <span id="hurryVolumeLabel" class="tiny">100%</span>
           </div>
 
+          <!-- Ten-second countdown toggle -->
+          <div class="row center align-center" style="margin-top:6px;">
+            <label class="lbl" for="tenSecondBeep">Count Down Ten Seconds</label>
+            <input
+              id="tenSecondBeep"
+              type="checkbox"
+              style="margin-left:8px;"
+            />
+          </div>
           <hr style="border:0;border-top:1px solid #333;margin:10px 0 0;">
 
           <div class="row center align-center" style="margin-top:10px;">
@@ -203,7 +222,7 @@
             </select>
             <input id="flashValue" type="text" placeholder="Default: 00:01:00 (One Minute)" />
           </div>
-            
+
           <div class="row center" style="margin-top:10px;">
             <button id="backFromHurry" class="chip">&lt; Back</button>
           </div>

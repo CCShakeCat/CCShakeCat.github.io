@@ -3,10 +3,6 @@
   --accent-yellow:#ffff55;
   --clock-vw:8vw;
   --modal-x:0px; --modal-y:0px;
-
-  --modal-side-gap: 24px;
-
-  --modal-font-stack: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 html,body{height:100%}
@@ -18,47 +14,26 @@ body{
 }
 
 /* Clock */
-#timerDisplay{ font-size:var(--clock-vw); line-height:1; letter-spacing:.02em; color:#fff; user-select:none; text-align:center; }
-.monochar{display:inline-block;width:.775em;text-align:center}
+#timerDisplay{ font-size:var(--clock-vw); line-height:1; letter-spacing:.02em; color:#fff; user-select:none }
+.monochar{display:inline-block;width:.75em;text-align:center}
 .monochar--sep{width:.36em}
 
 .clock-row{ display:flex; align-items:center; gap:min(3vw,48px); padding-top:6vh }
-.clock-row.stacked{ flex-direction:column; gap:0.6em; align-items:center; padding-top:4vh; }
+.clock-row.stacked #prefixWrap{justify-content:center; min-width:auto}
 #prefixWrap{ display:flex; align-items:center; justify-content:flex-end; min-width:12vw }
 #prefixText{ display:none; font-weight:900; letter-spacing:.02em; color:#ffff00; font-size:var(--clock-vw) }
 #prefixIcon{ display:none; width:calc(var(--clock-vw)*1.2); height:calc(var(--clock-vw)*1.2) }
 
 .timer-app{ display:grid; justify-items:center; align-items:center; gap:16px }
 #timerInput{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  display:none;
-  z-index:10000;
-  font:inherit;
-  font-size:var(--clock-vw);
-  line-height:1;
-  letter-spacing:.04em;
-  text-align:center;
-  color:#fff;
-  background:#000;
-  border:3px solid #58a6ff;
-  border-radius:12px;
-  padding:.2em .45em;
-  outline:none;
-  box-sizing: border-box;
-  min-width: 30%;
-  max-width: 90%;
-}.editing #timerDisplay{ visibility:hidden }
+  position:absolute; left:50%; top:0; transform:translateX(-50%);
+  display:none; z-index:2;
+  font:inherit; font-size:var(--clock-vw); line-height:1; letter-spacing:.04em; text-align:center;
+  color:#fff; background:#000; border:3px solid #58a6ff; border-radius:12px; padding:.2em .45em; outline:none;
+}
+.editing #timerDisplay{ visibility:hidden }
 .buttons{ display:flex; gap:8px; margin-top:22px }
 button{ font:inherit }
-
-/* stacked clock line styles */
-.clock-line { display:block; line-height:1; }
-.clock-line-large { font-size: calc(var(--clock-vw) * 1.0); }
-.clock-line-xl { font-size: calc(var(--clock-vw) * 1.05); }
-.clock-line-small { font-size: calc(var(--clock-vw) * 0.85); }
-.clock-line-tiny { font-size: calc(var(--clock-vw) * 0.7); }
 
 /* Gear */
 .icon-btn{ position:fixed; top:10px; left:10px; background:none; border:0; cursor:pointer }
@@ -68,13 +43,14 @@ button{ font:inherit }
 .modal{ position:fixed; inset:0; display:none; z-index:1000; pointer-events:none }
 .modal.show{ display:block }
 .modal-content{
+  font-family: var(--modal-font-stack);
+
   position:absolute; left:50%; top:50%;
   transform:translate(-50%,-50%) translate(var(--modal-x),var(--modal-y));
-  width: min(820px, calc(100vw - (var(--modal-side-gap) * 2)));
-  max-width: 820px;
+  width:min(820px,92vw);
   background:#0c0c0c; color:#fff; border:6px solid var(--ring);
   border-radius:22px; box-shadow:0 18px 60px rgba(0,0,0,.55);
-  padding:22px; user-select:none; pointer-events:auto; box-sizing:border-box;
+  padding:22px; user-select:none; pointer-events:auto;
 }
 
 /* Close (top-right, no border) */
@@ -122,45 +98,23 @@ button{ font:inherit }
 .status-btn img{ width:20px; height:20px }
 .status-tip{ display:none; position:fixed; transform:translateY(-8px); background:#111; border:1px solid #666; color:#fff; padding:6px 10px; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.35); white-space:nowrap; z-index:1101 }
 
-@media (max-width:600px){
-  :root{ --modal-side-gap: 20px; }
+@media (max-width:480px){
+  :root{ --clock-vw:16vw }
   .clock-row{ gap:5vw; padding-top:3vh }
   #prefixWrap{ min-width:18vw }
-  .modal-content{ width: calc(100vw - (var(--modal-side-gap) * 2)); max-width: 700px; }
-}
-
-@media (max-width:420px){
-  :root{ --modal-side-gap: 16px; }
-  .modal-content{ width: calc(100vw - (var(--modal-side-gap) * 2)); max-width: 680px; padding:18px; border-radius:18px; }
-  :root{ --clock-vw:16vw }
-}
-
-/* Ensure modal headings/labels use the site VendorSystem stack,
-   but avoid forcing the font on native form controls which changes metrics. */
-.modal-content {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.modal-content h1,
-.modal-content h2,
-.modal-content h3,
-.modal-content h4,
-.modal-content .lbl,
-.modal-content label,
-.modal-content .hint,
-.modal-content .muted,
-.modal-content .tiny,
-.modal-content .faint,
-.modal-content .target-time,
-.modal-content .chip,
-.modal-content .stack,
-.modal-content .row {
+  .modal-content{
   font-family: var(--modal-font-stack);
+ width:min(700px,96vw) }
 }
 
-/* Modal and everything inside stays on system font (kept for compatibility) */
+/* Put this near your modal styles */
+:root{
+  --ui-font-stack: system-ui, "Segoe UI", Roboto, -apple-system, "San Francisco",
+                   "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Modal and everything inside stays on system font */
 .modal-content,
 .modal-content * {
-  /* legacy left intentionally blank; variable above controls actual stack for textual elements */
+  font-family: var(--ui-font-stack) !important;
 }
