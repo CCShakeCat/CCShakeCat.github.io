@@ -1,184 +1,411 @@
 @font-face {
-    font-family: 'Press Start 2P';
-    src: url('./fonts/PressStart2P-Regular.ttf') format('truetype');
-    font-display: swap;
+  font-family: 'SMAS';
+  src: url('./fonts/SMAS.ttf') format('truetype');
+  font-display: swap;
 }
 
-body {
-    font-family: 'Press Start 2P', monospace, Arial, sans-serif;
-    color: #fff;
-    background: #6c9cff;
-    margin: 0;
-    min-height: 100vh;
-    min-width: 100vw;
-    overflow-x: hidden;
+:root{
+  --ui-scale: 1rem;
+
+  --hud-font: 'Press Start 2P', monospace, Arial, sans-serif;
+  --hud-size: clamp(80px, 12vw, 180px);
+  --label-size: clamp(80px, 12vw, 180px);
+
+  /* sprite defaults */
+  --glyph-size: 8px;
+  --glyph-stride: 9px;
+  --sheet-width: 323px;
+  --glyph-scale: 8;
+  --sprite-gap: 0px;
+  --input-width: calc((3 * var(--glyph-size) * var(--glyph-scale)) + 0.35em);
+  --sheet-url: url('./fonts/SMBLL-HUD.png');
+
+  --bg-fill: #86b6e8;
+  --text-fill: #ffffff;
 }
 
-.main-center {
-    min-height: 100vh;
-    min-width: 100vw;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* style presets */
+body[data-style="smb"]{
+  --hud-font: 'Press Start 2P', monospace, Arial, sans-serif;
+  --hud-size: clamp(56px, 7vw, 120px);
+  --label-size: clamp(56px, 7vw, 120px);
+  --bg-fill: #6c9cff;
+  --text-fill: #ffffff;
 }
 
-.timer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+body[data-style="smblost"]{
+  --hud-size: clamp(80px, 11vw, 180px);
+  --label-size: clamp(28px, 4vw, 52px);
+  --glyph-size: 8px;
+  --glyph-stride: 9px;   /* 8px glyph + 1px separator */
+  --sheet-width: 323px;  /* 36*8 + 35*1 */
+  --glyph-scale: 8;
+  --sheet-url: url('./fonts/SMBLL-HUD.png');
+  --bg-fill: #86b6e8;
 }
 
-#timerLabel {
-    font-family: inherit;
-    font-size: 5vw;
-    letter-spacing: 0.1em;
-    color: #fff;
-    margin-bottom: 0.2em;
-    text-align: center;
+body[data-style="smas"]{
+  --hud-font: 'SMAS', 'Press Start 2P', monospace, Arial, sans-serif;
+  --hud-size: clamp(80px, 11vw, 180px);
+  --label-size: clamp(28px, 4vw, 52px);
+  --glyph-size: 8px;
+  --glyph-stride: 8px;   /* 7px glyph + 1px separator */
+  --sheet-width: 323px;  /* 36*7 + 35*1 */
+  --glyph-scale: 8;
+  --sheet-url: url('./fonts/SMAS-HUD.png');
+  --bg-fill: linear-gradient(#5893a3, #cbfffd);
 }
 
-#display, #timerInput {
-    font-size: 5vw;
-    font-family: inherit;
-    letter-spacing: 0.1em;
-    margin: 1.2em 0 0.8em 0;
-    text-align: center;
-    background: none;
-    border: none;
-    color: #fff;
-    font-weight: bold;
-    outline: none;
-    width: 4.2em; /* Ensures input and display match width for 3 chars */
-    padding: 0;
+html, body { height:100%; }
+
+body{
+  margin:0;
+  color:#fff;
+  overflow-x:hidden;
+  min-height:100vh;
+  min-width:100vw;
+  background: var(--bg-fill);
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
 }
 
-#display {
-    word-spacing: 0;
-    /* Ensures monochar alignment is visually consistent */
-    display: flex;
-    justify-content: center;
-    gap: 0em;
+/* ===== top controls ===== */
+
+.ui-chrome{
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
 }
 
-.monochar {
-    display: inline-block;
-    width: 1.1em;
-    min-width: 1.1em;
-    max-width: 1.1em;
-    text-align: center;
-    /* Remove extra spacing for perfect grid look */
+#genHurryToggle{
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2200;
+  user-select: none;
+  cursor: pointer;
+  font-size: 1.1em;
+  background: #222;
+  color: #fff;
+  box-shadow: 0 2px 8px #0006;
+  padding: 0.2em 0.7em;
+  border-radius: 0.3em;
+  display: block;
+}
+#genHurryToggle label { cursor: pointer; }
+#genHurryToggle input[type="checkbox"] {
+  margin-right: 0.5em;
+  transform: scale(1.2);
+  vertical-align: middle;
+  accent-color: #f7d774;
 }
 
-.timer-controls {
-    display: flex;
-    gap: 1.5em;
-    margin-top: 0.5em;
+#customAudioBox{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2200;
+  display: block;
+  width: auto;
+  max-width: min(92vw, 640px);
+  font-size: var(--ui-scale);
+  user-select: none;
 }
 
-.timer-controls button {
-    font-size: 1em;
-    padding: 0.13em 0.6em;
-    border-radius: 0.2em;
-    border: none;
-    background: #888;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-    font-family: inherit;
-}
-.timer-controls button:hover {
-    background: #aaf;
-    color: #000;
+#customAudioInput{
+  font-size: 1em;
+  width: 22em;
+  max-width: 90vw;
+  padding: 0.4em;
+  border: 2px solid #000;
+  border-radius: 0.3em;
+  background: #eee;
+  color: #000;
+  font-family: inherit;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.settings-float {
-    position: fixed;
-    top: 24px;
-    left: 24px;
-    z-index: 2001;
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-}
-.icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.icon {
-    width: 2em;
-    height: 2em;
-    display: inline-block;
-    vertical-align: middle;
+#loadAudioBtn{
+  font-size: 1em;
+  margin-left: 0.45em;
+  padding: 0.22em 0.5em;
+  border: 2px solid #888;
+  border-radius: 0.2em;
+  background: #ddd;
+  color: #000;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-/* ========================= */
-/*     STYLE SYSTEM ADDON    */
-/* (non-destructive to base) */
-/* ========================= */
-
-/* Optional extra fonts used by some styles */
-@font-face { font-family: 'SMB';   src: url('./fonts/SMB.ttf') format('truetype');  font-display: swap; }
-@font-face { font-family: 'SMBLL'; src: url('./fonts/SMBLL.ttf') format('truetype'); font-display: swap; }
-@font-face { font-family: 'SMAS';  src: url('./fonts/SMAS.ttf') format('truetype');  font-display: swap; }
-
-/* Default (SMB): keep your original look (Press Start 2P + solid blue) */
-
-/* Lost Levels (FDS): font + pixel shadow */
-body[data-style="smblost"] {
-  font-family: 'SMBLL', 'Press Start 2P', monospace, Arial, sans-serif;
-}
-body[data-style="smblost"] #timerLabel,
-body[data-style="smblost"] #display,
-body[data-style="smblost"] #timerInput {
-  text-shadow: 0.13em 0.13em 0 #000;
+#loadAudioBtn:hover{
+  background: #fff;
 }
 
-/* Super Mario All-Stars (SNES): sky gradient + outline */
-body[data-style="smas"] {
-  font-family: 'SMAS', 'Press Start 2P', monospace, Arial, sans-serif;
-  background: linear-gradient(#5893a3, #cbfffd);
-}
-/* Outline: WebKit stroke + Firefox fallback via layered shadows */
-body[data-style="smas"] #timerLabel,
-body[data-style="smas"] #display,
-body[data-style="smas"] #timerInput {
-  -webkit-text-stroke: 0.08em #000073;
-  text-shadow:
-    0.13em 0   #000073,
-   -0.13em 0   #000073,
-    0   0.13em #000073,
-    0  -0.13em #000073,
-  /*  0.08em 0.08em #000073,
-   -0.08em 0.08em #000073,
-    0.08em -0.08em #000073,
-   -0.08em -0.08em #000073; */
+#audioStatus{
+  margin-top: 0.45em;
+  font-size: 0.9em;
+  min-height: 1.2em;
+  text-align: left;
 }
 
-/* Style dropdown row (under Music URL) */
-.style-row {
-  margin-top: .5rem;
+#mediaPreview{
+  display: none;
+  margin-top: 0.45em;
+  width: min(360px, 90vw);
+}
+
+body[data-paused="true"] #mediaPreview{
+  display: block;
+}
+
+#mediaPreview audio{
+  width: 100%;
+  display: block;
+}
+
+#mediaPreview iframe{
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+}
+
+.style-row{
+  margin-top: 0.45em;
   display: grid;
   grid-template-columns: max-content 1fr;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
+  width: min(360px, 90vw);
 }
 .style-row select { width: 100%; max-width: 22em; }
 .style-row label  { font-size: 0.9em; letter-spacing: 0.06em; }
 
-/* Hide ONLY these when running */
 body[data-running="true"] #genHurryToggle,
-body[data-running="true"] #customAudioBox,
-body[data-running="true"] .style-row {
+body[data-running="true"] #customAudioBox{
   display: none !important;
 }
 
-/* Optional nudge for timer area when running */
-body[data-running="true"] #timerArea {
-  margin: 8vh auto 0;
+/* ===== stage ===== */
+
+.main-center{
+  min-height:100vh;
+  min-width:100vw;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.timer{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+#timerArea{
+  text-align:center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* default text label only for smb */
+#timerLabel{
+  display:none;
+  color: var(--text-fill);
+  font-family: inherit;
+  font-size: var(--label-size);
+  margin-bottom: 0.6em;
+  margin-top: 0;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+body[data-style="smb"] #timerLabel{
+  display:block;
+}
+
+/* sprite label for LL / SMAS */
+.sprite-label{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap: var(--sprite-gap);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  min-height: calc(var(--glyph-size) * var(--glyph-scale));
+  margin: 0 0 0.8em 0;
+  width: fit-content;
+  cursor: default;
+}
+
+body[data-style="smblost"] .sprite-label,
+body[data-style="smas"] .sprite-label{
+  display:flex;
+}
+
+/* text digits only for smb */
+#display{
+  display:none;
+  color: var(--text-fill);
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
   text-align: center;
+  background: none;
+  border: none;
+  font-weight: bold;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--hud-size);
+  line-height: 1;
+  cursor: text;
+}
+
+body[data-style="smb"] #display{
+  display:block;
+}
+
+/* sprite digits */
+.sprite-display{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap: var(--sprite-gap);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  min-height: calc(var(--glyph-size) * var(--glyph-scale));
+  position: relative;
+  width: fit-content;
+  cursor: text;
+}
+
+body[data-style="smblost"] .sprite-display,
+body[data-style="smas"] .sprite-display{
+  display:flex;
+}
+
+.sprite-char{
+  width: calc(var(--glyph-size) * var(--glyph-scale));
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  background-image: var(--sheet-url);
+  background-repeat: no-repeat;
+  background-size: calc(var(--sheet-width) * var(--glyph-scale)) calc(var(--glyph-size) * var(--glyph-scale));
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+/* edit input */
+#timerInput{
+  display:none;
+  color: var(--text-fill);
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
+  text-align: center;
+  background: none;
+  border: none;
+  font-weight: bold;
+  outline: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* default SMB edit input is visible text */
+body[data-style="smb"].editing #timerInput{
+  display:block !important;
+  position: static;
+  transform: none;
+  font-size: var(--hud-size);
+  line-height: 1;
+  width: 3.4ch;
+  color: var(--text-fill);
+  -webkit-text-fill-color: initial;
+  caret-color: currentColor;
+}
+
+/* sprite styles use invisible typing layer */
+body[data-style="smblost"] #timerInput,
+body[data-style="smas"] #timerInput{
+  position:absolute;
+  left:50%;
+  transform: translateX(-50%);
+  width: var(--input-width);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  background:transparent;
+  z-index: 5;
+  text-align:center;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #ffffff;
+  font-size: 1px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+/* place input over the digits row, not between label and digits */
+body[data-style="smblost"] #timerInput,
+body[data-style="smas"] #timerInput{
+  top: calc(
+    (var(--glyph-size) * var(--glyph-scale)) +
+    0.8em +
+    ((var(--glyph-size) * var(--glyph-scale) - 1px) / 2)
+  );
+}
+
+body[data-style="smblost"].editing #timerInput,
+body[data-style="smas"].editing #timerInput{
+  display:inline-block !important;
+}
+
+#timerInput::selection{
+  background:transparent;
+  color:transparent;
+}
+#timerInput::-moz-selection{
+  background:transparent;
+  color:transparent;
+}
+
+/* buttons */
+.timer-controls{
+  display:flex;
+  gap:1.5em;
+  margin-top: 1.2em;
+}
+.timer-controls button{
+  font-size: 1em;
+  padding: 0.13em 0.6em;
+  border-radius: 0.2em;
+  border: none;
+  background: #888;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.timer-controls button:hover{
+  background: #aaf;
+  color: #000;
+}
+
+@media (max-width: 720px){
+  body[data-style="smblost"]{
+    --glyph-scale: 6;
+    --input-width: calc((3 * var(--glyph-size) * var(--glyph-scale)) + 0.35em);
+  }
+
+  body[data-style="smas"]{
+    --glyph-scale: 6;
+    --input-width: calc((3 * var(--glyph-size) * var(--glyph-scale)) + 0.35em);
+  }
+
+  #customAudioInput{
+    width: min(78vw, 22em);
+  }
+
+  .style-row,
+  #mediaPreview{
+    width: min(78vw, 360px);
+  }
+
+  .timer-controls{
+    gap: 0.9em;
+  }
 }

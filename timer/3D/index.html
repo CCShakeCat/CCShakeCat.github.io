@@ -1,71 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>3D Land Timer</title>
-    <link rel="stylesheet" href="style.css" />
-    <style>
-      #customAudioInput {
-        font-size: 1em;
-        width: 22em;
-        max-width: 90vw;
-        padding: 0.4em;
-        border: 2px solid #000;
-        border-radius: 0.3em;
-        background: #eee;
-        color: #000;
-        font-family: inherit;
-        text-align: center;
-      }
-      #styleSelect {
-        font-size: 1em;
-        margin-top: 1em;
-        padding: 0.2em 0.7em;
-        border-radius: 0.3em;
-        border: 2px solid #5a5a5a;
-        background: #fff;
-        color: #222;
-        font-family: inherit;
-        cursor: pointer;
-      }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Land / World Timer</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
-<body>
-    <!-- Style Dropdown -->
-    <div style="text-align:center;">
-      <label for="styleSelect"><b>Timer Style:</b></label>
+<body class="land-timer" data-running="false" data-paused="false">
+  <!-- Top-left controls -->
+  <div id="customAudioBox" class="ui-chrome">
+    <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, wav, YouTube, Spotify)" />
+    <button id="loadAudioBtn" type="button">Submit</button>
+
+    <div id="audioStatus"></div>
+    <div id="mediaPreview"></div>
+
+    <div class="style-row">
+      <label for="styleSelect">Style</label>
       <select id="styleSelect">
-        <option value="land">3D Land (Default)</option>
-        <option value="world">3D World</option>
+        <option value="land" selected>Super Mario 3D Land</option>
+        <option value="world">Super Mario 3D World</option>
       </select>
     </div>
+  </div>
 
-    <!-- Custom Music Input -->
-    <div id="customAudioBox" style="margin-top: 1em;">
-      <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
-      <button id="loadAudioBtn">Submit</button>
-      <div id="audioStatus" style="margin-top: 0.5em; font-size: 0.9em;"></div>
-      <div id="mediaPreview" style="margin-top: 0.5em;"></div>
+  <main class="main-center">
+    <div class="timer">
+
+      <div id="timerRow" aria-label="Timer">
+        <span id="timerClockIcon" aria-hidden="true"></span>
+
+        <p id="display" title="Click to edit">400</p>
+
+        <input
+          id="timerInput"
+          type="text"
+          value="400"
+          inputmode="text"
+          spellcheck="false"
+          autocomplete="off"
+          maxlength="3"
+        />
+      </div>
+
+      <div class="timer-controls">
+        <button id="startStopBtn" type="button">Start</button>
+        <button id="resetBtn" type="button">Reset</button>
+      </div>
     </div>
+  </main>
 
-    <!-- Main Timer Area -->
-    <main class="main-center">
-        <div class="timer">
-            <div id="timerLabel">TIME</div>
-            <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
-            <p id="display" style="display:none;">400</p>
-            <div class="timer-controls">
-                <button id="startStopBtn">Start</button>
-                <button id="resetBtn">Reset</button>
-            </div>
-        </div>
-    </main>
-    <!-- Hurry-up audio -->
-    <audio id="hurryAudio" preload="auto">
-      <source src="sounds/hurryup.ogg" type="audio/ogg">
-      <source src="sounds/hurryup.mp3" type="audio/mpeg">
-    </audio>
-    <script src="script.js"></script>
+  <audio id="hurryAudio" preload="auto">
+    <source src="./sounds/hurryup.ogg" type="audio/ogg">
+    <source src="./sounds/hurryup.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="timeWarningAudio" preload="auto" src="./sounds/time_warning.wav"></audio>
+
+  <audio id="bgAudio" preload="auto"></audio>
+
+  <script src="script.js"></script>
 </body>
 </html>

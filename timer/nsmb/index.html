@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>NSMB Timer</title>
   <link rel="stylesheet" href="style.css"/>
+  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
-<body class="ds-timer"><!-- default DS; JS will update based on select -->
+<body class="ds-timer" data-running="false" data-paused="false">
+  <!-- SMB-style top-left controls -->
+  <div id="customAudioBox" class="ui-chrome">
+    <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, wav, YouTube, Spotify)" />
+    <button id="loadAudioBtn" type="button">Submit</button>
 
-  <!-- Toolbar (simple, left-aligned) -->
-  <div class="toolbar">
-    <div class="row">
-      <label for="styleSelect" class="lbl">Style</label>
+    <div id="audioStatus"></div>
+    <div id="mediaPreview"></div>
+
+    <div class="style-row">
+      <label for="styleSelect">Style</label>
       <select id="styleSelect">
         <option value="ds" selected>New Super Mario Bros (DS)</option>
         <option value="wii">New Super Mario Bros Wii</option>
@@ -20,19 +26,22 @@
     </div>
   </div>
 
-  <!-- Center stage -->
   <main class="main-center">
     <div class="timer">
-      <div id="hudRow" aria-label="Timer">
-        <span id="nsmbClockIcon" aria-hidden="true"></span>
-
-        <!-- View digits -->
-        <p id="display" class="digits" title="Click to edit">400</p>
-
-        <!-- Edit field (only shown in IDLE by JS) -->
-        <input id="timerInput" type="text" value="400"
-               inputmode="numeric" maxlength="3"
-               spellcheck="false" autocomplete="off"/>
+      <div id="timerArea">
+        <div id="hudRow" aria-label="Timer">
+          <span id="nsmbClockIcon" aria-hidden="true"></span>
+          <p id="display" class="digits" title="Click to edit">400</p>
+          <input
+            id="timerInput"
+            type="text"
+            value="400"
+            inputmode="numeric"
+            maxlength="3"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </div>
       </div>
 
       <div class="timer-controls">
@@ -42,11 +51,17 @@
     </div>
   </main>
 
-  <!-- Old Hurry-Up element (kept; JS will use this) -->
+  <!-- 100-tick hurry -->
   <audio id="hurryAudio" preload="auto">
-    <source src="./sound/hurryup.ogg" type="audio/ogg">
-    <source src="./sound/hurryup.mp3" type="audio/mpeg">
+    <source src="./sounds/hurryup.ogg" type="audio/ogg">
+    <source src="./sounds/hurryup.mp3" type="audio/mpeg">
   </audio>
+
+  <!-- NSMB2 10..1 overlay warning -->
+  <audio id="nsmb2WarningAudio" preload="auto" src="./sounds/time_warning.wav"></audio>
+
+  <!-- direct audio player -->
+  <audio id="bgAudio" preload="auto"></audio>
 
   <script src="script.js"></script>
 </body>

@@ -1,42 +1,36 @@
 /* ================================
-   NSMB Timer — Merged font system
+   NSMB Timer — SMB-layout aligned
    ================================ */
 
-/* HUD fonts */
 @font-face {
-  font-family: 'PixelSuperHudPX'; /* NSMB DS-style */
+  font-family: 'PixelSuperHudPX';
   src: url('./fonts/PixelSuperHudPX.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'NSMBWii';         /* NSMB Wii */
+  font-family: 'NSMBWii';
   src: url('./fonts/Mario-Classic.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'NSMB2';           /* NSMB2 (3DS) */
+  font-family: 'NSMB2';
   src: url('./fonts/Modern-Mario.otf') format('opentype');
   font-display: swap;
 }
 
-/* Theme + sizing knobs */
 :root{
-  --hud-size: clamp(72px, min(16vw, 24vh), 340px);
-
-  /* icon tuning */
-  --icon-em: .62em;
-  --icon-crop: .26em;
-  --icon-zoom: 100%;
-  --icon-gap: .10em;
-  --icon-nudge-y: .02em;
-
-  /* font defaults (overridden by body class) */
+  --hud-size: clamp(78px, min(17vw, 22vh), 320px);
   --hud-font: 'PixelSuperHudPX', monospace, Arial, sans-serif;
   --hud-letter: .04em;
-  --hud-stroke: 6px;    /* outline thickness */
+  --hud-stroke: 6px;
+
+  --icon-size: .62em;
+  --icon-gap: .09em;
+  --icon-nudge-y: .02em;
+
+  --ui-scale: 1rem;
 }
 
-/* Per-style font overrides (JS toggles these body classes) */
 body.ds-timer{
   --hud-font: 'PixelSuperHudPX', monospace, Arial, sans-serif;
   --hud-letter: .04em;
@@ -49,95 +43,293 @@ body.wii-timer{
 }
 body.nsmb2-timer{
   --hud-font: 'NSMB2', 'PixelSuperHudPX', Arial, sans-serif;
-  --hud-letter: .02em;
+  --hud-letter: .015em;
   --hud-stroke: 5px;
 }
 
-/* Page base */
-html,body{height:100%}
+html, body { height:100%; }
+
 body{
-  margin:0; color:#fff; overflow-x:hidden;
-  background: linear-gradient(to bottom, #7ecefa 0%, #1e6ad9 60%, #1664b1 100%);
-  font-family: var(--hud-font);
+  margin:0;
+  color:#fff;
+  overflow-x:hidden;
+  min-height:100vh;
+  min-width:100vw;
+  background: linear-gradient(to bottom, #9cc4f4 0%, #4d72df 62%, #3e59ba 100%);
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
 }
 
-/* Toolbar */
-.toolbar{ max-width:1200px; margin:.7rem auto 0 auto; padding:0 1rem; }
-.toolbar .row{ display:flex; align-items:center; gap:.5rem; margin:.3rem 0; }
-.lbl{ font-size:.95rem; opacity:.85; }
-#styleSelect{
-  font-size:1rem; padding:.4rem .7rem; border-radius:.35rem;
-  border:2px solid #5a5a5a; background:#fff; color:#222; cursor:pointer;
+/* ===== SMB-style top-left controls ===== */
+
+.ui-chrome{
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
 }
 
-/* Stage */
+#customAudioBox{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2200;
+  display: block;
+  width: auto;
+  max-width: min(92vw, 640px);
+  font-size: var(--ui-scale);
+  user-select: none;
+}
+
+#customAudioInput{
+  font-size: 1em;
+  width: 22em;
+  max-width: 90vw;
+  padding: 0.4em;
+  border: 2px solid #000;
+  border-radius: 0.3em;
+  background: #eee;
+  color: #000;
+  font-family: inherit;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+#loadAudioBtn{
+  font-size: 1em;
+  margin-left: 0.45em;
+  padding: 0.22em 0.5em;
+  border: 2px solid #888;
+  border-radius: 0.2em;
+  background: #ddd;
+  color: #000;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#loadAudioBtn:hover{
+  background: #fff;
+}
+
+#audioStatus{
+  margin-top: 0.45em;
+  font-size: 0.9em;
+  min-height: 1.2em;
+  text-align: left;
+}
+
+#mediaPreview{
+  display: none;
+  margin-top: 0.45em;
+  width: min(360px, 90vw);
+}
+
+body[data-paused="true"] #mediaPreview{
+  display: block;
+}
+
+#mediaPreview audio{
+  width: 100%;
+  display: block;
+}
+
+#mediaPreview iframe{
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+}
+
+/* style row under the URL/status/player, like SMB */
+.style-row{
+  margin-top: 0.45em;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(360px, 90vw);
+}
+
+.style-row label{
+  font-size: 0.9em;
+  letter-spacing: 0.04em;
+}
+
+.style-row select{
+  width: 100%;
+  max-width: 22em;
+  font-size: 1em;
+  padding: 0.2em 0.35em;
+  border: 2px solid #000;
+  border-radius: 0.2em;
+  background: #fff;
+  color: #000;
+  font-family: inherit;
+}
+
+/* match SMB behavior: hide top controls while running */
+body[data-running="true"] #customAudioBox{
+  display:none !important;
+}
+
+/* ===== main timer ===== */
+
 .main-center{
-  min-height: calc(100vh - 6rem);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:100vh;
+  min-width:100vw;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.timer{ display:flex; flex-direction:column; align-items:center; }
 
-/* One-line HUD (icon + digits/input) */
+.timer{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+#timerArea{
+  text-align:center;
+}
+
 #hudRow{
-  display:flex; align-items:baseline; justify-content:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   gap: var(--icon-gap);
   font-size: var(--hud-size);
   line-height: 1;
 }
 
-/* Clock icon (swaps per style) */
+/* icon */
 #nsmbClockIcon{
-  display:inline-block; flex:0 0 auto;
-  width:var(--icon-em); height:var(--icon-em); aspect-ratio:1/1;
-
-  overflow:hidden; padding:var(--icon-crop);
-  background-origin:content-box; background-clip:content-box;
-
-  background-image:url('./fonts/DSclock.png');   /* default: DS */
-  background-repeat:no-repeat; background-position:center; background-size:var(--icon-zoom);
-  image-rendering: -moz-crisp-edges; image-rendering: pixelated;
-
+  display:inline-block;
+  flex: 0 0 auto;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  image-rendering:-moz-crisp-edges;
+  image-rendering:pixelated;
   transform: translateY(var(--icon-nudge-y));
-  margin-right:-.10em; /* tighten gap optically */
+  margin-right: .02em;
 }
-body.wii-timer  #nsmbClockIcon{ background-image:url('./fonts/WIIclock.png'); }
-body.nsmb2-timer#nsmbClockIcon{ background-image:url('./fonts/3DSclock.png'); }
 
-/* Digits (view + edit share the exact metrics) */
-#display, #timerInput, .monochar{
+body.ds-timer #nsmbClockIcon{
+  background-image:url('./fonts/DSclock.png');
+}
+body.wii-timer #nsmbClockIcon{
+  background-image:url('./fonts/WIIclock.png');
+}
+body.nsmb2-timer #nsmbClockIcon{
+  background-image:url('./fonts/3DSclock.png');
+  width: .58em;
+  height: .58em;
+  transform: translateY(.01em);
+  margin-right: .04em;
+}
+
+/* digits */
+#display,
+#timerInput,
+.monochar{
   font-family: var(--hud-font), monospace, Arial, sans-serif;
   letter-spacing: var(--hud-letter);
   -webkit-text-stroke: var(--hud-stroke) #000;
-  /* hard 8-direction outline for non-WebKit */
   text-shadow:
-     -3px -3px 0 #000,  3px -3px 0 #000,
-     -3px  3px 0 #000,  3px  3px 0 #000,
-      0px -3px 0 #000,  0px  3px 0 #000,
-     -3px  0px 0 #000,  3px  0px 0 #000;
+    -3px -3px 0 #000,  3px -3px 0 #000,
+    -3px  3px 0 #000,  3px  3px 0 #000,
+     0px -3px 0 #000,  0px  3px 0 #000,
+    -3px  0px 0 #000,  3px  0px 0 #000;
 }
 
-/* View digits */
-#display{ margin:0; }
+#display{
+  margin:0;
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:0;
+  color:#fff;
+}
 
-/* Edit field sits in-place but is hidden unless IDLE-editing */
 #timerInput{
-  display:none;            /* JS toggles this */
-  background:transparent; border:none; outline:none;
-  color:#fff; font: inherit; letter-spacing: inherit;
-  width: 6ch; text-align:left; caret-color:#fff;
+  display:none;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:#fff;
+  font:inherit;
+  letter-spacing:inherit;
+  width:3.4ch;
+  text-align:left;
+  caret-color:#fff;
+  padding:0;
+  margin:0;
 }
 
-/* Mono width for each digit span so view/edit align perfectly */
 .monochar{
   display:inline-block;
-  width: .72em;           /* tweak per taste/face */
+  width:.72em;
   text-align:center;
 }
 
-/* Buttons */
-.timer-controls{ display:flex; gap:1.4em; margin-top:1rem; }
-.timer-controls button{
-  font-size:1.05rem; padding:.30em .85em; border-radius:.3em; border:none;
-  background:#888; color:#fff; cursor:pointer; font-weight:800;
+body.editing #display{
+  display:none !important;
 }
-.timer-controls button:hover{ background:#aaf; color:#000; }
+body.editing #timerInput{
+  display:inline-block !important;
+}
+
+/* buttons */
+.timer-controls{
+  display:flex;
+  gap:1.4em;
+  margin-top:1rem;
+}
+
+.timer-controls button{
+  font-size:1.05rem;
+  padding:.30em .85em;
+  border-radius:.2em;
+  border:none;
+  background:#888;
+  color:#fff;
+  cursor:pointer;
+  font-weight:800;
+  font-family: var(--hud-font), monospace, Arial, sans-serif;
+}
+
+.timer-controls button:hover{
+  background:#aaf;
+  color:#000;
+}
+
+/* ===== NSMB2 face flash only ===== */
+/* Standard uses face-color classes only; keep outline/icon untouched. */
+body.nsmb2-timer.warning-fill-red #display,
+body.nsmb2-timer.warning-fill-red #timerInput,
+body.nsmb2-timer.warning-fill-red .monochar{
+  color:#ff0000 !important;
+}
+
+body.nsmb2-timer.warning-fill-white #display,
+body.nsmb2-timer.warning-fill-white #timerInput,
+body.nsmb2-timer.warning-fill-white .monochar{
+  color:#ffffff !important;
+}
+
+@media (max-width: 700px){
+  :root{
+    --hud-size: clamp(54px, 20vw, 140px);
+  }
+
+  #customAudioInput{
+    width: min(78vw, 22em);
+  }
+
+  .style-row,
+  #mediaPreview{
+    width: min(78vw, 360px);
+  }
+
+  .timer-controls{
+    gap: .8em;
+  }
+}

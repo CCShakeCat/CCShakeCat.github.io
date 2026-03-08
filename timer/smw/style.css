@@ -1,105 +1,247 @@
-@font-face {
-    font-family: 'SMB3Secondary';
-    src: url('./fonts/super-mario-brothers-3-secondary.ttf') format('truetype');
-    font-display: swap;
-}
 body {
-    font-family: 'SMB3Secondary', 'Press Start 2P', monospace, Arial, sans-serif;
-    color: #ffe96b;
-    background: #0866c6;
-    margin: 0;
-    min-height: 100vh;
-    min-width: 100vw;
-    overflow-x: hidden;
+  --ui-scale: 1rem;
+
+  --glyph-size: 8px;
+  --glyph-stride: 9px;   /* 8px glyph + 1px separator */
+  --sheet-width: 323px;  /* 36*8 + 35*1 */
+  --glyph-scale: 8;
+  --sprite-gap: 0px;
+
+  --hud-size: clamp(84px, 11vw, 180px);
+  --label-size: clamp(34px, 5vw, 64px);
+  --input-width: calc((3 * var(--glyph-size) * var(--glyph-scale)) + 0.35em);
+
+  --bg-fill: #0866c6;
+  --sheet-url: url('./fonts/SMW-HUD.png');
+
+  color: #ffe96b;
+  background: var(--bg-fill);
+  margin: 0;
+  min-height: 100vh;
+  min-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Press Start 2P', monospace, Arial, sans-serif;
 }
+
 .main-center {
-    min-height: 100vh;
-    min-width: 100vw;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
+
 .timer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* --- CLEAN SMW OUTLINE --- */
-#timerLabel, #display, #timerInput, .monochar {
-    color: #ffe96b;
-    font-family: inherit;
-    -webkit-text-stroke: 3px #000;
-    text-stroke: 3px #000;
-    text-shadow:
-        -2px -2px 0 #000,
-         2px -2px 0 #000,
-        -2px  2px 0 #000,
-         2px  2px 0 #000,
-         0px -2px 0 #000,
-         0px  2px 0 #000,
-        -2px  0px 0 #000,
-         2px  0px 0 #000;
-    image-rendering: pixelated;
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.1em;
+#timerArea{
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-#timerLabel {
-    font-size: 5vw;
-    margin-bottom: 0.6em;
-    margin-top: 0;
-    text-align: center;
+/* top controls */
+#customAudioBox{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2200;
+  display: block;
+  width: auto;
+  max-width: min(92vw, 640px);
+  font-size: var(--ui-scale);
+  user-select: none;
 }
 
-#display, #timerInput {
-    font-size: 10vw;
-    margin: 0;
-    text-align: center;
-    background: none;
-    border: none;
-    font-weight: bold;
-    outline: none;
-    width: 7.8em;
-    padding: 0;
-    letter-spacing: 0.1em;
-    font-family: inherit;
-    color: #ffe96b;
-}
-#display {
-    word-spacing: 0;
-    display: flex;
-    justify-content: center;
-    gap: 0em;
+#customAudioInput {
+  font-size: 1em;
+  width: 22em;
+  max-width: 90vw;
+  padding: 0.4em;
+  border: 2px solid #000;
+  border-radius: 0.3em;
+  background: #eee;
+  color: #000;
+  font-family: inherit;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.monochar {
-    display: inline-block;
-    width: 1.0em;
-    min-width: 1.0em;
-    max-width: 1.0em;
-    text-align: center;
+#loadAudioBtn{
+  font-size: 1em;
+  margin-left: 0.45em;
+  padding: 0.22em 0.5em;
+  border: 2px solid #888;
+  border-radius: 0.2em;
+  background: #ddd;
+  color: #000;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#loadAudioBtn:hover{
+  background: #fff;
+}
+
+#audioStatus{
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  min-height: 1.2em;
+}
+
+#mediaPreview{
+  display: none;
+  margin-top: 0.5em;
+  width: min(360px, 90vw);
+}
+
+body[data-paused="true"] #mediaPreview{
+  display: block;
+}
+
+#mediaPreview audio{
+  width: 100%;
+  display: block;
+}
+
+#mediaPreview iframe{
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+}
+
+body[data-running="true"] #customAudioBox{
+  display: none !important;
+}
+
+/* fallback text hidden by default */
+#timerLabel,
+#display{
+  display: none;
+}
+
+/* sprite label + digits */
+.sprite-label{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sprite-gap);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  min-height: calc(var(--glyph-size) * var(--glyph-scale));
+  margin: 0 0 0.85em 0;
+  width: fit-content;
+}
+
+.sprite-display{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sprite-gap);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  min-height: calc(var(--glyph-size) * var(--glyph-scale));
+  width: fit-content;
+  cursor: text;
+}
+
+.sprite-char{
+  width: calc(var(--glyph-size) * var(--glyph-scale));
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  background-image: var(--sheet-url);
+  background-repeat: no-repeat;
+  background-size: calc(var(--sheet-width) * var(--glyph-scale)) calc(var(--glyph-size) * var(--glyph-scale));
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+/* invisible edit layer */
+#timerInput{
+  position: absolute;
+  left: 50%;
+  top: calc(
+    (var(--glyph-size) * var(--glyph-scale)) +
+    0.85em +
+    ((var(--glyph-size) * var(--glyph-scale) - 1px) / 2)
+  );
+  transform: translate(-50%, -50%);
+  width: var(--input-width);
+  height: calc(var(--glyph-size) * var(--glyph-scale));
+  background: transparent;
+  border: none;
+  outline: none;
+  z-index: 5;
+  text-align: center;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #ffe96b;
+  font-size: 1px;
+  line-height: 1;
+  letter-spacing: 0;
+  display: none;
+  padding: 0;
+  margin: 0;
+}
+
+body.editing #timerInput{
+  display: inline-block !important;
+}
+
+#timerInput::selection{
+  background: transparent;
+  color: transparent;
+}
+
+#timerInput::-moz-selection{
+  background: transparent;
+  color: transparent;
 }
 
 .timer-controls {
-    display: flex;
-    gap: 1.5em;
-    margin-top: 1.2em;
+  display: flex;
+  gap: 1.5em;
+  margin-top: 1.2em;
 }
+
 .timer-controls button {
-    font-size: 1em;
-    padding: 0.13em 0.6em;
-    border-radius: 0.2em;
-    border: none;
-    background: #888;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s;
-    font-family: inherit;
+  font-size: 1em;
+  padding: 0.13em 0.6em;
+  border-radius: 0.2em;
+  border: none;
+  background: #888;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
 }
+
 .timer-controls button:hover {
-    background: #aaf;
-    color: #000;
+  background: #aaf;
+  color: #000;
+}
+
+@media (max-width: 720px){
+  body{
+    --glyph-scale: 6;
+    --input-width: calc((3 * var(--glyph-size) * var(--glyph-scale)) + 0.35em);
+  }
+
+  #customAudioInput{
+    width: min(78vw, 22em);
+  }
+
+  #mediaPreview{
+    width: min(78vw, 360px);
+  }
+
+  .timer-controls{
+    gap: 0.9em;
+  }
 }

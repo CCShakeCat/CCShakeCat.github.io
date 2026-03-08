@@ -1,64 +1,73 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>SMB3 Timer</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
-<body data-style="smb3">
-  <!-- Controls (no background) -->
-  <div id="controls">
-    <!-- Row 1: URL + Submit + status + Genesis toggle -->
-  <div class="header-row">
-    <input id="customAudioInput" type="text" placeholder="Paste music URL (mp3, ogg, YouTube, Spotify)" />
-    <button id="loadAudioBtn">Submit</button>
-    <span id="audioStatus" aria-live="polite"></span>
+<body class="smb3-timer" data-style="smb3" data-running="false" data-paused="false">
+  <!-- NSMB-style top-left controls -->
+  <div id="customAudioBox" class="ui-chrome">
+    <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, wav, YouTube, Spotify)" />
+    <button id="loadAudioBtn" type="button">Submit</button>
 
-    <div class="spacer"></div>
+    <div id="audioStatus"></div>
+    <div id="mediaPreview"></div>
 
-    <!-- Row 2: STYLE (under URL) -->
-    <div class="ctrl-row" id="styleRow">
-      <span class="chip">STYLE</span>
-      <select id="styleSelect" aria-label="Style">
-        <option value="smb3">Super Mario Bros 3 (Default)</option>
-        <option value="smb3smas">Super Mario Bros 3 All-Stars (SNES)</option>
+    <div class="style-row">
+      <label for="styleSelect">Style</label>
+      <select id="styleSelect">
+        <option value="smb3" selected>Super Mario Bros 3 (Default)</option>
+        <option value="smb3smas">Super Mario Bros 3 (All-Stars)</option>
       </select>
     </div>
   </div>
 
-  <!-- Stage -->
   <main class="main-center">
     <div class="timer">
-      <!-- One-line HUD: icon + digits/input -->
-      <div id="hudRow" aria-live="off">
-        <span id="clockIcon" aria-hidden="true"></span>
-        <span id="display" class="digits" role="button" tabindex="0">400</span>
-        <input id="timerInput" maxlength="3" inputmode="latin" autocapitalize="characters" />
+      <div id="timerArea">
+        <div id="hudRow" aria-label="Timer">
+          <span id="smb3ClockIcon" aria-hidden="true"></span>
+
+          <!-- Fallback text display -->
+          <p id="display" class="digits" title="Click to edit">400</p>
+
+          <!-- Sprite display -->
+          <div id="spriteDisplay" class="sprite-display" aria-hidden="true"></div>
+
+          <!-- Editable input -->
+          <input
+            id="timerInput"
+            type="text"
+            value="400"
+            inputmode="text"
+            maxlength="3"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="characters"
+          />
+        </div>
       </div>
 
       <div class="timer-controls">
-        <button id="startStopBtn">START</button>
-        <button id="resetBtn">RESET</button>
+        <button id="startStopBtn" type="button">START</button>
+        <button id="resetBtn" type="button">RESET</button>
       </div>
-
-      <!-- Preview area for custom audio / YT / Spotify -->
-      <div id="mediaPreview" class="media"></div>
     </div>
   </main>
 
-  <!-- Hurry-up sounds -->
-<!-- NES -->
-<audio id="hurryAudioNES" preload="auto">
-  <source src="./sounds/smb3-hurryup.ogg" type="audio/ogg">
-  <source src="./sounds/smb3-hurryup.mp3" type="audio/mpeg">
-</audio>
+  <audio id="hurryAudioNES" preload="auto">
+    <source src="./sounds/smb3-hurryup.ogg" type="audio/ogg">
+    <source src="./sounds/smb3-hurryup.mp3" type="audio/mpeg">
+  </audio>
 
-<!-- SNES -->
-<audio id="hurryAudioSNES" preload="auto">
-  <source src="./sounds/snes-hurryup.ogg" type="audio/ogg">
-  <source src="./sounds/snes-hurryup.mp3" type="audio/mpeg">
-</audio>
-  <script src="./script.js"></script>
+  <audio id="hurryAudioSNES" preload="auto">
+    <source src="./sounds/snes-hurryup.ogg" type="audio/ogg">
+    <source src="./sounds/snes-hurryup.mp3" type="audio/mpeg">
+  </audio>
+
+  <script src="script.js"></script>
 </body>
 </html>
