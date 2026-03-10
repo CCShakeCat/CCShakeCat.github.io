@@ -13,6 +13,7 @@
   const hurryAudio = document.getElementById('hurryAudio');
   const genHurryAudio = document.getElementById('genHurryAudio');
   const genHurryToggleBox = document.getElementById('genHurryToggleBox');
+const snesHurryAudio = document.getElementById('snesHurryAudio');
 
   const customAudioInput = document.getElementById('customAudioInput');
   const loadAudioBtn = document.getElementById('loadAudioBtn');
@@ -69,9 +70,11 @@
     return s === 'smblost' || s === 'smas';
   }
 
-  function currentHurryAudio() {
-    return genHurryToggleBox?.checked ? genHurryAudio : hurryAudio;
-  }
+function currentHurryAudio() {
+  if (genHurryToggleBox?.checked) return genHurryAudio;
+  if (currentStyle() === 'smas') return snesHurryAudio;
+  return hurryAudio;
+}
 
   function renderSpriteString(target, text) {
     if (!target) return;
@@ -158,15 +161,20 @@
     clearHurryResumeTimeout();
     wantPlayback = false;
 
-    try {
-      hurryAudio.pause();
-      hurryAudio.currentTime = 0;
-    } catch {}
+try {
+  hurryAudio.pause();
+  hurryAudio.currentTime = 0;
+} catch {}
 
-    try {
-      genHurryAudio.pause();
-      genHurryAudio.currentTime = 0;
-    } catch {}
+try {
+  snesHurryAudio.pause();
+  snesHurryAudio.currentTime = 0;
+} catch {}
+
+try {
+  genHurryAudio.pause();
+  genHurryAudio.currentTime = 0;
+} catch {}
 
     if (audioEl) {
       try {
