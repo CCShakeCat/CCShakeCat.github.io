@@ -95,7 +95,7 @@ body {
 .slw-timer #display,
 .slw-timer #timerInput,
 .slw-timer .monochar {
-  font-family: 'AftikaBlack', 'PixelSuperHudPX', Arial, sans-serif;
+  font-family: 'Loew-Heavy', 'PixelSuperHudPX', Arial, sans-serif;
   color: var(--slw-fill);
   -webkit-text-stroke: var(--slw-stroke) var(--slw-outline);
   /* Fallback for browsers without stroke (keeps edges crisp) */
