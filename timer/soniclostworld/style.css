@@ -1,6 +1,6 @@
 @font-face {
-    font-family: 'AftikaBlack';
-    src: url('./fonts/AftikaBlack.ttf') format('truetype');
+    font-family: 'Loew-Heavy';
+    src: url('./fonts/Loew-Heavy.otf') format('opentype');
     font-display: swap;
 }
 
