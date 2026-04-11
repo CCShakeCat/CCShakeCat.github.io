@@ -16,7 +16,7 @@
   const mediaPreview = document.getElementById('mediaPreview');
   const bgAudio = document.getElementById('bgAudio');
 
-  const TICK_MS = 680;
+  const TICK_MS = 750;
   const HURRY_AT_NUMERIC = 100;
   const LAST_TEN_MIN = 1;
   const LAST_TEN_MAX = 10;

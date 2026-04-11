@@ -2,15 +2,15 @@
   const body = document.body;
 
   const display = document.getElementById('display');
-  const spriteDisplay = document.getElementById('spriteDisplay');
-  const timerLabel = document.getElementById('timerLabel');
   const timerLabelSprite = document.getElementById('timerLabelSprite');
+  const spriteDisplay = document.getElementById('spriteDisplay');
   const input = document.getElementById('timerInput');
   const startBtn = document.getElementById('startStopBtn');
   const resetBtn = document.getElementById('resetBtn');
   const styleSelect = document.getElementById('styleSelect');
 
   const hurryAudio = document.getElementById('hurryAudio');
+  const snesHurryAudio = document.getElementById('snesHurryAudio');
   const genHurryAudio = document.getElementById('genHurryAudio');
   const genHurryToggleBox = document.getElementById('genHurryToggleBox');
 
@@ -70,7 +70,9 @@
   }
 
   function currentHurryAudio() {
-    return genHurryToggleBox?.checked ? genHurryAudio : hurryAudio;
+    if (genHurryToggleBox?.checked) return genHurryAudio;
+    if (currentStyle() === 'smas') return snesHurryAudio;
+    return hurryAudio;
   }
 
   function renderSpriteString(target, text) {
@@ -95,7 +97,6 @@
 
   function render() {
     timerValue = padTimerText(timerValue);
-
     display.textContent = timerValue;
     input.value = timerValue;
 
@@ -128,16 +129,6 @@
     }
   }
 
-  function applyStyle() {
-    body.dataset.style = currentStyle();
-
-    try {
-      localStorage.setItem('smb-style', currentStyle());
-    } catch {}
-
-    render();
-  }
-
   function setAudioStatus(msg) {
     audioStatus.textContent = msg || '';
   }
@@ -161,6 +152,11 @@
     try {
       hurryAudio.pause();
       hurryAudio.currentTime = 0;
+    } catch {}
+
+    try {
+      snesHurryAudio.pause();
+      snesHurryAudio.currentTime = 0;
     } catch {}
 
     try {
@@ -192,6 +188,11 @@
     try {
       hurryAudio.pause();
       hurryAudio.currentTime = 0;
+    } catch {}
+
+    try {
+      snesHurryAudio.pause();
+      snesHurryAudio.currentTime = 0;
     } catch {}
 
     try {
@@ -420,7 +421,7 @@
       resumed = true;
       clearHurryResumeTimeout();
 
-      if (state === 'running' && !isTimerZero(timerValue)) {
+      if (state === 'running' && wantPlayback && !isTimerZero(timerValue)) {
         startConfiguredMedia({ rate: HURRY_RESUME_RATE, restart: true });
       }
     };
@@ -550,6 +551,8 @@
   function reset() {
     clearInterval(timer);
     timer = null;
+    clearHurryResumeTimeout();
+    wantPlayback = false;
 
     if (state === 'idle') {
       startValue = padTimerText(input.value || startValue);
@@ -558,7 +561,6 @@
     state = 'idle';
     timerValue = padTimerText(startValue);
     hurryPlayed = false;
-    wantPlayback = false;
 
     stopAllMedia();
     setEditing(false);
@@ -670,6 +672,16 @@
         localStorage.setItem('smb-gen-toggle', genHurryToggleBox.checked ? '1' : '0');
       } catch {}
     });
+  }
+
+  function applyStyle() {
+    body.dataset.style = currentStyle();
+
+    try {
+      localStorage.setItem('smb-style', currentStyle());
+    } catch {}
+
+    render();
   }
 
   function initFromDOM() {
