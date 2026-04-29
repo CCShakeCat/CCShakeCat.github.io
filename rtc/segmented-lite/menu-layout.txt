@@ -1,0 +1,37 @@
+```
+#Head# Segmented Display Settings
+> 24h [Check||OFF]
+> Leading Zero [Check||ON]
+
+> (Customize Style...)
+>> [x] 7 [ ] 8 [ ] 14
+>> Preset: [Classic (Default) // Modern // Custom v]
+>> Corners: [ ] Square [x] Chopped [ ] Rounded
+>> Corner Segment Height: [x] Normal [ ] Half-Digit Height
+>> Segment Symmetry [Check||ON]
+
+>> (Digits...)
+>>> Show on clock: SS [Check||ON] . TT [Check||ON]
+>>> Tick Rate: [10 // 20 // 30 // 40 (default) // 50 // 60 // 70 // 80 // 90 // 100 v] ms
+>>> Italic [Check||OFF]
+
+>>> (Number styles...) << We will get to THIS later
+
+>> Flashing Separators [Check||OFF]
+>> Description "* Flashes the ":" and "." every specified interval"
+>> Flash every: [____]s (accepts '0.1' and above)
+>> Even flashing [Check||ON]
+>> Description "* If unchecked, Value represents how long the flash stays on, while the separators in the remainder the passing two seconds are off."
+Unshown: If checked, only values accepted are 0.5 and 1.0 (replace text field to dropdown with those options)
+
+> (Colours) << We will get to THIS later
+
+
+Notes:
+[Check||X] represents a check box, with ON and OFF replacing "X" being their respective default values
+[x] [ ] are Radio buttons
+[text1 // text2 // ... v] is a dropdown
+(text...) is a sub-menu button
+[____] is a text field
+Each '>' represents what submenu the option is on. I have visually separated them here so they wouldn't get mixed up
+```

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segmented RTC Lite</title>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="clock-shell">
+    <div id="display" aria-live="polite"></div>
+
+    <button id="settingsBtn" aria-label="Clock Settings" type="button">
+      <img src="icons/gear_2699-fe0f.png" alt="" class="settings-icon">
+    </button>
+  </div>
+
+  <div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-content system-font draggable segmented-modal" id="modalCard">
+      <button id="closeSettings" class="close-btn" aria-label="Close Settings" type="button">
+        <img src="icons/cross-mark-button_274e.png" alt="">
+      </button>
+
+      <div class="settings-header drag-handle">
+        <span class="font-header-text">SEGMENTED DISPLAY LITE</span>
+      </div>
+
+      <div class="seg-setting-list lite-settings-grid">
+        <div class="seg-field">
+          <label for="optPreset">Preset</label>
+          <select id="optPreset">
+            <option value="default">Default</option>
+            <option value="classic">Classic</option>
+            <option value="modern">Modern</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="seg-inline-pair">
+          <label class="seg-check-row compact-check">
+            <span>24h</span>
+            <input type="checkbox" id="opt24h">
+          </label>
+
+          <label class="seg-check-row compact-check">
+            <span>Leading Zero</span>
+            <input type="checkbox" id="optLeadingZero">
+          </label>
+        </div>
+
+        <fieldset class="seg-lite-fieldset">
+          <legend>Corners</legend>
+          <div class="seg-radio-group lite-radio-group">
+            <label><input type="radio" name="optCorners" value="square"> Square</label>
+            <label><input type="radio" name="optCorners" value="chop"> Chopped</label>
+            <label><input type="radio" name="optCorners" value="round"> Rounded</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="seg-lite-fieldset">
+          <legend>Corner Segment Height</legend>
+          <div class="seg-radio-group lite-radio-group">
+            <label><input type="radio" name="optSegmentHeight" value="normal"> Normal</label>
+            <label><input type="radio" name="optSegmentHeight" value="half"> Half-Digit Height</label>
+          </div>
+        </fieldset>
+
+        <label class="seg-check-row">
+          <span>Segment Symmetry</span>
+          <input type="checkbox" id="optSymmetry">
+        </label>
+
+        <fieldset class="seg-lite-fieldset">
+          <legend>Show on clock</legend>
+          <div class="seg-radio-group lite-radio-group show-clock-group">
+            <label>SS <input type="checkbox" id="optSeconds"></label>
+            <label>.TT <input type="checkbox" id="optTicks"></label>
+          </div>
+        </fieldset>
+
+        <div class="seg-field">
+          <label for="optTPS">Tick Rate (TPS)</label>
+          <select id="optTPS">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="40">40 (Default)</option>
+            <option value="50">50</option>
+            <option value="60">60</option>
+            <option value="70">70</option>
+            <option value="80">80</option>
+            <option value="90">90</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+
+        <hr class="lite-divider">
+
+        <label class="seg-check-row">
+          <span>Flashing Separators</span>
+          <input type="checkbox" id="optFlashSeparators">
+        </label>
+
+        <div class="seg-help">Flashes the “:” and “.” every specified interval.</div>
+
+        <div class="seg-field" id="flashEveryFreeRow">
+          <label for="optFlashEvery">Flash every</label>
+          <div class="suffix-row">
+            <input type="number" id="optFlashEvery" min="0.1" step="0.1">
+            <span>s</span>
+          </div>
+        </div>
+
+        <div class="seg-field" id="flashEveryEvenRow">
+          <label for="optFlashEveryEven">Flash every</label>
+          <select id="optFlashEveryEven">
+            <option value="0.5">0.5 s</option>
+            <option value="1.0">1.0 s</option>
+          </select>
+        </div>
+
+        <label class="seg-check-row">
+          <span>Even Flashing</span>
+          <input type="checkbox" id="optEvenFlashing">
+        </label>
+
+        <div class="seg-help">If unchecked, the value is how long the separators stay on, while the rest of the 2-second cycle stays off.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

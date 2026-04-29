@@ -1,0 +1,4 @@
+gear_2699-fe0f = Joypixels Gear - Settings
+icn_font = "Aa123" in Roboto - Settings/Font
+kb_win = Sonic Supermix Meta key - Settings/Keybinds
+stopwatch_23f1-fe0f = Joypixels Stopwatch - Settings/TPS

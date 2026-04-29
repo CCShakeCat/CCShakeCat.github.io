@@ -1,0 +1,385 @@
+@font-face {
+  font-family: 'FancyCatPX';
+  src: url('fonts/FancyCatPX.ttf') format('truetype');
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: 'FancyCatPX', Arial, sans-serif;
+  color: #fff;
+  background: #000;
+  overflow: hidden;
+}
+
+.clock-shell {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#settingsBtn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 2001;
+  width: 56px;
+  height: 56px;
+  border: none;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.settings-icon {
+  width: 42px;
+  height: 42px;
+  display: block;
+  image-rendering: auto;
+}
+
+#display {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 58px;
+  box-sizing: border-box;
+  user-select: none;
+  white-space: nowrap;
+}
+
+#display.segmented-active {
+  font-size: min(9vw, 104px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.segment-clock {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--seg-char-gap);
+  white-space: nowrap;
+}
+
+:root {
+  --seg-char-gap: 0.015em;
+  --seg-sep-gap: 0.006em;
+  --digit-scale: 1;
+  --digit-skew: 0deg;
+
+  --digit-width-px: 76;
+  --digit-height-px: 115;
+
+  --sep-active: #ffffff;
+  --sep-inactive: #222222;
+}
+
+.seg-digit {
+  position: relative;
+  width: calc(var(--digit-width-px) * 1px * var(--digit-scale));
+  height: calc(var(--digit-height-px) * 1px * var(--digit-scale));
+  display: inline-block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  transform: skewX(var(--digit-skew));
+  transform-origin: center center;
+}
+
+.seg-canvas-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+
+.seg-separator {
+  position: relative;
+  width: calc(16px * var(--digit-scale));
+  height: calc(var(--digit-height-px) * 1px * var(--digit-scale));
+  display: inline-block;
+  flex: 0 0 auto;
+  margin-inline: var(--seg-sep-gap);
+  transform: skewX(var(--digit-skew));
+  transform-origin: center center;
+}
+
+.seg-dot {
+  position: absolute;
+  width: calc(11px * var(--digit-scale));
+  height: calc(11px * var(--digit-scale));
+  border-radius: 999px;
+  background: var(--sep-inactive);
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.seg-dot.on {
+  background: var(--sep-active);
+}
+
+.seg-separator.colon .seg-dot.top { top: 35%; }
+.seg-separator.colon .seg-dot.bottom { top: 65%; }
+.seg-separator.dot .seg-dot.bottom { top: 83%; }
+
+/* Lite self-contained modal shell. Mirrors the original segmented styling, without /globals/. */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+}
+
+.modal.show {
+  display: flex;
+  pointer-events: auto;
+}
+
+.segmented-modal {
+  background: #000;
+  color: #fff;
+  border: 12px solid #888;
+  border-radius: 40px;
+  padding: 32px 40px;
+  box-shadow: 0 0 32px #000c;
+  position: relative;
+  min-width: 660px;
+  max-width: min(760px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 26px;
+  cursor: grab;
+  user-select: none;
+}
+
+.segmented-modal.dragging .settings-header {
+  cursor: grabbing;
+}
+
+.font-header-text {
+  font-size: 2.2em;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  position: absolute;
+  right: 24px;
+  top: 18px;
+  width: 34px;
+  height: 34px;
+  color: #fff;
+  cursor: pointer;
+  background: none;
+  border: none;
+  z-index: 10;
+  padding: 0;
+}
+
+.close-btn img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.seg-setting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.seg-check-row,
+.seg-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 1.35rem;
+}
+
+.seg-field label,
+.seg-check-row span,
+.seg-field-label {
+  flex: 1 1 auto;
+}
+
+.seg-field select,
+.seg-field input[type="number"],
+.seg-field input[type="text"] {
+  flex: 0 0 260px;
+  min-width: 260px;
+  font-size: 1rem;
+  padding: 6px 10px;
+}
+
+.seg-check-row input[type="checkbox"] {
+  flex: 0 0 auto;
+}
+
+.seg-radio-group {
+  flex: 0 0 380px;
+  min-width: 380px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  justify-content: flex-start;
+}
+
+.seg-radio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.seg-help {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  line-height: 1.35;
+  margin-top: -6px;
+}
+
+.seg-inline-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.compact-check {
+  justify-content: space-between;
+}
+
+.seg-lite-fieldset {
+  border: 2px solid rgba(255,255,255,0.22);
+  border-radius: 12px;
+  padding: 14px 18px 12px;
+  margin: 0;
+}
+
+.seg-lite-fieldset legend {
+  padding: 0 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.lite-radio-group {
+  min-width: 0;
+  flex: unset;
+}
+
+.show-clock-group {
+  gap: 32px;
+}
+
+.lite-divider {
+  width: 100%;
+  border: 0;
+  border-top: 2px solid rgba(255,255,255,0.18);
+  margin: 2px 0 0;
+}
+
+.suffix-row {
+  flex: 0 0 260px;
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suffix-row input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 1000px) {
+  #display.segmented-active {
+    font-size: min(11vw, 90px);
+  }
+
+  :root {
+    --digit-scale: 0.92;
+  }
+}
+
+@media (max-width: 700px) {
+  #display {
+    padding-top: 84px;
+  }
+
+  #display.segmented-active {
+    font-size: min(13vw, 68px);
+  }
+
+  :root {
+    --digit-scale: 0.74;
+  }
+
+  .modal.show {
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 96px;
+    box-sizing: border-box;
+  }
+
+  .segmented-modal {
+    min-width: unset;
+    width: min(94vw, 700px);
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+
+  .font-header-text {
+    font-size: 1.45rem;
+  }
+
+  .seg-inline-pair {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .seg-check-row,
+  .seg-field {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seg-field select,
+  .seg-field input[type="number"],
+  .seg-field input[type="text"],
+  .suffix-row {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .seg-radio-group {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+}
