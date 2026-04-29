@@ -3,8 +3,8 @@
    ================================ */
 
 @font-face {
-  font-family: 'PixelSuperHudPX';
-  src: url('./fonts/PixelSuperHudPX.ttf') format('truetype');
+  font-family: 'NSMBDS';
+  src: url('./fonts/NSMB DS HUD.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
@@ -20,7 +20,7 @@
 
 :root{
   --hud-size: clamp(78px, min(17vw, 22vh), 320px);
-  --hud-font: 'PixelSuperHudPX', monospace, Arial, sans-serif;
+  --hud-font: 'NSMBDS', monospace, Arial, sans-serif;
   --hud-letter: .04em;
   --hud-stroke: 6px;
 
@@ -32,17 +32,17 @@
 }
 
 body.ds-timer{
-  --hud-font: 'PixelSuperHudPX', monospace, Arial, sans-serif;
+  --hud-font: 'NSMBDS', monospace, Arial, sans-serif;
   --hud-letter: .04em;
   --hud-stroke: 6px;
 }
 body.wii-timer{
-  --hud-font: 'NSMBWii', 'PixelSuperHudPX', Arial, sans-serif;
+  --hud-font: 'NSMBWii', 'NSMBDS', Arial, sans-serif;
   --hud-letter: .03em;
   --hud-stroke: 5px;
 }
 body.nsmb2-timer{
-  --hud-font: 'NSMB2', 'PixelSuperHudPX', Arial, sans-serif;
+  --hud-font: 'NSMB2', 'NSMBDS', Arial, sans-serif;
   --hud-letter: .015em;
   --hud-stroke: 5px;
 }
