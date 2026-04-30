@@ -75,6 +75,7 @@ function clamp(n, min, max) {
 }
 
 function saveSettings() {
+  markDisplayDirty?.();
   localStorage.setItem("seg_lite_h24", settings.h24 ? "1" : "0");
   localStorage.setItem("seg_lite_leading", settings.leading ? "1" : "0");
   localStorage.setItem("seg_lite_seconds", settings.seconds ? "1" : "0");
@@ -402,23 +403,123 @@ function makeSeparatorHTML(type, visible) {
   return `<span class="seg-separator"></span>`;
 }
 
-async function renderClockHTML(date) {
-  const asset = await loadSvgAsset(getCornerFilename());
-  const visible = separatorsVisible(Date.now());
-  const str = buildTimeString(date);
+const digitDataUrlCache = new Map();
+let slotState = [];
+let lastSlotStructureKey = "";
+let lastRenderedText = "";
+let lastRenderedSeparatorsVisible = null;
+let displayNeedsFullRefresh = true;
 
-  const pieces = [];
-  for (const ch of [...str]) {
-    if (/\d/.test(ch) || ch === " ") {
-      const canvas = await buildDigitCanvas(ch, asset);
-      const dataUrl = canvas ? canvas.toDataURL() : "";
-      pieces.push(`<span class="seg-digit"><img class="seg-canvas-img" src="${dataUrl}" alt=""></span>`);
-    } else if (ch === ":" || ch === ".") {
-      pieces.push(makeSeparatorHTML(ch, visible));
+function getClockStyleKey() {
+  return JSON.stringify({
+    asset: getCornerFilename(),
+    corners: settings.corners,
+    segmentHeight: settings.segmentHeight,
+    symmetry: settings.symmetry,
+    italic: settings.italic,
+    activeColor: normalizeCssColor(settings.activeColor) || "#ffffff",
+    inactiveEnabled: settings.inactiveEnabled,
+    sevenStyle: settings.sevenStyle,
+    sixStyle: settings.sixStyle,
+    nineStyle: settings.nineStyle,
+  });
+}
+
+function markDisplayDirty() {
+  displayNeedsFullRefresh = true;
+}
+
+function getSlotKind(ch) {
+  if (/\d/.test(ch) || ch === " ") return "digit";
+  if (ch === ":") return "colon";
+  if (ch === ".") return "dot";
+  return "blank";
+}
+
+function makeSlotShellHTML(ch) {
+  const kind = getSlotKind(ch);
+  if (kind === "digit") {
+    return `<span class="seg-digit" data-kind="digit"><img class="seg-canvas-img" alt=""></span>`;
+  }
+  if (kind === "colon") {
+    return `<span class="seg-separator colon" data-kind="colon" aria-hidden="true"><span class="seg-dot top"></span><span class="seg-dot bottom"></span></span>`;
+  }
+  if (kind === "dot") {
+    return `<span class="seg-separator dot" data-kind="dot" aria-hidden="true"><span class="seg-dot bottom"></span></span>`;
+  }
+  return `<span class="seg-separator" data-kind="blank" aria-hidden="true"></span>`;
+}
+
+function ensureClockSlots(str) {
+  const structureKey = [...str].map(getSlotKind).join("|");
+  if (structureKey === lastSlotStructureKey && slotState.length) return;
+
+  display.innerHTML = `<span class="segment-clock">${[...str].map(makeSlotShellHTML).join("")}</span>`;
+  const slots = display.querySelectorAll(".segment-clock > span");
+  slotState = [...slots].map((el) => ({
+    el,
+    img: el.querySelector("img"),
+    char: null,
+    visible: null
+  }));
+  lastSlotStructureKey = structureKey;
+  lastRenderedText = "";
+  lastRenderedSeparatorsVisible = null;
+}
+
+async function getDigitDataUrl(char, asset, styleKey) {
+  const key = `${styleKey}|${char}`;
+  if (digitDataUrlCache.has(key)) return digitDataUrlCache.get(key);
+
+  const promise = buildDigitCanvas(char, asset).then(canvas => canvas ? canvas.toDataURL() : "");
+  digitDataUrlCache.set(key, promise);
+  return promise;
+}
+
+function setSeparatorSlot(slot, visible) {
+  if (!slot || slot.visible === visible) return;
+  slot.el.querySelectorAll(".seg-dot").forEach(dot => dot.classList.toggle("on", visible));
+  slot.visible = visible;
+}
+
+async function renderClockFast(date) {
+  display.classList.add("segmented-active");
+
+  const str = buildTimeString(date);
+  const sepVisible = separatorsVisible(Date.now());
+  const styleKey = getClockStyleKey();
+
+  if (!displayNeedsFullRefresh && str === lastRenderedText && sepVisible === lastRenderedSeparatorsVisible) {
+    return;
+  }
+
+  const asset = await loadSvgAsset(getCornerFilename());
+  ensureClockSlots(str);
+
+  const force = displayNeedsFullRefresh;
+  const chars = [...str];
+
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const slot = slotState[i];
+    if (!slot) continue;
+
+    const kind = getSlotKind(ch);
+    if (kind === "digit") {
+      if (force || slot.char !== ch) {
+        const dataUrl = await getDigitDataUrl(ch, asset, styleKey);
+        if (slot.img && slot.img.src !== dataUrl) slot.img.src = dataUrl;
+        slot.char = ch;
+      }
+    } else if (kind === "colon" || kind === "dot") {
+      setSeparatorSlot(slot, sepVisible);
+      slot.char = ch;
     }
   }
 
-  return `<span class="segment-clock">${pieces.join("")}</span>`;
+  lastRenderedText = str;
+  lastRenderedSeparatorsVisible = sepVisible;
+  displayNeedsFullRefresh = false;
 }
 
 function syncCssVars() {
@@ -434,10 +535,8 @@ function syncCssVars() {
 
 async function render() {
   const token = ++renderToken;
-  display.classList.add("segmented-active");
-  const html = await renderClockHTML(new Date());
+  await renderClockFast(new Date());
   if (token !== renderToken) return;
-  display.innerHTML = html;
 }
 
 function restartTimer() {
@@ -451,6 +550,7 @@ function restartTimer() {
     intervalId = setInterval(render, 1000);
   }
 
+  markDisplayDirty();
   render();
 }
 
