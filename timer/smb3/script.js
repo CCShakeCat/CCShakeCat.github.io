@@ -131,6 +131,21 @@
     audioStatus.textContent = msg || '';
   }
 
+  function getGlobalVolume(kind) {
+    return window.GSGlobal?.getEffectiveAudioVolume?.(kind) ?? 1;
+  }
+
+  function applyAudioVolumes() {
+    try { hurryAudioNES.volume = getGlobalVolume('hurry'); } catch {}
+    try { hurryAudioSNES.volume = getGlobalVolume('hurry'); } catch {}
+    if (audioEl) {
+      try { audioEl.volume = getGlobalVolume('music'); } catch {}
+    }
+    if (youTubePlayer && typeof youTubePlayer.setVolume === 'function') {
+      try { youTubePlayer.setVolume(Math.round(getGlobalVolume('music') * 100)); } catch {}
+    }
+  }
+
   function clearHurryResumeTimeout() {
     if (hurryResumeTimeout) {
       clearTimeout(hurryResumeTimeout);
@@ -236,6 +251,7 @@
     if (state !== 'running') return;
 
     wantPlayback = true;
+    applyAudioVolumes();
 
     if (mediaType === 'audio' && audioEl) {
       try {
@@ -401,6 +417,7 @@
     audioEl.loop = true;
     audioEl.preload = 'auto';
     audioEl.controls = true;
+    audioEl.volume = getGlobalVolume('music');
     audioEl.style.width = 'min(360px, 90vw)';
     audioEl.addEventListener('ended', () => {
       if (state === 'running') {
@@ -423,6 +440,7 @@
 
   function playHurrySoundThenResumeMedia() {
     clearHurryResumeTimeout();
+    applyAudioVolumes();
 
     if (audioEl) {
       try { audioEl.pause(); } catch {}
@@ -713,5 +731,10 @@ spriteDisplay.addEventListener('click', () => {
     }
   }
 
+  window.addEventListener('storage', (event) => {
+    if (String(event.key || '').startsWith('gs.audio.')) applyAudioVolumes();
+  });
+
   initFromDOM();
+  applyAudioVolumes();
 })();

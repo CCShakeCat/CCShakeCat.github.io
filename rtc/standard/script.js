@@ -1,17 +1,30 @@
 let msPerTick = 25;
 
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
-let savedFontType = localStorage.getItem('stopwatchFontType') || 'default';
+let savedFontType = localStorage.getItem('stopwatchFontType') || localStorage.getItem('gs.clockFontMode') || 'default';
 let customFontData = localStorage.getItem('customFontData') || null;
 let customFontName = localStorage.getItem('customFontName') || '';
 
-let showHours = true;
-let showMinutes = true;
+let showHours = (localStorage.getItem('showHours') ?? "1") === "1";
+let showMinutes = (localStorage.getItem('showMinutes') ?? "1") === "1";
 let showSeconds = (localStorage.getItem('showSeconds') ?? "1") === "1";
 let showTicks = (localStorage.getItem('showTicks') ?? "1") === "1";
 let is24Hour = (localStorage.getItem('is24Hour') ?? "1") === "1";
 let showAMPM = (localStorage.getItem('showAMPM') ?? "1") === "1";
 let clockMode = localStorage.getItem('clockMode') || "Standard [23:59:59]";
+const RTC_SIZE_EM = { 1: 2.6, 2: 4, 3: 7, 4: 11, 5: 16 };
+let clockSize = Math.min(5, Math.max(1, parseInt(localStorage.getItem('rtcClockSize') || '3', 10) || 3));
+let rtcClockColor = localStorage.getItem('rtcClockColor') || '#ffffff';
+let rtcColourEditorMode = localStorage.getItem('rtcColourEditorMode') || 'rgb';
+
+function resolveThemeClockColor(color) {
+  const normalized = String(color || '').trim().toLowerCase();
+  if (!normalized || normalized === '#fff' || normalized === '#ffffff' || normalized === 'white') {
+    const rootStyles = getComputedStyle(document.documentElement);
+    return rootStyles.getPropertyValue('--page-text').trim() || getComputedStyle(document.body).color || '#ffffff';
+  }
+  return color;
+}
 
 // Laggy rendering state
 let laggyFrameCounter = 0;
@@ -149,7 +162,7 @@ const clockModes = {
       for (let i = 0; i < 7; ++i) extra += Math.floor(Math.random() * 10).toString();
       fractional += extra;
       let out = [pad(h), pad(m), pad(s)].join(":") + "." + fractional;
-      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      return `<span class="rtc-wrap rtc-dense">${[...out].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
     }
   },
   "UNIX [seconds since 1970-01-01]": {
@@ -247,9 +260,7 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
         out += "." + msTick.toString().padStart(2, '0');
       }
-      return `<span style="display:inline-block;transform:rotate(180deg);">` +
-        [...out].map(ch => `<span class="monochar">${ch}</span>`).join('') +
-      `</span>`;
+      return [...out].map(ch => `<span class="monochar">${ch}</span>`).join('');
     }
   },
   "Backwards": {
@@ -332,7 +343,7 @@ const clockModes = {
     formatter: (d) => {
       const { h } = getHourAMPM(d);
       const answer = (is24Hour ? (h >= 20 || h < 6) : (d.getHours() >= 20 || d.getHours() < 6)) ? "You may rest now, it's night" : "You can only sleep at night";
-      return [...answer].map(ch => `<span class="monochar">${ch}</span>`).join('');
+      return `<span class="rtc-wrap rtc-sentence">${[...answer].map(ch => `<span class="monochar">${ch}</span>`).join('')}</span>`;
     }
   },
   "Marquee": {
@@ -476,22 +487,15 @@ const clockModes = {
     name: "Minecraft",
     formatter: (d) => {
       const frameCount = 64;
-      const frameW = 16, frameH = 16, scale = 4;
       const imageSrc = "./images/minecraft_clock_atlas.png";
       let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600;
       let mcTime = (hours - 6 + 24) % 24;
       let frame = Math.floor(mcTime / 24 * frameCount) % frameCount;
-      const bgY = -frame * frameH * scale;
       return `
         <div class="minecraft-clock-face"
           style="
-            width: ${frameW * scale}px;
-            height: ${frameH * scale}px;
-            background: url('${imageSrc}') 0px ${bgY}px;
-            background-size: ${frameW * scale}px ${frameH * frameCount * scale}px;
-            image-rendering: pixelated;
-            border: 4px solid #333;
-            border-radius: 12px;
+            --mc-frame:${frame};
+            background-image: url('${imageSrc}');
           "></div>
       `;
     }
@@ -500,7 +504,7 @@ const clockModes = {
     name: "Time Query",
     formatter: (d) => {
       const q = getTimeOfDayAndColor(d);
-      return `<span class="timequery" style="color:${q.color}; font-size:2em;">
+      return `<span class="timequery rtc-wrap" style="color:${q.color};">
         ${q.label}
       </span>`;
     }
@@ -511,7 +515,7 @@ const clockModes = {
       let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600 + d.getMilliseconds()/3600000;
       let ticks = Math.floor((hours / 24) * 24000) % 24000;
       const q = getTimeOfDayAndColor(d);
-      return `<span class="timequery" style="color:${q.color}; font-size:2em;">
+      return `<span class="timequery rtc-wrap" style="color:${q.color};">
         Daytime is ${ticks}
       </span>`;
     }
@@ -701,17 +705,24 @@ function formatClock(d) {
   return (clockModes[clockMode] || clockModes["Standard [23:59:59]"]).formatter(d);
 }
 
+window.GSGlobal?.init?.('.');
+document.documentElement.style.setProperty('--clock-font-stack', window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif");
 function detectOS() {
-  const ua = navigator.userAgent;
-  if (/Windows/i.test(ua)) return "windows";
-  if (/Android/i.test(ua)) return "android";
-  if (/Macintosh|iPhone|iPad|iPod/i.test(ua)) return "apple";
-  return "windows";
+  const info = window.GSGlobal?.detectPlatform?.();
+  if (info?.platform === 'windows') return 'windows';
+  if (info?.platform === 'android') return 'android';
+  if (info?.platform === 'apple') return 'apple';
+  return 'windows';
 }
 function applyFontFamily(fontType) {
   const sw = document.querySelector('.stopwatch');
   let fontStack;
-  if (fontType === 'custom') {
+  window.GSGlobal?.restoreBitmapText?.(sw || document.body);
+  document.documentElement.dataset.clockFontMode = fontType === 'bitmap' ? 'bitmap' : '';
+  if (fontType === 'bitmap') {
+    fontStack = window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif";
+    window.GSGlobal?.renderBitmapText?.(document.getElementById('display'), { force: true });
+  } else if (fontType === 'custom') {
     const fontData = localStorage.getItem('customFontData');
     const fontName = (localStorage.getItem('customFontName') || 'CustomFont').replace(/\.[^/.]+$/, "");
     if (fontData && fontName) {
@@ -723,18 +734,16 @@ function applyFontFamily(fontType) {
         `;
         document.head.appendChild(style);
       }
-      fontStack = `'${fontName}', sans-serif`;
+      fontStack = `'${fontName}', ${window.GSGlobal?.getSystemFontStack?.() || "system-ui, Arial, sans-serif"}`;
     } else {
-      fontStack = "'FancyCatPX', sans-serif";
+      fontStack = window.GSGlobal?.getClockFontStack?.('custom') || window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif";
     }
   } else if (fontType === 'system') {
-    const os = detectOS();
-    if (os === 'windows') fontStack = "'Segoe UI', Arial, sans-serif";
-    else if (os === 'android') fontStack = "Roboto, Arial, sans-serif";
-    else fontStack = "'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+    fontStack = window.GSGlobal?.getSystemFontStack?.() || "system-ui, Arial, sans-serif";
   } else {
-    fontStack = "'FancyCatPX', sans-serif";
+    fontStack = window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif";
   }
+  document.documentElement.style.setProperty('--clock-font-stack', fontStack);
   if (sw) sw.style.fontFamily = fontStack;
   localStorage.setItem('stopwatchFont', fontStack);
 }
@@ -742,6 +751,9 @@ function applyAndSaveFont(type) {
   if (type === 'system') {
     applyFontFamily('system');
     localStorage.setItem('stopwatchFont', 'system');
+  } else if (type === 'bitmap') {
+    applyFontFamily('bitmap');
+    localStorage.setItem('stopwatchFont', 'bitmap');
   } else {
     applyFontFamily('default');
     localStorage.setItem('stopwatchFont', 'FancyCatPX');
@@ -749,6 +761,10 @@ function applyAndSaveFont(type) {
 }
 
 function updateShowHideCheckboxUI() {
+  const showHoursEl = document.getElementById('showHours');
+  const showMinutesEl = document.getElementById('showMinutes');
+  if (showHoursEl) showHoursEl.checked = showHours;
+  if (showMinutesEl) showMinutesEl.checked = showMinutes;
   document.getElementById('showSeconds').checked = showSeconds;
   document.getElementById('showTicks').checked = showTicks;
   const ampmRow = document.getElementById('showAMPMRow');
@@ -756,6 +772,8 @@ function updateShowHideCheckboxUI() {
   else ampmRow.style.display = 'none';
 }
 function saveShowHideState() {
+  localStorage.setItem('showHours', showHours ? "1" : "0");
+  localStorage.setItem('showMinutes', showMinutes ? "1" : "0");
   localStorage.setItem('showSeconds', showSeconds ? "1" : "0");
   localStorage.setItem('showTicks', showTicks ? "1" : "0");
   localStorage.setItem('is24Hour', is24Hour ? "1" : "0");
@@ -766,9 +784,13 @@ function saveShowHideState() {
 function updateDisplay() {
   const display = document.getElementById('display');
   if (!display) return;
+  const fontType = localStorage.getItem('stopwatchFontType') || localStorage.getItem('gs.clockFontMode') || savedFontType || 'default';
+  document.documentElement.style.setProperty('--clock-size', `${RTC_SIZE_EM[clockSize] || RTC_SIZE_EM[3]}em`);
+  display.style.setProperty('color', resolveThemeClockColor(rtcClockColor), 'important');
   display.innerHTML = formatClock(new Date());
+  if (fontType === 'bitmap') window.GSGlobal?.renderBitmapText?.(display, { force: true });
   if (clockMode === "Upside Down") {
-    display.style.transform = "rotate(180deg)";
+    display.style.transform = "scaleY(-1)";
   } else if (clockMode === "Backwards") {
     display.style.transform = "";
   } else if (clockMode === "Flipped") {
@@ -778,12 +800,78 @@ function updateDisplay() {
   }
 }
 
+function clampNumber(value, min, max) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
+function rgbToHex(r, g, b) {
+  const part = value => Math.round(clampNumber(value, 0, 255)).toString(16).padStart(2, '0');
+  return `#${part(r)}${part(g)}${part(b)}`;
+}
+
+function hexToRgb(hex) {
+  const match = String(hex || '').trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  if (!match) return null;
+  return { r: parseInt(match[1], 16), g: parseInt(match[2], 16), b: parseInt(match[3], 16) };
+}
+
+function parseCssColor(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const direct = hexToRgb(raw);
+  if (direct) return rgbToHex(direct.r, direct.g, direct.b);
+  const probe = document.createElement('span');
+  probe.style.color = raw;
+  if (!probe.style.color) return null;
+  document.body.appendChild(probe);
+  const computed = getComputedStyle(probe).color;
+  probe.remove();
+  const match = computed.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+  return match ? rgbToHex(Number(match[1]), Number(match[2]), Number(match[3])) : null;
+}
+
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  let h = 0;
+  if (delta) {
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  return { h: Math.round(h), s: max ? Math.round((delta / max) * 100) : 0, v: Math.round(max * 100) };
+}
+
+function hsvToRgb(h, s, v) {
+  h = ((clampNumber(h, 0, 360) % 360) + 360) % 360;
+  s = clampNumber(s, 0, 100) / 100;
+  v = clampNumber(v, 0, 100) / 100;
+  const c = v * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const os = detectOS();
   document.body.setAttribute('data-os', os);
 
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsModal = document.getElementById('settingsModal');
+  const modalCard = document.getElementById('modalCard') || settingsModal?.querySelector?.('.modal-content');
   const fontSelect = document.getElementById('fontSelect');
   const closeSettings = document.getElementById('closeSettings');
   const importCustomFont = document.getElementById('importCustomFont');
@@ -793,6 +881,233 @@ document.addEventListener("DOMContentLoaded", () => {
   const clock24Checkbox = document.getElementById('is24Hour');
   const showAMPMCheckbox = document.getElementById('showAMPM');
   const clockModeSelect = document.getElementById('clockModeSelect');
+  const pages = {
+    main: document.getElementById('page-main'),
+    style: document.getElementById('page-style'),
+    colors: document.getElementById('page-colors')
+  };
+  const openStyle = document.getElementById('openStyle');
+  const openColors = document.getElementById('openColors');
+  const backFromStyle = document.getElementById('backFromStyle');
+  const backFromColors = document.getElementById('backFromColors');
+  const sizePrev = document.getElementById('sizePrev');
+  const sizeNext = document.getElementById('sizeNext');
+  const sizeLabel = document.getElementById('sizeLabel');
+  const colourModeRGB = document.getElementById('colourModeRGB');
+  const colourModeHSV = document.getElementById('colourModeHSV');
+  const colourValue = document.getElementById('colourValue');
+  const colourPreview = document.getElementById('colourPreview');
+  const rgbEditor = document.getElementById('rgbEditor');
+  const hsvEditor = document.getElementById('hsvEditor');
+  const rgbRRange = document.getElementById('rgbRRange');
+  const rgbGRange = document.getElementById('rgbGRange');
+  const rgbBRange = document.getElementById('rgbBRange');
+  const rgbRInput = document.getElementById('rgbRInput');
+  const rgbGInput = document.getElementById('rgbGInput');
+  const rgbBInput = document.getElementById('rgbBInput');
+  const hsvHRange = document.getElementById('hsvHRange');
+  const hsvSRange = document.getElementById('hsvSRange');
+  const hsvVRange = document.getElementById('hsvVRange');
+  const hsvHInput = document.getElementById('hsvHInput');
+  const hsvSInput = document.getElementById('hsvSInput');
+  const hsvVInput = document.getElementById('hsvVInput');
+  const resetColours = document.getElementById('resetColours');
+
+  window.GSGlobal?.applyPlatformDataset?.();
+
+  function showSettingsPage(name) {
+    Object.entries(pages).forEach(([key, page]) => page?.classList.toggle('active', key === name));
+  }
+
+  function applyClockSize() {
+    clockSize = Math.min(5, Math.max(1, parseInt(clockSize, 10) || 3));
+    document.documentElement.style.setProperty('--clock-size', `${RTC_SIZE_EM[clockSize] || RTC_SIZE_EM[3]}em`);
+    if (sizeLabel) sizeLabel.textContent = String(clockSize);
+    localStorage.setItem('rtcClockSize', String(clockSize));
+  }
+
+  function setColourMode(mode, persist = true) {
+    rtcColourEditorMode = mode === 'hsv' ? 'hsv' : 'rgb';
+    colourModeRGB?.classList.toggle('active', rtcColourEditorMode === 'rgb');
+    colourModeHSV?.classList.toggle('active', rtcColourEditorMode === 'hsv');
+    rgbEditor?.classList.toggle('active', rtcColourEditorMode === 'rgb');
+    hsvEditor?.classList.toggle('active', rtcColourEditorMode === 'hsv');
+    if (persist) localStorage.setItem('rtcColourEditorMode', rtcColourEditorMode);
+  }
+
+  function setInputPair(rangeEl, numberEl, value) {
+    if (rangeEl) rangeEl.value = String(value);
+    if (numberEl) numberEl.value = String(value);
+  }
+
+  function syncColourEditorUI() {
+    const hex = parseCssColor(rtcClockColor) || '#ffffff';
+    const rgb = hexToRgb(hex) || { r: 255, g: 255, b: 255 };
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    if (colourValue) colourValue.value = hex;
+    if (colourPreview) colourPreview.style.background = hex;
+    setInputPair(rgbRRange, rgbRInput, rgb.r);
+    setInputPair(rgbGRange, rgbGInput, rgb.g);
+    setInputPair(rgbBRange, rgbBInput, rgb.b);
+    setInputPair(hsvHRange, hsvHInput, hsv.h);
+    setInputPair(hsvSRange, hsvSInput, hsv.s);
+    setInputPair(hsvVRange, hsvVInput, hsv.v);
+    setColourMode(rtcColourEditorMode, false);
+  }
+
+  function commitClockColour(value) {
+    const parsed = parseCssColor(value);
+    if (!parsed) {
+      syncColourEditorUI();
+      return;
+    }
+    rtcClockColor = parsed;
+    localStorage.setItem('rtcClockColor', rtcClockColor);
+    syncColourEditorUI();
+    updateDisplay();
+  }
+
+  function setRtcModalOffset(x = 0, y = 0) {
+    if (!modalCard) return;
+    modalCard.dataset.modalX = String(x);
+    modalCard.dataset.modalY = String(y);
+    modalCard.style.setProperty('--modal-x', `${x}px`);
+    modalCard.style.setProperty('--modal-y', `${y}px`);
+    modalCard.style.transform = 'translate(-50%, -50%) translate(var(--modal-x), var(--modal-y))';
+  }
+
+  function centerRtcModal() {
+    setRtcModalOffset(0, 0);
+  }
+
+  function enableRtcModalDrag() {
+    if (!modalCard || modalCard.dataset.rtcDragBound === 'true') return;
+    modalCard.dataset.rtcDragBound = 'true';
+
+    let pendingDrag = false;
+    let dragging = false;
+    let sx = 0;
+    let sy = 0;
+    let bx = 0;
+    let by = 0;
+    let previousUserSelect = '';
+
+    const isInteractive = el => !!(el && el.closest && el.closest('input, textarea, select, option, button, a, [data-no-drag], .colour-editor, .color-field, .colour-mode-row'));
+    const clearSelection = () => { try { window.getSelection?.().removeAllRanges?.(); } catch {} };
+    const setDragLock = on => {
+      if (on) {
+        previousUserSelect = document.body.style.userSelect || '';
+        document.documentElement.classList.add('gs-modal-dragging');
+        document.body.classList.add('modal-dragging');
+        document.body.style.userSelect = 'none';
+      } else {
+        document.documentElement.classList.remove('gs-modal-dragging');
+        document.body.classList.remove('modal-dragging');
+        document.body.style.userSelect = previousUserSelect;
+      }
+      clearSelection();
+    };
+
+    const startDrag = () => {
+      pendingDrag = false;
+      dragging = true;
+      modalCard.classList.add('dragging', 'gs-dragging');
+      setDragLock(true);
+    };
+
+    const stopDrag = () => {
+      pendingDrag = false;
+      if (!dragging) return;
+      dragging = false;
+      modalCard.classList.remove('dragging', 'gs-dragging');
+      setDragLock(false);
+    };
+
+    modalCard.addEventListener('mousedown', e => {
+      if (e.button !== 0 || isInteractive(e.target)) return;
+      pendingDrag = true;
+      sx = e.clientX;
+      sy = e.clientY;
+      bx = parseFloat(modalCard.dataset.modalX || '0') || 0;
+      by = parseFloat(modalCard.dataset.modalY || '0') || 0;
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (pendingDrag) {
+        const dx = e.clientX - sx;
+        const dy = e.clientY - sy;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) startDrag();
+      }
+      if (!dragging) return;
+      setRtcModalOffset(bx + (e.clientX - sx), by + (e.clientY - sy));
+      clearSelection();
+      e.preventDefault();
+    });
+
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('mouseleave', stopDrag);
+
+    modalCard.addEventListener('touchstart', e => {
+      const t = e.touches && e.touches[0];
+      if (!t || isInteractive(e.target)) return;
+      pendingDrag = true;
+      sx = t.clientX;
+      sy = t.clientY;
+      bx = parseFloat(modalCard.dataset.modalX || '0') || 0;
+      by = parseFloat(modalCard.dataset.modalY || '0') || 0;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', e => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      if (pendingDrag) {
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) startDrag();
+      }
+      if (!dragging) return;
+      setRtcModalOffset(bx + (t.clientX - sx), by + (t.clientY - sy));
+      clearSelection();
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchend', stopDrag);
+    window.addEventListener('touchcancel', stopDrag);
+
+    document.addEventListener('selectstart', e => {
+      if (!dragging) return;
+      e.preventDefault();
+      clearSelection();
+    });
+
+    document.addEventListener('dragstart', e => {
+      if (!dragging) return;
+      e.preventDefault();
+    });
+  }
+
+  function openSettingsModal() {
+    const globalClockMode = localStorage.getItem('gs.clockFontMode') || "default";
+    fontSelect.value = localStorage.getItem('stopwatchFontType') || globalClockMode;
+    customFontNameElem.textContent = localStorage.getItem('customFontName') || localStorage.getItem('gs.clockCustomFontName') || '';
+    settingsModal.classList.add('show');
+    settingsModal.setAttribute('aria-hidden', 'false');
+    enableRtcModalDrag();
+    centerRtcModal();
+    showSettingsPage('main');
+    updateCustomFontNotice();
+    updateShowHideCheckboxUI();
+    applyClockSize();
+    syncColourEditorUI();
+    clock24Checkbox.checked = is24Hour;
+    showAMPMCheckbox.checked = showAMPM;
+    populateClockModes();
+  }
+
+  function closeSettingsModal() {
+    settingsModal.classList.remove('show');
+    settingsModal.setAttribute('aria-hidden', 'true');
+  }
 
   function populateClockModes() {
     clockModeSelect.innerHTML = '';
@@ -809,24 +1124,74 @@ document.addEventListener("DOMContentLoaded", () => {
     clockModeSelect.value = clockMode;
   }
 
-  settingsBtn.addEventListener('click', () => {
-    fontSelect.value = localStorage.getItem('stopwatchFontType') || "default";
-    customFontNameElem.textContent = localStorage.getItem('customFontName') || '';
-    settingsModal.classList.add('show');
-    updateCustomFontNotice();
-    updateShowHideCheckboxUI();
-    clock24Checkbox.checked = is24Hour;
-    showAMPMCheckbox.checked = showAMPM;
-    populateClockModes();
-  });
-  closeSettings.addEventListener('click', () => {
-    settingsModal.classList.remove('show');
-  });
+  settingsBtn.addEventListener('click', openSettingsModal);
+  closeSettings.addEventListener('click', closeSettingsModal);
   settingsModal.addEventListener('click', (e) => {
     if (e.target === settingsModal) {
-      settingsModal.classList.remove('show');
+      closeSettingsModal();
     }
   });
+
+  openStyle?.addEventListener('click', () => showSettingsPage('style'));
+  backFromStyle?.addEventListener('click', () => showSettingsPage('main'));
+  openColors?.addEventListener('click', () => {
+    syncColourEditorUI();
+    showSettingsPage('colors');
+  });
+  backFromColors?.addEventListener('click', () => showSettingsPage('main'));
+
+  sizePrev?.addEventListener('click', () => {
+    clockSize = Math.max(1, clockSize - 1);
+    applyClockSize();
+    updateDisplay();
+  });
+  sizeNext?.addEventListener('click', () => {
+    clockSize = Math.min(5, clockSize + 1);
+    applyClockSize();
+    updateDisplay();
+  });
+
+  colourModeRGB?.addEventListener('click', () => setColourMode('rgb'));
+  colourModeHSV?.addEventListener('click', () => setColourMode('hsv'));
+  colourValue?.addEventListener('change', () => commitClockColour(colourValue.value));
+
+  [
+    [rgbRRange, rgbRInput],
+    [rgbGRange, rgbGInput],
+    [rgbBRange, rgbBInput]
+  ].forEach(([rangeEl, inputEl]) => {
+    rangeEl?.addEventListener('input', event => {
+      event.gsSoundHandled = true;
+      if (inputEl) inputEl.value = rangeEl.value;
+      commitClockColour(rgbToHex(rgbRInput?.value ?? rgbRRange?.value, rgbGInput?.value ?? rgbGRange?.value, rgbBInput?.value ?? rgbBRange?.value));
+    });
+    inputEl?.addEventListener('input', event => {
+      event.gsSoundHandled = true;
+      if (rangeEl) rangeEl.value = inputEl.value;
+      commitClockColour(rgbToHex(rgbRInput?.value ?? rgbRRange?.value, rgbGInput?.value ?? rgbGRange?.value, rgbBInput?.value ?? rgbBRange?.value));
+    });
+  });
+
+  [
+    [hsvHRange, hsvHInput],
+    [hsvSRange, hsvSInput],
+    [hsvVRange, hsvVInput]
+  ].forEach(([rangeEl, inputEl]) => {
+    rangeEl?.addEventListener('input', event => {
+      event.gsSoundHandled = true;
+      if (inputEl) inputEl.value = rangeEl.value;
+      const rgb = hsvToRgb(hsvHInput?.value ?? hsvHRange?.value, hsvSInput?.value ?? hsvSRange?.value, hsvVInput?.value ?? hsvVRange?.value);
+      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+    });
+    inputEl?.addEventListener('input', event => {
+      event.gsSoundHandled = true;
+      if (rangeEl) rangeEl.value = inputEl.value;
+      const rgb = hsvToRgb(hsvHInput?.value ?? hsvHRange?.value, hsvSInput?.value ?? hsvSRange?.value, hsvVInput?.value ?? hsvVRange?.value);
+      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+    });
+  });
+
+  resetColours?.addEventListener('click', () => commitClockColour('#ffffff'));
 
   importCustomFont.addEventListener('click', () => {
     customFontFile.value = '';
@@ -871,7 +1236,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function updateCustomFontNotice() {
-    if (fontSelect.value === 'custom' || customFontNameElem.textContent) {
+    if (fontSelect.value === 'custom' || (fontSelect.value !== 'bitmap' && customFontNameElem.textContent)) {
       customFontNotice.style.display = '';
     } else {
       customFontNotice.style.display = 'none';
@@ -884,8 +1249,10 @@ document.addEventListener("DOMContentLoaded", () => {
     applyFontFamily(savedFontType);
   }
 
-  ["showSeconds","showTicks"].forEach(id => {
+  ["showHours","showMinutes","showSeconds","showTicks"].forEach(id => {
     document.getElementById(id).addEventListener('change', function() {
+      if (id === "showHours") showHours = this.checked;
+      if (id === "showMinutes") showMinutes = this.checked;
       if (id === "showSeconds") showSeconds = this.checked;
       if (id === "showTicks") showTicks = this.checked;
       saveShowHideState();
@@ -910,6 +1277,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   populateClockModes();
   updateShowHideCheckboxUI();
+  applyClockSize();
+  syncColourEditorUI();
   updateDisplay();
 
   let interval = null;

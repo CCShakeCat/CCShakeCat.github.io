@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Global Settings</title>
+
+    <!-- Material Symbols (Rounded) -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
+
+    <!-- Page CSS -->
+    <link rel="stylesheet" href="./global_settings.css" />
+
+    <script src="./themes/theme_runtime.js"></script>
+    <script src="./global.js"></script>
+  </head>
+
+  <body class="gs-mobile-home theme-dark">
+    <header class="gs-status-bar" aria-label="Status bar">
+      <time id="gsStatusDate" class="gs-status-date" datetime=""></time>
+      <time id="gsStatusTime" class="gs-status-time" datetime=""></time>
+    </header>
+
+    <div class="gs-page">
+      <header class="gs-header">
+        <h1 class="gs-title">GLOBAL SETTINGS</h1>
+
+        <div class="gs-backbar">
+          <button id="gsBackBtn" class="gs-backbtn" type="button">
+            <span class="gs-mi" aria-hidden="true">arrow_back</span>
+            <span>Back</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="gs-layout">
+        <nav class="gs-nav" aria-label="Sections">
+          <button class="gs-nav-btn is-active" type="button" data-section="display">
+            <span class="gs-mi" aria-hidden="true">wb_sunny</span>
+            <span class="gs-nav-text">Display</span>
+          </button>
+
+          <button class="gs-nav-btn" type="button" data-section="audio">
+            <span class="gs-mi" aria-hidden="true">volume_up</span>
+            <span class="gs-nav-text">Audio</span>
+          </button>
+
+          <button class="gs-nav-btn" type="button" data-section="themes">
+            <span class="gs-mi" aria-hidden="true">palette</span>
+            <span class="gs-nav-text">Themes</span>
+          </button>
+
+          <button class="gs-nav-btn" type="button" data-section="about">
+            <span class="gs-mi" aria-hidden="true">info</span>
+            <span class="gs-nav-text">
+              About
+              <br />
+              Website
+            </span>
+          </button>
+        </nav>
+
+        <main class="gs-panel" aria-live="polite">
+          <div class="gs-panel-backbar">
+            <button id="gsPanelBackBtn" class="gs-backbtn" type="button">
+              <span class="gs-mi" aria-hidden="true">arrow_back</span>
+              <span>Back</span>
+            </button>
+          </div>
+
+          <div class="gs-sections">
+            <!-- DISPLAY -->
+            <section class="gs-section is-visible" data-section="display">
+              <h2 class="gs-section-title">Display</h2>
+
+              <div class="gs-card">
+                <!-- 1) Themes -->
+                <div class="gs-setting-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Themes</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <select id="gsThemeSelect" class="gs-select">
+                      <option value="light">Light</option>
+                      <option value="dark">Dark (Default)</option>
+                      <option value="system">System</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <!-- 2) UI Font -->
+                <button class="gs-setting-row gs-setting-button" type="button" id="gsOpenSettingsFontAdvanced">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">UI Font</div>
+                    <div class="gs-setting-sub">Tap this row for advanced Font Options</div>
+                  </div>
+                  <div class="gs-setting-right" data-stop-drag="">
+                    <select id="gsSettingsFontSelect" class="gs-select" aria-label="UI Font">
+                      <option value="default">Default</option>
+                      <option value="system">System</option>
+                      <option value="custom">Custom</option>
+                      <option value="bitmap">Bitmap</option>
+                    </select>
+                  </div>
+                </button>
+
+                <hr class="gs-divider" />
+
+                <!-- 3) Clock fonts -->
+                <button class="gs-setting-row gs-setting-button" type="button" id="gsOpenClockFontAdvanced">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Clock fonts</div>
+                    <div class="gs-setting-sub">Tap this row for advanced Font Options</div>
+                    <div class="gs-setting-sub subtle">Only affects RTC, Stopwatch, and Standard Timer</div>
+                  </div>
+                  <div class="gs-setting-right" data-stop-drag="">
+                    <select id="gsClockFontSelect" class="gs-select" aria-label="Clock fonts">
+                      <option value="default">Default</option>
+                      <option value="system">System</option>
+                      <option value="custom">Custom</option>
+                    
+                      <option value="bitmap">Bitmap</option></select>
+                  </div>
+                </button>
+
+                <hr class="gs-divider" />
+
+                <!-- 4) UI Animation scale -->
+                <div class="gs-setting-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">UI Animation scale</div>
+                    <div class="gs-setting-sub">Less than 1 = faster, greater than 1 = slower</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <select id="gsAnimScaleSelect" class="gs-select">
+                      <option value="off">OFF</option>
+                      <option value="0.25">0.25x</option>
+                      <option value="0.5">0.5x</option>
+                      <option value="1" selected="">1x</option>
+                      <option value="2">2x</option>
+                      <option value="5">5x</option>
+                      <option value="10">10x</option>
+                    </select>
+                  </div>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <div class="gs-footnote">These settings are global and will persist across the whole site.</div>
+              </div>
+            </section>
+
+            <!-- AUDIO -->
+            <section class="gs-section" data-section="audio">
+              <h2 class="gs-section-title">Audio</h2>
+              <div class="gs-card">
+                <div class="gs-setting-row gs-audio-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Master</div>
+                    <div class="gs-setting-sub">Controls all volume</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <input id="gsVolumeMaster" class="gs-range" type="range" min="0" max="100" step="1" />
+                    <output id="gsVolumeMasterValue" class="gs-range-value" for="gsVolumeMaster">100%</output>
+                  </div>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <div class="gs-setting-row gs-audio-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Music</div>
+                    <div class="gs-setting-sub">Controls all added music's volume</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <input id="gsVolumeMusic" class="gs-range" type="range" min="0" max="100" step="1" />
+                    <output id="gsVolumeMusicValue" class="gs-range-value" for="gsVolumeMusic">100%</output>
+                  </div>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <div class="gs-setting-row gs-audio-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Hurry Up</div>
+                    <div class="gs-setting-sub">Controls all Hurry Up's volume</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <input id="gsVolumeHurry" class="gs-range" type="range" min="0" max="100" step="1" />
+                    <output id="gsVolumeHurryValue" class="gs-range-value" for="gsVolumeHurry">100%</output>
+                  </div>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <div class="gs-setting-row gs-audio-row">
+                  <div class="gs-setting-left">
+                    <div class="gs-setting-title">Warning</div>
+                    <div class="gs-setting-sub">Controls all added 10 Second Warning's volume</div>
+                  </div>
+                  <div class="gs-setting-right">
+                    <input id="gsVolumeWarning" class="gs-range" type="range" min="0" max="100" step="1" />
+                    <output id="gsVolumeWarningValue" class="gs-range-value" for="gsVolumeWarning">100%</output>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- THEMES -->
+            <!-- THEMES -->
+            <section class="gs-section" data-section="themes">
+              <h2 class="gs-section-title">Themes</h2>
+
+              <a class="gs-link" href="./test/playground.html">Test Your Theme</a>
+
+              <!-- Theme picker + preview -->
+              <div class="gs-card">
+                <div class="gs-theme-actions">
+                  <label class="gs-theme-file">
+                    <span class="gs-theme-file-label">Load Theme Pack (.zip)</span>
+                    <input id="gsThemeZipInput" type="file" accept=".zip" />
+                  </label>
+
+                  <button id="gsClearThemeBtn" class="gs-btn" type="button">Clear Theme</button>
+                </div>
+
+                <hr class="gs-divider" />
+
+                <!-- THEME PREVIEW -->
+                <div class="gs-theme-preview">
+                  <div class="gs-theme-left">
+                    <div class="gs-theme-icon-wrap">
+                      <img id="tpIcon" class="gs-theme-icon" alt="Theme icon" />
+                    </div>
+
+                    <div id="tpNameSmall" class="gs-theme-name-small">(Theme Name Here)</div>
+                    <div id="tpAuthorSmall" class="gs-theme-author-small">By (name)</div>
+                  </div>
+
+                  <div class="gs-theme-right">
+                    <div id="tpTitle" class="gs-theme-title">(Theme Name Here)</div>
+                    <div id="tpDesc" class="gs-theme-desc">(Description)</div>
+                    <div id="tpByline" class="gs-theme-byline">By (name)</div>
+                    <div id="tpVersion" class="gs-theme-version">v(x.x.x)</div>
+
+                    <div id="tpBitfontRow" class="gs-theme-bitfont-row" hidden=""></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Available themes list with APPLY buttons -->
+              <div class="gs-card">
+                <div class="gs-theme-list-head">
+                  <div class="gs-theme-list-title">Available Themes</div>
+                  <div class="gs-theme-list-sub">Pick one and click APPLY.</div>
+                </div>
+
+                <div id="gsThemeList" class="gs-theme-list"></div>
+              </div>
+            </section>
+
+            <!-- ABOUT -->
+            <section class="gs-section" data-section="about">
+              <h2 class="gs-section-title">About Website</h2>
+              <p class="gs-section-desc">
+                This is a page for Mimi's clock-related stuff.
+                <br />
+                The current projects are listed below with their changelogs.
+              </p>
+
+              <div class="gs-changelog-controls" aria-label="Changelog controls">
+                <button class="gs-btn" type="button" data-changelog-action="newest">SHOW NEWEST VERSIONS</button>
+                <button class="gs-btn" type="button" data-changelog-action="oldest">SHOW OLDEST VERSIONS</button>
+                <button class="gs-btn" type="button" data-changelog-action="expand">EXPAND ALL</button>
+                <button class="gs-btn" type="button" data-changelog-action="collapse">COLLAPSE ALL</button>
+              </div>
+
+              <div class="gs-card">
+                <strong>WEBSITE</strong>
+                <br />
+                <details>
+                  <summary>
+                    Version 2.0 -
+                    <span style="color: #55ff55">THE GLOBAL WARMUP</span>
+                  </summary>
+                  <span style="color: #55ffff">A new update has been made for the website!</span>
+                  <br />
+                  In this update, the site is now styled off an OS, because why not? :)
+                  <ul>
+                    <li>
+                      <span style="color: #ffff00">Global Settings</span>
+                      (which is what you are looking at now) has been added
+                      <ul>
+                        <li>
+                          Change your theme between
+                          <span style="color: #ffff00">Light</span>
+                          and
+                          <span style="color: #ffff00">Dark</span>
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">UI Font</span>
+                          can now be globally changed
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Audio</span>
+                          volume can now be globally changed
+                        </li>
+                        <li>
+                          New
+                          <span style="color: #ffff00">Themes</span>
+                          have been added
+                        </li>
+                        <ul>
+                          <li>
+                            You can now
+                            <span style="color: #00ffff">add your own theme pack</span>
+                            in the
+                            <span style="color: #ffff00">Themes</span>
+                            settings in the form of a
+                            <span style="color: #ffff00">ZIP archive</span>
+                            . These themes can be used to change the stule of UI colours, textures, fonts, and more.
+                            Right now it's a bit limited, but I do plan on the expansion of features
+                          </li>
+                        </ul>
+                      </ul>
+                    </li>
+                    <li>
+                      <span style="color: #ffff00">Bitmap Font Support</span>
+                      has been added. use any kind of
+                      <span style="color: #ffff00">ascii.png</span>
+                      or
+                      <span style="color: #ffff00">default8.png</span>
+                      font from a Minecraft resource pack and rename it to the latter (
+                      <span style="color: #ffff00">default8.png</span>
+                      ) to change the font and have it display in a bitmap style
+                    </li>
+
+                  </ul>
+                </details>
+              </div>
+
+              <div class="gs-card">
+                <strong>REALTIME CLOCK</strong>
+                <br />
+                <details>
+                  <summary>Version 1.x</summary>
+                  <details>
+                    <summary>Version 1.0</summary>
+                    <ul>
+                      <li>v1.0.0 - Official Release!</li>
+                    </ul>
+                  </details>
+                  <details>
+                    <summary>Version 1.1</summary>
+                    <ul>
+                      <li>
+                        v1.1.0 - Fixed the jittering on the Rotating Time, properly flipped the Backwards time mode, the
+                        Minecraft clock is now properly synced with the time, and a few fixes have been made to
+                        Crazycolors, but you'll have to figure them out for yourself, heheheheh &gt;:)
+                        <br />
+                        <span style="color: &quot;#555555&quot;">
+                          Psst, let me give you a hint! They have a 6 in them
+                        </span>
+                      </li>
+                      <li>
+                      v1.2.0 - Added a LITE version of an upcoming page called SEGMENTE DISPLAY. Here you will get a taste of what will eventually be released  
+                      </li>
+                    </ul>
+                  </details>
+                </details>
+                <details>
+                  <summary>
+                    Version 2.x -
+                    <span style="color: #55ff55">THE GLOBAL WARMUP</span>
+                  </summary>
+                  <details>
+                    <summary>Version 2.0</summary>
+                    <ul>
+                      <li>
+                        <span style="color: #ffff00">Real-Time Clock</span>
+                        has had a revamp with theme support, new options, and menu parity
+                      </li>
+                      <ul>
+                        <li>
+                          <span style="color: #ffff00">Real-Time Clock</span>
+                          now has a feature to change the colours of the clock face and the background and can overwrite
+                          the current theme
+                        </li>
+                        <li>
+                          The settings menu of the
+                          <span style="color: #ffff00">Real-Time Clock</span>
+                          can now be moved around, like the Standard Timer
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Real-Time Clock</span>
+                          now has the ability to hide clock elements
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Real-Time Clock</span>
+                          can now change depending on the current theme
+                        </li>
+                        <li>
+                          The
+                          <span style="color: #ffff00">System Font</span>
+                          option on the
+                          <span style="color: #ffff00">Real-Time Clock</span>
+                          can now uses the font of the vendor on Android devices
+                        </li>
+                      </ul>
+                      <li>
+                        A few
+                        <span style="color: #ffff00">Real-Time Clock modes</span>
+                        have been adjusted to fit the screen
+                      </li>
+                      <li>
+                        A new split of
+                        <span style="color: #ffff00">Real-Time Clock</span>
+                        has been added to emulate a digital alarm clock
+                      </li>
+                    </ul>
+                  </details>
+                </details>
+              </div>
+
+              <div class="gs-card" style="margin-top: 14px">
+                <strong>COUNTDOWN TIMER</strong>
+                <br />
+                <details>
+                  <summary>Version 1.x</summary>
+                  <details>
+                    <summary>Version 1.0</summary>
+                    <ul>
+                      <li>v1.0.0 - Original Release! Multiple styles and customization!</li>
+                      <ul>
+                        <li>
+                          v1.0.10 - Fixed the outline looking like gridlines and fixed a bug where the STANDARD timer
+                          disappears when attempting to be edited
+                        </li>
+                      </ul>
+                    </ul>
+                  </details>
+                  <details>
+                    <summary>Version 1.1</summary>
+                    <li>v1.1.0 - Made the dropdowns and checkboxes native</li>
+                  </details>
+                  <details>
+                    <summary>Version 1.2</summary>
+                    <li>
+                      v1.2.0 - The Mario timers can now play music. To keep the timers more authentic, the HURRY UP will
+                      speed up the music in each style. The STANDARD timer now has the RTC's clock modes, along with a
+                      new AUTO checkbox which hides zeroed out places and the ability to play music with Hurry Up
+                      options! Plus once the timer falls below or is started under One Minute, the timer will now flash
+                      red in the
+                      <span style="color: #00ffff">Standard</span>
+                      clock mode
+                      <br />
+                      * Bare in mind that the music does not yet work on the STANDARD mode. I am working to fix that,
+                      but it may take some time
+                    </li>
+                    <ul>
+                      <li>
+                        v1.2.10 - Added a new style based on Sonic Lost World's HUD, following the same music system as
+                        the Mario timers. Also, removed the unintentionally accessible "Wii" subpage that takes you to
+                        the old NSMB timer.
+                        <br />
+                        * Bare in mind that the layout is still bugged and the music does still not work. I am working
+                        to fix that, but it may take some time
+                      </li>
+                    </ul>
+                  </details>
+                  <details>
+                    <summary>Version 1.3</summary>
+                    <li>
+                      v1.3.0 - New styles in the Super Mario Bros and Super Mario Bros 3 modes. The rest will be updated
+                      at a later date. SMB1 and 3 are the most polished right now
+                      <ul>
+                        <li>
+                          Super Mario Bros now has two new modes: Super Mario Bros 2: The Lost Levels, and Super Mario
+                          All Stars (Yes, the SNES port's style has been added!). Note that the Genesis Hurry Up
+                          checkbox still exists, but it will be overridden by the Super Mario All-Stars style
+                          <br />
+                          Please keep in mind that if any letter is only in the 1's or 10's place on SMB, the timer will
+                          not commence. You need to have a letter in the 100's place
+                        </li>
+                        <li>
+                          Super Mario Bros 3 now has it's icon for the timer instead of that ugly TIME text. It also has
+                          recieved it's SNES couterpart's style, too!
+                          <br />
+                          Letters will NOT work for now in the SMB3 style
+                          <br />
+                          <br />
+
+                          Both of these bugs will be fixed at a later date. Sorry for the inconvenience
+                        </li>
+                      </ul>
+                    </li>
+                  </details>
+                  <details>
+                    <summary>Version 1.4</summary>
+                    <li>
+                      v1.4.10 - The
+                      <span style="color: #00ffff">Standard</span>
+                      timer has had a revamp! You can now customize the Tick Rate, turn off the red flash, and the old
+                      Modes have been removed, but more importantly, THE MUSIC PLAYER NOW WORKS! You can finally have
+                      your favourite songs play in the background of your music! Oh and one global update that I have
+                      also made: The settings modal now fits on portrait screens. I have updated the other modes for
+                      this, but I don't feel like it was necessary to put this change in their own categories on the
+                      changelog
+                    </li>
+                    <li>
+                      v1.4.20 - The menu can now be moved and is much better for portrait devices such as phones. You
+                      can now also change the timer from counting down to counting up, much like Sonic The Hedgehog!
+                    </li>
+                  </details>
+                  <details>
+                    <summary>Version 1.5</summary>
+                    <li>v1.5.0 - New Timer prefixes and options for the red flashing</li>
+                  </details>
+                  <details>
+                    <summary>Version 1.6</summary>
+                    <li>
+                      v1.6.0 - Complete settings overhaul, allowing for even more customization! Also I fixed the bugs
+                      from the previous version, along with adding new things!
+                    </li>
+                  </details>
+                  <details>
+                    <summary>Version 1.7</summary>
+                    <li>
+                      v1.7.0 - The following bugs
+                      <span style="color: #55ff55">have been fixed:</span>
+                      <ul>
+                        <li>
+                          The font was always set to SYSTEM and doesn't respond to setting it to Default or adding a new
+                          TTF or OTF
+                        </li>
+                        <li>Custom Fonts reset when the page refreshed</li>
+                        <li>Music player is not working at the minute</li>
+                        <li>Samsung Internet is the only browser to apply the current Android Vendor's font</li>
+                        <li>Tick Rate is no longer blank and will show the default value of 40TPS</li>
+                        <li>The Sonic Hurry Ups do not play</li>
+                        <li>The Hurry Up flash settings do not save upon refresh</li>
+                        <li>The layouts on Clock Size 4 and 5 we're grouped up oddly</li>
+                        <li>Status hover is offset</li>
+                      </ul>
+                      And these features
+                      <span style="color: #55ff55">have been added alongside</span>
+                      <ul>
+                        <li>
+                          The Hurry Up volume now plays a sound to test how loud it will be when the timer is not
+                          ticking
+                        </li>
+                        <li>The volume is now a slider instead of a dropdown</li>
+                        <li>
+                          There is a new option in the Hurry Up page that beeps the last ten seconds, akin to Sonic
+                          Advance/Rush/Colors DS
+                        </li>
+                        <span style="color: #676767">
+                          <li>
+                            Also I forgot to mention this before, but the menu is now able to be moved around on Mobile
+                            devices. sadlt, this means you can't pull to refresh anymore because of it
+                          </li>
+                        </span>
+                      </ul>
+                    </li>
+                  </details>
+                  <details>
+                    <summary>Version 1.8</summary>
+          <li>v1.8.0 - All Mario timers have been reworked and upgraded
+          <ul>
+            <li>Super Mario 3D (Land and World) now has it's red flash when 100 ticks or below and plays a sound when counting down the last ten</li>    
+            <li>NSMB2 now has it's red flash when 100 ticks or below and plays a sound when counting down the last ten</li>    
+            <li>All timers now have their respective icons</li>    
+            <li>Super Mario Bros now uses a spritesheet approach on the timer text for more authenticity</li>    
+            <li>Super Mario Bros. 3  now uses a spritesheet approach on the timer text for more authenticity</li>    
+            <li>Super Mario World  now uses a spritesheet approach on the timer text for more authenticity</li>    
+          </ul>
+          <li>v1.8.01 - Fixed an issue with New Super Mario Bros's timer where the NUMERIC keyboard was opening on mobile. Also Sonic Lost World's title will now correctly read <span style="color: #55ff55">Sonic Lost World</span>
+                      </ul>
+                    </li>
+                  </details>
+                </details>
+                <details>
+                  <summary>
+                    Version 2.x -
+                    <span style="color: #55ff55">THE GLOBAL WARMUP</span>
+                  </summary>
+                  <details>
+                    <summary>Version 2.0</summary>
+                    <ul>
+                      <li>
+                        <span style="color: #ffff00">Standard Timer</span>
+                        has had a revamp with theme support, new options, and menu parity
+                      </li>
+                      <ul>
+                        <li>
+                          <span style="color: #ffff00">Standard Timer</span>
+                          now has a feature to change the colours of the clock face and the background and can overwrite
+                          the current theme
+                        </li>
+                        <li>
+                          The settings menu of the
+                          <span style="color: #ffff00">Standard Timer</span>
+                          can now be moved around, like the Standard Timer
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Standard Timer</span>
+                          now has the ability to hide clock elements
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Standard Timer</span>
+                          can now change depending on the current theme
+                        </li>
+                        <li>
+                          The
+                          <span style="color: #ffff00">System Font</span>
+                          option on the
+                          <span style="color: #ffff00">Standard Timer</span>
+                          can now uses the font of the vendor on Android devices
+                        </li>
+                      </ul>
+                    </ul>
+                  </details>
+                </details>
+              </div>
+
+              <div class="gs-card" style="margin-top: 14px">
+                <strong>STOPWATCH</strong>
+                <br />
+                <details>
+                  <summary>Version 1.x</summary>
+                  <details>
+                    <summary>Version 1.0</summary>
+                    <li>v1.0.0 - Original Release, Barebones, One font</li>
+                  </details>
+                  <details>
+                    <summary>Version 1.2</summary>
+                    v1.2.0 - Revamp of the clock and code
+                    <ul>
+                      <li>⚪ White text on ⬛ black background (easier for colour change editing)</li>
+                      <li>
+                        New Settings menu with a font changer. The display has a "forced monospace" property which will
+                        eliminate the jitteriness of otherwise professional fonts, making them easier to read, and
+                        better on the eyes.
+                        <ul>
+                          <li>Default - Fancy Cat PX. A tabular font suitable for a clock!</li>
+                          <li>
+                            System - An OS-specific setting. iOS/Mac will use San Francisco, Android will use Roboto,
+                            and Windows will use Segoe UI
+                          </li>
+                          <li>
+                            Custom - Upload your own TTF, OTF, or WOFF. Note: You may need to refresh the page once
+                            you've uploaded a file!
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        The Stopwatch itself now uses the "wall-clock" method of keeping track of elapsed time, which is
+                        a fancy way of saying it no longer freezes when unfocusing or minimizing the tab or window
+                        altogether.
+                      </li>
+                    </ul>
+                    <li>v1.2.10 - Added icons to the files and reworked the settings button / modal text</li>
+                    <li>v1.2.11 - Fixed the CLOSE SETTINGS button. It now uses a hue shifted ❎ Cross Mark Button</li>
+                    <li>v1.2.2 - New options to hide the options in the stopwatch (i.e. Hours, Mins, etc)</li>
+                  </details>
+                  <details>
+                    <summary>Version 1.3</summary>
+                    <li>v1.3.0 - Made the dropdowns and checkboxes native</li>
+                  </details>
+                  <details>
+                    <summary>Version 1.4</summary>
+                    <li>
+                      v1.4.10 - New KEYBINDS menu to set START/STOP and RESET functions
+                      <br />
+                      Press your keybind within three seconds of pressing the button
+                      <br />
+                      If you accidentally press RESET, you'd have to hold. I thought about that ;)
+                    </li>
+                    <li>
+                      v1.4.11 - New Personal Best system with a CLEAR PB button by the Speedrunner toggle. Also added a
+                      new keybind for clearing the Personal Best
+                    </li>
+                  </details>
+                </details>
+                <details>
+                  <summary>
+                    Version 2.x -
+                    <span style="color: #55ff55">THE GLOBAL WARMUP</span>
+                  </summary>
+                  <details>
+                    <summary>Version 2.0</summary>
+                    <ul>
+                      <li>
+                        <span style="color: #ffff00">Stopwatch</span>
+                        has had a revamp with theme support, new options, and menu parity
+                      </li>
+                      <ul>
+                        <li>
+                          <span style="color: #ffff00">Stopwatch</span>
+                          now has a feature to change the colours of the clock face and the background and can overwrite
+                          the current theme
+                        </li>
+                        <li>
+                          The settings menu of the
+                          <span style="color: #ffff00">Stopwatch</span>
+                          can now be moved around, like the Standard Timer
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Stopwatch</span>
+                          now has the ability to hide clock elements
+                        </li>
+                        <li>
+                          <span style="color: #ffff00">Stopwatch</span>
+                          can now change depending on the current theme
+                        </li>
+                        <li>
+                          The
+                          <span style="color: #ffff00">System Font</span>
+                          option on the
+                          <span style="color: #ffff00">Stopwatch</span>
+                          can now uses the font of the vendor on Android devices
+                        </li>
+                      </ul>
+                    </ul>
+                  </details>
+                </details>
+              </div>
+
+              <!-- KEEPING YOUR CREDITS -->
+              <div class="gs-card" style="margin-top: 14px">
+                <strong>CREDITS</strong>
+                <br>
+                    Settings Icons:
+                    <a href="https://fonts.google.com/icons" style="color: #5555ff">Material Icons by Google</a>
+                    <details>
+                        <summary>Font Credits</summary>
+                    <ul>
+                      <li>Fancy Cat PX (Default clock font) by CCShakeCat</li>
+                      <li>Roboto, Google Sans by Google</li>
+                      <li>One Plus Sans by One Plus</li>
+                      <li>OPPO Sans by OPPO</li>
+                      <li>Samsung Sans by Samsung</li>
+                      <li>Vivo Sans by Vivo</li>
+                      <li>Mi Sans by Xaomi</li>
+                      <li>San Francisco by Apple</li>
+                      <li>Segoe UI by Microsoft</li>
+                      <li>Press Start by Google</li>
+                      <li>SMB2: Lost Levels recreation by JustinRose</li>
+                      <li>SMB3 recreation by JustinRose</li>
+                      <li>Super Mario World recreation by JustinRose</li>
+                      <li>New Super Mario Bros DS HUD by CCShakeCat
+                        <br>Interoplated from Super Mario 64 Time by NDS22</li>
+                      <li>SMB Wii Hud by Nintendo</li>
+                      <li>MARIO Font v3 Solid by Nintendo</li>
+                      <li>Loew Heavy by The Northern Block</li>
+                      <li style="font-size: 12px; opacity: 0.9">
+                          <i>Note: The lists here are NOT licenses, just credits to the original authors.</i>
+                        </details>
+                  <details>
+                      <summary>Audio Credits:</summary>
+                    <ul>
+                      <li>Super Mario Bros 1 Hurry Up jingle by Nintendo</li>
+                      <li>Super Mario Bros Genesis port Hurry Up jingle by Mairtrus</li>
+                      <li>Super Mario Bros 3 Hurry Up jingle by Nintendo</li>
+                      <li>Super Mario World Hurry Up jingle by Nintendo</li>
+                      <li>New Super Mario Bros Hurry Up jingle by Nintendo</li>
+                      <li>Super Mario 3D Land Hurry Up jingle by Nintendo</li>
+                      <li>Sonic Lost World Hurry Up jingle by Sega</li>
+                      <li>Goose Goose Duck Ship Sabotage by Gaggle</li>
+                      <li>Goose Goose Duck Fowl Play (Victorian) Sabotage by Gaggle</li>
+                      <li>Goose Goose Duck Retro (Eagleton) Sabotage by Gaggle</li>
+                      <li style="font-size: 12px; opacity: 0.9">
+                        Note: The lists here are NOT licenses, just credits to the original authors.
+                      </li>
+                    </ul>
+                      </details>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="gs-font-modal" id="gsFontModal" hidden>
+      <div class="gs-font-dialog" role="dialog" aria-modal="true" aria-labelledby="gsFontModalTitle">
+        <button class="gs-font-close" id="gsFontModalClose" type="button" aria-label="Close">
+          <img src="icons/close.png" alt="Close" class="gs-close-icon" />
+        </button>
+        <h2 class="gs-font-title" id="gsFontModalTitle">FONT OPTIONS</h2>
+        <p class="gs-font-desc" id="gsFontModalDesc">Import a TTF or OTF font.</p>
+        <div class="gs-font-status" id="gsFontModalStatus">No custom font imported.</div>
+        <div class="gs-font-actions">
+          <button class="gs-btn primary" id="gsFontImportBtn" type="button">Import Custom Font...</button>
+          <button class="gs-btn" id="gsFontClearBtn" type="button">Clear Custom Font</button>
+        </div>
+        <input id="gsFontFileInput" type="file" accept=".ttf,.otf,.woff,.woff2" hidden />
+      </div>
+    </div>
+
+    <script src="./global_settings.js"></script>
+  </body>
+</html>

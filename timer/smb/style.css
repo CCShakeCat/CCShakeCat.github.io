@@ -1,4 +1,10 @@
 @font-face {
+  font-family: 'SMB';
+  src: url('./fonts/SMB.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'SMAS';
   src: url('./fonts/SMAS.ttf') format('truetype');
   font-display: swap;
@@ -6,6 +12,8 @@
 
 :root{
   --ui-scale: 1rem;
+  --edit-yellow-filter: brightness(0) saturate(100%) invert(87%) sepia(100%) saturate(7494%) hue-rotate(359deg) brightness(106%) contrast(104%) opacity(.75);
+  --edit-invert-filter: invert(1) hue-rotate(180deg) saturate(1.12) brightness(1.08);
 
   --hud-font: 'Press Start 2P', monospace, Arial, sans-serif;
   --hud-size: clamp(80px, 12vw, 180px);
@@ -26,7 +34,7 @@
 
 /* style presets */
 body[data-style="smb"]{
-  --hud-font: 'Press Start 2P', monospace, Arial, sans-serif;
+  --hud-font: 'SMB', 'Press Start 2P', monospace, Arial, sans-serif;
   --hud-size: clamp(56px, 7vw, 120px);
   --label-size: clamp(56px, 7vw, 120px);
   --bg-fill: #6c9cff;
@@ -222,6 +230,7 @@ body[data-running="true"] #customAudioBox{
 
 body[data-style="smb"] #timerLabel{
   display:block;
+  font-family: 'Press Start 2P', monospace, Arial, sans-serif;
 }
 
 /* sprite label for LL / SMAS */
@@ -261,6 +270,15 @@ body[data-style="smas"] .sprite-label{
 
 body[data-style="smb"] #display{
   display:block;
+}
+
+body[data-style="smb"].editing #display{
+  display: none;
+}
+
+body[data-style="smblost"].editing .sprite-display,
+body[data-style="smas"].editing .sprite-display{
+  filter: var(--edit-yellow-filter);
 }
 
 /* sprite digits */
@@ -318,6 +336,16 @@ body[data-style="smb"].editing #timerInput{
   color: var(--text-fill);
   -webkit-text-fill-color: initial;
   caret-color: currentColor;
+}
+
+body[data-style="smb"].editing #timerInput::selection{
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--text-fill);
+}
+
+body[data-style="smb"].editing #timerInput::-moz-selection{
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--text-fill);
 }
 
 /* sprite styles use invisible typing layer */

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "name": "Dark Mode",
+  "author": "Default",
+  "version": "0.1.0",
+  "description": "Default Dark Mode",
+  "show_bitfont_toggle": true,
+
+  "branding": {
+    "accent_color": "#ffffff",
+    "preview_background": "dark"
+  }
+}

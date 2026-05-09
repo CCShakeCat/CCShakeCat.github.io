@@ -114,6 +114,19 @@
     audioStatus.textContent = msg || '';
   }
 
+  function getGlobalVolume(kind) {
+    return window.GSGlobal?.getEffectiveAudioVolume?.(kind) ?? 1;
+  }
+
+  function applyAudioVolumes() {
+    try { hurryAudio.volume = getGlobalVolume('hurry'); } catch {}
+    try { timeWarningAudio.volume = getGlobalVolume('warning'); } catch {}
+    try { bgAudio.volume = getGlobalVolume('music'); } catch {}
+    if (youTubePlayer && typeof youTubePlayer.setVolume === 'function') {
+      try { youTubePlayer.setVolume(Math.round(getGlobalVolume('music') * 100)); } catch {}
+    }
+  }
+
   function clearWarningFlash() {
     if (warningFlashTimer) {
       clearInterval(warningFlashTimer);
@@ -266,6 +279,7 @@ function startConfiguredMedia({ rate = 1, restart = false } = {}) {
   if (state !== 'running') return;
 
   wantPlayback = true;
+  applyAudioVolumes();
 
   if (mediaType === 'audio') {
     try {
@@ -456,6 +470,7 @@ function setMusicFromURL(rawURL) {
     pauseBackgroundMedia();
     stopWarningOverlays();
     clearHurryResumeTimeout();
+    applyAudioVolumes();
 
     let resumed = false;
     const resume = () => {
@@ -494,6 +509,7 @@ function setMusicFromURL(rawURL) {
     try {
       const overlay = timeWarningAudio.cloneNode(true);
       overlay.currentTime = 0;
+      overlay.volume = getGlobalVolume('warning');
       activeWarningOverlays.push(overlay);
 
       const cleanup = () => {
@@ -743,6 +759,7 @@ function reset() {
 
   if (bgAudio) {
     bgAudio.loop = true;
+    applyAudioVolumes();
     bgAudio.addEventListener('ended', () => {
       if (state === 'running') {
         try {
@@ -784,5 +801,10 @@ function reset() {
     }
   }
 
+  window.addEventListener('storage', (event) => {
+    if (String(event.key || '').startsWith('gs.audio.')) applyAudioVolumes();
+  });
+
   initFromDOM();
+  applyAudioVolumes();
 })();

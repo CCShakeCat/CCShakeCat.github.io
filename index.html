@@ -1,52 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CCShakeCat's Clock Problems :)</title>
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <title>HeadClockOS</title>
+  <link rel="stylesheet" href="home.css">
 </head>
-<body>
-  <main class="clock-main">
-    <h1 class="clock-title">
-      CCSHAKECAT AND THEIR<br>
-      CLOCK PROBLEMS :)
-    </h1>
-    <ul class="clock-list">
-      <li>
-        <img src="homeicons/three-oclock_1f552.png" alt="Real-Time Clock" class="clock-icon" />
-        <a class="clock-link" href="./rtc/">REALTIME CLOCK - v1.2.0</a>
-      </li>
-      <li>
-        <img src="homeicons/stopwatch_23f1-fe0f.png" alt="Stopwatch" class="clock-icon" />
-        <a class="clock-link" href="./stopwatch/">STOPWATCH - v1.4.12*</a>
-      </li>
-      <li>
-        <img src="homeicons/timer-clock_23f2-fe0f.png" alt="Timer" class="clock-icon" />
-        <a class="clock-link" href="./timer/">TIMER - v1.8.01</a>
-      </li>
-    </ul>
-    <div class="clock-info-link-row">
-      <a class="clock-info-link" href="./clock-info.html">CLOCK INFO</a>
-    </div>
-    <div id="unavailable-dialogue" class="unavailable-dialogue" style="display:none;">
-      <span id="unavailable-message"></span>
-      <button class="close-dialogue" onclick="closeUnavailable()">OK</button>
-    </div>
+<body class="home-screen">
+  <header class="status-bar" aria-label="Status bar">
+    <time id="statusDate" class="status-date" datetime=""></time>
+    <time id="statusTime" class="status-time" datetime=""></time>
+  </header>
+
+  <main class="home-main">
+    <section class="brand" aria-label="Site title">
+      <h1>HeadClockOS</h1>
+      <p>the site of a cat with clock problems</p>
+    </section>
+
+    <nav class="app-grid" aria-label="Clock apps">
+      <button class="app-shortcut" type="button" data-launch-menu="rtc" aria-haspopup="dialog" aria-label="Open Real Time Clock options">
+        <span class="app-icon app-icon-rtc">
+          <img data-home-texture="ui_rtc" src="globals/icons/ui_rtc.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')">
+        </span>
+        <span class="app-label">Real Time</span>
+      </button>
+
+      <a class="app-shortcut" href="stopwatch/" aria-label="Open Stopwatch">
+        <span class="app-icon app-icon-stopwatch">
+          <img data-home-texture="ui_stopwatch" src="globals/icons/ui_stopwatch.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')">
+        </span>
+        <span class="app-label">Stopwatch</span>
+      </a>
+
+      <button class="app-shortcut" type="button" data-launch-menu="timer" aria-haspopup="dialog" aria-label="Open Timer options">
+        <span class="app-icon app-icon-timer">
+          <img data-home-texture="ui_timer" src="globals/icons/ui_timer.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')">
+        </span>
+        <span class="app-label">Timer</span>
+      </button>
+    </nav>
   </main>
-  <script>
-    function showUnavailable(title) {
-      document.getElementById('unavailable-message').textContent =
-        title + " is not currently available. Please try again later.";
-      document.getElementById('unavailable-dialogue').style.display = 'block';
-    }
-    function closeUnavailable() {
-      document.getElementById('unavailable-dialogue').style.display = 'none';
-    }
-    // Optional: allow escape key to close the dialogue
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeUnavailable();
-    });
-  </script>
+
+  <footer class="home-dock" aria-label="System controls">
+    <a class="settings-shortcut" href="globals/global_settings.html" aria-label="Open Settings">
+      <span class="app-icon app-icon-settings">
+        <img data-home-texture="ui_settings" src="globals/icons/ui_settings.png" alt="" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')">
+      </span>
+      <span class="app-label">Settings</span>
+    </a>
+  </footer>
+
+  <div id="launchMenu" class="launch-menu" hidden>
+    <div class="launch-menu-backdrop" data-close-launch-menu></div>
+    <section class="launch-menu-card" role="dialog" aria-modal="true" aria-labelledby="launchMenuTitle">
+      <button class="launch-menu-close" type="button" data-close-launch-menu aria-label="Close">x</button>
+      <h2 id="launchMenuTitle"></h2>
+      <div id="launchMenuGrid" class="launch-menu-grid"></div>
+    </section>
+  </div>
+
+  <script src="globals/themes/theme_runtime.js"></script>
+  <script src="globals/global.js"></script>
+  <script src="home.js"></script>
 </body>
 </html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segmented RTC</title>
+
+  <link rel="stylesheet" href="/globals/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../../globals/themes/theme_runtime.js" defer></script>
+  <script src="../../globals/global.js" defer></script>
+  <script src="/globals/modal.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body data-theme-visuals="off">
+  <div class="clock-shell">
+    <div id="display" aria-live="polite"></div>
+
+    <button id="settingsBtn" aria-label="Clock Settings" type="button">
+      <img src="../../globals/icons/gear.png" alt="Settings" class="gear" width="48" height="48" />
+    </button>
+  </div>
+
+  <div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-content system-font draggable segmented-modal">
+      <button id="closeSettings" class="close-btn" aria-label="Close Settings">
+        <img src="../../globals/icons/close.png" alt="Close" class="icon" />
+      </button>
+
+      <div class="settings-header">
+        <span class="font-header-text">SEGMENTED DISPLAY</span>
+      </div>
+
+      <div class="seg-pages">
+        <section class="seg-page active" id="segPageMain">
+          <div class="seg-setting-list">
+            <label class="seg-check-row">
+              <span>24h</span>
+              <input type="checkbox" id="opt24h">
+            </label>
+
+            <label class="seg-check-row">
+              <span>Leading Zero</span>
+              <input type="checkbox" id="optLeadingZero">
+            </label>
+
+            <button class="seg-nav-btn" type="button" data-page="segPageStyle">Customize Style...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageDigits">Digits...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageFlash">Flashing Separators...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageColors">Colours...</button>
+            <a class="global-settings-btn" href="../../globals/global_settings.html" data-global-settings-link>Global Settings</a>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageStyle">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">← Back</button>
+            <h2>Customize Style</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <div class="seg-field">
+              <label for="optPreset">Preset</label>
+              <select id="optPreset">
+                <option value="default">Default</option>
+                <option value="classic">Classic</option>
+                <option value="modern">Modern</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="seg-field seg-radio-field">
+              <span class="seg-field-label">Digit Style</span>
+              <div class="seg-radio-group">
+                <label><input type="radio" name="optCorners" value="square"> Square</label>
+                <label><input type="radio" name="optCorners" value="chop"> Chopped</label>
+                <label><input type="radio" name="optCorners" value="round"> Rounded</label>
+                <label><input type="radio" name="optCorners" value="custom"> Custom</label>
+              </div>
+            </div>
+
+            <div class="seg-field seg-radio-field">
+              <span class="seg-field-label">Corner Segment Height</span>
+              <div class="seg-radio-group">
+                <label><input type="radio" name="optSegmentHeight" value="normal"> Normal</label>
+                <label><input type="radio" name="optSegmentHeight" value="half"> Half-Digit Height</label>
+              </div>
+            </div>
+
+
+
+            <div class="seg-field custom-digit-import" id="customDigitImportRow" hidden>
+              <label for="optCustomDigitFile">Custom Digit SVG</label>
+              <div class="custom-digit-import-controls">
+                <button class="seg-nav-btn custom-import-btn" type="button" id="importCustomDigitBtn">Import Custom SVG</button>
+                <input type="file" id="optCustomDigitFile" accept=".svg,image/svg+xml" hidden>
+                <a class="custom-template-link" href="icons/digit-seven_seg_template.svg" download="digit-seven_seg_template.svg">Download Template SVG</a>
+              </div>
+                
+            </div>
+              <div style="font-size:16px"><span style="color:#ffff55;"><center><i><b>NOTE: Only Seven segmented designs are supported. Adding more will not work until support is added for more segments</b></i></center></span>
+              <span style="color:#c6c6c6;">For more information:</span> <a href="./tutorial/custom_segment_help.html" target="_blank" rel="noopener noreferrer">read this tutorial</a>
+              </div>
+
+            <label class="seg-check-row">
+              <span>Segment Symmetry</span>
+              <input type="checkbox" id="optSymmetry">
+            </label>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageDigits">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">← Back</button>
+            <h2>Digits</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <label class="seg-check-row">
+              <span>SS</span>
+              <input type="checkbox" id="optSeconds">
+            </label>
+
+            <label class="seg-check-row">
+              <span>.TT</span>
+              <input type="checkbox" id="optTicks">
+            </label>
+
+            <div class="seg-field">
+              <label for="optTPS">Tick Rate (TPS)</label>
+              <select id="optTPS">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
+                <option value="50">50</option>
+                <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
+                <option value="90">90</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+
+            <label class="seg-check-row">
+              <span>Italic</span>
+              <input type="checkbox" id="optItalic">
+            </label>
+
+            <button class="seg-nav-btn" type="button" data-page="segPageNumberStyles">Number Styles...</button>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageNumberStyles">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageDigits">← Back</button>
+            <h2>Number Styles</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <div class="num-style-block">
+              <div class="seg-field seg-radio-field">
+                <span class="seg-field-label">7 Style</span>
+                <div class="seg-radio-group">
+                  <label><input type="radio" name="optSevenStyle" value="default"> Default</label>
+                  <label><input type="radio" name="optSevenStyle" value="simple"> Simple</label>
+                </div>
+              </div>
+              <div class="num-demo-row" id="demoSeven"></div>
+            </div>
+
+            <div class="num-style-block">
+              <div class="seg-field seg-radio-field">
+                <span class="seg-field-label">6 Style</span>
+                <div class="seg-radio-group">
+                  <label><input type="radio" name="optSixStyle" value="default"> Default</label>
+                  <label><input type="radio" name="optSixStyle" value="simple"> Simple</label>
+                </div>
+              </div>
+              <div class="num-demo-row" id="demoSix"></div>
+            </div>
+
+            <div class="num-style-block">
+              <div class="seg-field seg-radio-field">
+                <span class="seg-field-label">9 Style</span>
+                <div class="seg-radio-group">
+                  <label><input type="radio" name="optNineStyle" value="default"> Default</label>
+                  <label><input type="radio" name="optNineStyle" value="simple"> Simple</label>
+                </div>
+              </div>
+              <div class="num-demo-row" id="demoNine"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageFlash">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">← Back</button>
+            <h2>Flashing Separators</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <label class="seg-check-row">
+              <span>Enable</span>
+              <input type="checkbox" id="optFlashSeparators">
+            </label>
+
+            <div class="seg-help">
+              Flashes the ":" and "." every specified interval.
+            </div>
+
+            <div class="seg-field">
+              <label for="optFlashEvery">Flash every (s)</label>
+              <input type="number" id="optFlashEvery" min="0.1" step="0.1">
+            </div>
+
+            <label class="seg-check-row">
+              <span>Even Flashing</span>
+              <input type="checkbox" id="optEvenFlashing">
+            </label>
+
+            <div class="seg-help">
+              If unchecked, the value is how long the separators stay on, and the rest of the 2-second cycle stays off.
+            </div>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageColors">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">← Back</button>
+            <h2>Colours</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <div class="colour-mode-row">
+              <button type="button" id="colorModeRGB" class="colour-mode-btn active">RGB</button>
+              <button type="button" id="colorModeHSV" class="colour-mode-btn">HSV</button>
+            </div>
+
+            <div class="seg-field color-field">
+              <label for="optActiveColor">HEX / CSS</label>
+              <div class="color-input-row">
+                <input type="text" id="optActiveColor" placeholder="#FFFFFF or rgb(255,255,255)">
+                <button type="button" id="activeColorPreview" class="color-preview-btn" aria-label="Active colour preview"></button>
+              </div>
+            </div>
+
+            <div id="rgbEditor" class="colour-editor active">
+              <div class="channel-row">
+                <div class="channel-label">R</div>
+                <div class="channel-slider rgb-r" data-channel="r">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="rgbRInput" class="channel-number" min="0" max="255" step="1">
+              </div>
+
+              <div class="channel-row">
+                <div class="channel-label">G</div>
+                <div class="channel-slider rgb-g" data-channel="g">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="rgbGInput" class="channel-number" min="0" max="255" step="1">
+              </div>
+
+              <div class="channel-row">
+                <div class="channel-label">B</div>
+                <div class="channel-slider rgb-b" data-channel="b">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="rgbBInput" class="channel-number" min="0" max="255" step="1">
+              </div>
+            </div>
+
+            <div id="hsvEditor" class="colour-editor">
+              <div class="channel-row">
+                <div class="channel-label">H</div>
+                <div class="channel-slider hsv-h" data-channel="h">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="hsvHInput" class="channel-number" min="0" max="360" step="1">
+              </div>
+
+              <div class="channel-row">
+                <div class="channel-label">S</div>
+                <div class="channel-slider hsv-s" data-channel="s">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="hsvSInput" class="channel-number" min="0" max="100" step="1">
+              </div>
+
+              <div class="channel-row">
+                <div class="channel-label">V</div>
+                <div class="channel-slider hsv-v" data-channel="v">
+                  <div class="channel-track"></div>
+                  <div class="channel-fill"></div>
+                  <div class="channel-thumb"></div>
+                </div>
+                <input type="number" id="hsvVInput" class="channel-number" min="0" max="100" step="1">
+              </div>
+            </div>
+
+            <label class="seg-check-row">
+              <span>Inactive Colour</span>
+              <input type="checkbox" id="optInactiveEnabled">
+            </label>
+
+            <div class="seg-help">
+              When enabled, inactive segments use a darker version of the active colour. When disabled, inactive segments are transparent.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

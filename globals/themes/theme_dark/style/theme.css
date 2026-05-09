@@ -1,0 +1,16 @@
+/* theme.css */
+:root {
+  --gs-bg: #0f0f0f;
+  --gs-text: #ffffff;
+  --gs-card: #1b1b1b;
+  --gs-border: rgba(255,255,255,.12);
+  --page-bg: var(--gs-bg);
+  --page-text: var(--gs-text);
+  --page-panel: var(--gs-card);
+  --page-border: var(--gs-border);
+  --page-button-bg: #222;
+  --page-button-text: #fff;
+  --page-button-hover: #333;
+}
+body { background: var(--page-bg); color: var(--page-text); }
+.gs-card { background: var(--gs-card); border: 1px solid var(--gs-border); }

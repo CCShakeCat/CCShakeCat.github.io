@@ -17,6 +17,8 @@ let isInHurryUp = false;
 let hurryTriggered = false;
 
 let currentPlaybackRate = 1;
+let slwFlashTimer = null;
+let slwFlashPhase = false;
 
 // Helper: Extract YouTube video ID
 function extractYouTubeID(url) {
@@ -168,6 +170,24 @@ function updatePlaybackRateDisplay(rate) {
   else display.textContent = `Playback speed: ${rate.toFixed(2)}x`;
 }
 
+function stopSLWFlash() {
+  if (slwFlashTimer) {
+    clearInterval(slwFlashTimer);
+    slwFlashTimer = null;
+  }
+  slwFlashPhase = false;
+  document.body.classList.remove('slw-flash');
+}
+
+function startSLWFlash() {
+  if (slwFlashTimer) return;
+  slwFlashTimer = setInterval(() => {
+    if (!running) return;
+    slwFlashPhase = !slwFlashPhase;
+    document.body.classList.toggle('slw-flash', slwFlashPhase);
+  }, 333);
+}
+
 // === Audio/Video Control Functions ===
 function onTimerStart() {
   isTimerRunning = true;
@@ -196,6 +216,7 @@ function onTimerStart() {
 
 function onTimerStop() {
   isTimerRunning = false;
+  stopSLWFlash();
 
   if (mediaType === 'audio' && customAudio) {
     fadeVolume(customAudio, 0, 500).then(() => customAudio.pause());
@@ -215,6 +236,7 @@ function onTimerReset() {
   isInHurryUp = false;
   hurryTriggered = false;
   currentPlaybackRate = 1;
+  stopSLWFlash();
 
   if (customAudio) {
     fadeVolume(customAudio, 0, 500).then(() => {
@@ -323,6 +345,11 @@ function onTimerTick(ticksLeft) {
     hurryTriggered = true;
     triggerHurryUp();
   }
+  if (ticksLeft <= 100 && ticksLeft > 0) {
+    startSLWFlash();
+  } else {
+    stopSLWFlash();
+  }
 }
 
 function wallClockUpdate() {
@@ -361,6 +388,7 @@ function wallClockUpdate() {
     // Stop looping Hurry sound and reset media on timer end
     if (hurryAudio) { hurryAudio.loop=false; hurryAudio.pause(); hurryAudio.currentTime=0; }
     document.body.classList.remove('hurry');
+    stopSLWFlash();
     onTimerReset();
   }
 }
@@ -374,6 +402,7 @@ function startStop() {
     updateStartStopButton();
     showInput(false);
     document.body.classList.remove('running');
+    stopSLWFlash();
     onTimerStop();
     finished = false;
   } else {
@@ -405,6 +434,7 @@ function reset() {
   updateDisplay();
   updateStartStopButton();
   document.body.classList.remove('running');
+  stopSLWFlash();
   onTimerReset();
 }
 

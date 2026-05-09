@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
-<body class="land-timer" data-running="false" data-paused="false">
+<body class="land-timer" data-running="false" data-paused="false" data-theme-visuals="off">
   <!-- Top-left controls -->
   <div id="customAudioBox" class="ui-chrome">
     <input id="customAudioInput" placeholder="Paste music URL (mp3, ogg, wav, YouTube, Spotify)" />
@@ -60,6 +60,8 @@
 
   <audio id="bgAudio" preload="auto"></audio>
 
+  <script src="../../globals/themes/theme_runtime.js"></script>
+  <script src="../../globals/global.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -19,9 +19,11 @@
 <!-- Main Timer Area -->
 <main class="main-center">
     <div class="timer">
-        <div id="timerLabel">TIME</div>
-        <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
-        <p id="display" style="display:none;">400</p>
+        <div id="timerRow" aria-label="Timer">
+            <span id="slwClockIcon" aria-hidden="true"></span>
+            <input id="timerInput" type="text" value="400" spellcheck="false" autocomplete="off" maxlength="3" />
+            <p id="display" style="display:none;">400</p>
+        </div>
         <div class="timer-controls">
             <button id="startStopBtn">Start</button>
             <button id="resetBtn">Reset</button>

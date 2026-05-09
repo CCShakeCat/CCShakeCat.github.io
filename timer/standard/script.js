@@ -1,5 +1,7 @@
 (() => {
   const boot = () => {
+    window.GSGlobal?.init?.('.');
+    window.GSGlobal?.applyPlatformDataset?.();
     // ✅ Prevent double initialization (script included twice / boot called twice)
     if (window.__stdtimerBooted) return;
     window.__stdtimerBooted = true;
@@ -15,6 +17,7 @@
 
     const prefixText = $('prefixText');
     const prefixIcon = $('prefixIcon');
+    const prefixWrap = $('prefixWrap');
 
     const settingsBtn   = $('settingsBtn');
     const settingsModal = $('settingsModal');
@@ -85,6 +88,188 @@
       return;
     }
 
+
+
+    /* ==== BITMAP FONT ==== */
+    const BITMAP_CELL = 8;
+    let bitmapImg = null;
+    let bitmapReady = false;
+    let bitmapWidths = null;
+
+    function ensureBitmapNodes(){
+      let pWrap = document.getElementById('prefixBitmapWrap');
+      if (!pWrap) { pWrap = document.createElement('div'); pWrap.id='prefixBitmapWrap'; pWrap.className='bitmap-prefix-holder'; prefixWrap?.appendChild(pWrap); }
+      let pCanvas = document.getElementById('prefixBitmapCanvas');
+      if (!pCanvas) { pCanvas = document.createElement('canvas'); pCanvas.id='prefixBitmapCanvas'; pCanvas.className='bitmap-canvas'; pWrap.appendChild(pCanvas); }
+      let tWrap = document.getElementById('timerBitmapWrap');
+      if (!tWrap) { tWrap = document.createElement('div'); tWrap.id='timerBitmapWrap'; tWrap.className='bitmap-holder'; timerDisplay?.parentNode?.insertBefore(tWrap, timerDisplay.nextSibling); }
+      let tCanvas = document.getElementById('timerBitmapCanvas');
+      if (!tCanvas) { tCanvas = document.createElement('canvas'); tCanvas.id='timerBitmapCanvas'; tCanvas.className='bitmap-canvas'; tWrap.appendChild(tCanvas); }
+      return {pWrap,pCanvas,tWrap,tCanvas};
+    }
+
+    function resetBitmapFont(){
+      bitmapReady = false;
+      bitmapImg = null;
+      bitmapWidths = null;
+    }
+
+    function fallbackBitmapWidth(index) {
+      if (index === 32) return 4;
+      if (index >= 29 && index <= 31) return 1;
+      return 6;
+    }
+
+    function measureBitmapWidths(img) {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 128;
+      canvas.height = img.naturalHeight || 128;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      const widths = new Array(256);
+
+      for (let index = 0; index < 256; index++) {
+        const sx = (index % 16) * BITMAP_CELL;
+        const sy = Math.floor(index / 16) * BITMAP_CELL;
+        let right = -1;
+
+        try {
+          const data = ctx.getImageData(sx, sy, BITMAP_CELL, BITMAP_CELL).data;
+          for (let y = 0; y < BITMAP_CELL; y++) {
+            for (let x = 0; x < BITMAP_CELL; x++) {
+              const offset = (y * BITMAP_CELL + x) * 4;
+              const visible = data[offset + 3] > 16 && (data[offset] > 16 || data[offset + 1] > 16 || data[offset + 2] > 16);
+              if (visible && x > right) right = x;
+            }
+          }
+        } catch {}
+
+        widths[index] = right >= 0 ? Math.min(BITMAP_CELL, right + 2) : fallbackBitmapWidth(index);
+      }
+
+      return widths;
+    }
+
+    function loadBitmapFont(){
+      const src = window.GSGlobal?.getBitmapFontUrl?.() || '../../globals/default8.png';
+      if (bitmapReady && bitmapImg && bitmapImg.src === src) return Promise.resolve(bitmapImg);
+      if (bitmapImg && bitmapImg._loading && bitmapImg._src === src) return bitmapImg._loading;
+      bitmapImg = new Image();
+      bitmapImg.decoding='async';
+      bitmapImg._src = src;
+      const prom = new Promise((resolve,reject)=>{
+        bitmapImg.onload=()=>{ bitmapWidths = measureBitmapWidths(bitmapImg); bitmapReady=true; resolve(bitmapImg); render(); };
+        bitmapImg.onerror=reject;
+      });
+      bitmapImg._loading = prom;
+      bitmapImg.src = src;
+      return prom;
+    }
+
+    function getBitmapGlyph(ch){
+      const code = ch.codePointAt(0);
+      const index = Number.isFinite(code) && code >= 0 && code <= 255 ? code : 63;
+      return {
+        x: (index % 16) * BITMAP_CELL,
+        y: Math.floor(index / 16) * BITMAP_CELL,
+        width: bitmapWidths?.[index] || fallbackBitmapWidth(index)
+      };
+    }
+
+    function drawBitmapText(canvas, text, scale){
+      if (!canvas || !bitmapReady || !bitmapImg) return;
+      const glyphs = [...String(text||'')].map(getBitmapGlyph);
+      const w = Math.max(1, glyphs.reduce((sum, g) => sum + g.width, 0) * scale);
+      const h = Math.max(1, BITMAP_CELL * scale);
+      canvas.width = w; canvas.height = h; canvas.style.width = w+'px'; canvas.style.height = h+'px';
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,w,h);
+      ctx.imageSmoothingEnabled = false;
+      let x = 0;
+      for (const g of glyphs){
+        if (g) ctx.drawImage(bitmapImg, g.x, g.y, BITMAP_CELL, BITMAP_CELL, x, 0, BITMAP_CELL*scale, BITMAP_CELL*scale);
+        x += g.width * scale;
+      }
+    }
+
+    function measureBitmapLine(text, scale){
+      const glyphs = [...String(text || '')].map(getBitmapGlyph);
+      return {
+        glyphs,
+        width: Math.max(1, glyphs.reduce((sum, g) => sum + g.width, 0) * scale),
+        height: BITMAP_CELL * scale,
+        scale
+      };
+    }
+
+    function drawBitmapLines(canvas, lines){
+      if (!canvas || !bitmapReady || !bitmapImg) return;
+      const measured = lines
+        .filter(line => line && line.text !== '')
+        .map(line => measureBitmapLine(line.text, line.scale));
+      if (!measured.length) return drawBitmapText(canvas, '', 1);
+
+      const gap = Math.max(0, Math.round(Math.min(...measured.map(line => line.scale)) * 2));
+      const w = Math.max(1, ...measured.map(line => line.width));
+      const h = Math.max(1, measured.reduce((sum, line) => sum + line.height, 0) + gap * (measured.length - 1));
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      ctx.imageSmoothingEnabled = false;
+
+      let y = 0;
+      for (const line of measured){
+        let x = Math.floor((w - line.width) / 2);
+        for (const g of line.glyphs){
+          if (g) {
+            ctx.drawImage(
+              bitmapImg,
+              g.x,
+              g.y,
+              BITMAP_CELL,
+              BITMAP_CELL,
+              x,
+              y,
+              BITMAP_CELL * line.scale,
+              BITMAP_CELL * line.scale
+            );
+          }
+          x += g.width * line.scale;
+        }
+        y += line.height + gap;
+      }
+    }
+
+    function renderBitmapMode(){
+      if (!bitmapReady) { loadBitmapFont().catch(()=>{}); return false; }
+      const nodes = ensureBitmapNodes();
+      const fs = parseFloat(getComputedStyle(timerDisplay).fontSize) || 64;
+      const prefixScale = Math.max(1, Math.round((parseFloat(getComputedStyle(prefixText).fontSize) || fs) / BITMAP_CELL));
+      const lineEls = [...timerDisplay.querySelectorAll('.clock-line')];
+      if (lineEls.length){
+        drawBitmapLines(nodes.tCanvas, lineEls.map(el => ({
+          text: el.textContent || '',
+          scale: Math.max(1, Math.round((parseFloat(getComputedStyle(el).fontSize) || fs) / BITMAP_CELL))
+        })));
+      } else {
+        const scale = Math.max(1, Math.round(fs / BITMAP_CELL));
+        const face = formatFromTicks(st.remainingTicks);
+        drawBitmapText(nodes.tCanvas, face, scale);
+      }
+      if (st.style==='time') drawBitmapText(nodes.pCanvas, 'TIME', prefixScale);
+      clockRow?.classList.add('bitmap-active');
+      clockRow?.classList.toggle('bitmap-prefix-active', st.style==='time');
+      return true;
+    }
+
+    function clearBitmapMode(){
+      clockRow?.classList.remove('bitmap-active', 'bitmap-prefix-active');
+    }
+
     /* ==== CONSTANTS / PRESETS ==== */
     const LS_KEY = 'stdtimer:v19';
     const HURRY_DIR = './hurryup/';
@@ -102,7 +287,13 @@
     ]);
 
     const hurryUpPresets = {
-      none: { label: 'None', sub: [{ value: '', label: 'No Hurry', desc: 'No hurry up sound will play.' }] },
+      none: {
+        label: 'None',
+        sub: [
+          { value: '', label: 'No Hurry', desc: 'No hurry up sound will play.' },
+          { value: '__speedup__', label: 'Speed Up', desc: 'Speeds up the current music when Hurry Up starts.' }
+        ]
+      },
       mario: {
         label: 'Mario',
         sub: [
@@ -144,6 +335,21 @@
           { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_retro', label: 'Sabotage - Retro', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_ship', label: 'Sabotage - Ship', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_victorian', label: 'Sabotage - Victorian', desc: 'Plays at Hurry Up start.' }
+        ]
+      },
+      splatoon: {
+        label: 'Splatoon',
+        sub: [
+          { value: './hurryup/Splatoon/now_or_never-1.mp3', label: 'Splatoon 1 - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-1bDanFourts.mp3', label: 'Splatoon 1 Beta - Dan Fourts', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-1e.mp3', label: 'Splatoon 1 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2.mp3', label: 'Splatoon 2 - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2d.mp3', label: 'Splatoon 2 Demo - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2e.mp3', label: 'Splatoon 2 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2f.mp3', label: 'Splatoon 2 Final Fest - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-3.mp3', label: 'Splatoon 3 - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-3e.mp3', label: 'Splatoon 3 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-3c.mp3', label: 'Splatoon 3 TableTurf - Now or Never!', desc: 'Plays at Hurry Up start.' }
         ]
       }
     };
@@ -239,10 +445,6 @@
       const totalSeconds = Math.floor(t/base);
       const tickPart = t % base;
 
-      const h = Math.floor(totalSeconds/3600);
-      const m = Math.floor((totalSeconds%3600)/60);
-      const s = totalSeconds%60;
-
       let sh,sm,ss,stt;
       if (st.auto){
         sh  = totalSeconds>=3600;
@@ -256,13 +458,27 @@
         stt = !!st.showT;
       }
 
+      const visibleUnits = [
+        { show: sh, unit: 3600 },
+        { show: sm, unit: 60 },
+        { show: ss, unit: 1 }
+      ].filter(part => part.show);
+
       const arr=[];
-      if (sh) arr.push(pad2(h));
-      if (sm) arr.push(sh?pad2(m):String(m));
-      if (ss) arr.push((sh||sm)?pad2(s):String(s));
+      let remainingSeconds = totalSeconds;
+      visibleUnits.forEach((part, index) => {
+        const value = Math.floor(remainingSeconds / part.unit);
+        remainingSeconds -= value * part.unit;
+        arr.push(part.unit === 3600 ? pad2(value) : (index === 0 ? String(value) : pad2(value)));
+      });
+
       let out = arr.join(':');
       if (stt) out += (out?'.':'') + pad2(tickPart);
-      if (!out) out = `${pad2(m)}:${pad2(s)}.${pad2(tickPart)}`;
+      if (!out) {
+        const fallbackMinutes = Math.floor((totalSeconds % 3600) / 60);
+        const fallbackSeconds = totalSeconds % 60;
+        out = `${pad2(fallbackMinutes)}:${pad2(fallbackSeconds)}.${pad2(tickPart)}`;
+      }
       return out;
     }
 
@@ -297,6 +513,7 @@
 
     /* ==== RENDER (Size 4/5 spec) ==== */
     function render(){
+      clearBitmapMode();
       if (prefixText) prefixText.style.display = (st.style==='time') ? 'block' : 'none';
       if (prefixIcon) prefixIcon.style.display = (st.style==='icon') ? 'block' : 'none';
 
@@ -320,6 +537,7 @@
         timerDisplay.innerHTML =
           `<div class="clock-line clock-line-large">${monoText(hhmm)}</div>` +
           `<div class="clock-line clock-line-small">${monoText(sstt)}</div>`;
+        if (st.fontMode==='bitmap') renderBitmapMode();
         return;
       }
 
@@ -336,10 +554,12 @@
           lines.push(`<div class="clock-line clock-line-small">${monoText(p.s + (st.showT ? '.' + p.tt : ''))}</div>`);
         }
         timerDisplay.innerHTML = lines.join('');
+        if (st.fontMode==='bitmap') renderBitmapMode();
         return;
       }
 
       timerDisplay.innerHTML = monoText(formatFromTicks(st.remainingTicks));
+      if (st.fontMode==='bitmap') renderBitmapMode();
     }
 
     /* ==== SIZE ==== */
@@ -486,7 +706,7 @@ function ensureYT(id){
       });
     }
 
-    function looksLikeDirectAudio(u){ return /\.(mp3|ogg|wav|m4a|aac)(\?|#|$)/i.test(u); }
+    function looksLikeDirectAudio(u){ return /\.(mp3|wav|m4a|aac)(\?|#|$)/i.test(u); }
     function extractYTId(input) {
       const raw = (input || "").trim();
       if (!raw) return "";
@@ -525,6 +745,12 @@ function ensureYT(id){
 
 
     /* ==== HURRY AUDIO ==== */
+    function getHurryVolume(){
+      const local = Number.isFinite(st.huVolume) ? st.huVolume : 1.0;
+      const global = window.GSGlobal?.getEffectiveAudioVolume?.('hurry') ?? 1.0;
+      return clamp(local * global, 0, 1);
+    }
+
     const stopHU = () => {
       if (st.huAudio){
         try { st.huAudio.pause(); } catch {}
@@ -539,6 +765,16 @@ function ensureYT(id){
 
       const basePath = String(st.huValue).trim();
 
+      if (basePath === '__speedup__') {
+        if (st.yt && st.ytReady) {
+          try { st.yt.setPlaybackRate(1.25); st.yt.playVideo(); } catch {}
+        }
+        if (bgAudio && bgAudio.src) {
+          try { bgAudio.playbackRate = 1.25; if (st.running) bgAudio.play(); } catch {}
+        }
+        return;
+      }
+
       // Goose Goose Duck (Ship) should OVERLAY on top of whatever music is playing.
       // Everything else keeps existing behavior (stop/pause/restart rules).
       const isGGDShip = /ggdsabo_ship$/i.test(basePath) || /\/hurryup-ggdsabo_ship$/i.test(basePath);
@@ -548,11 +784,11 @@ function ensureYT(id){
         (st.yt && st.ytReady && (() => { try { return st.yt.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })());
 
       if (wasBGMPlaying && !isGGDShip) stopAllBGM();
-      const url = basePath.endsWith('.mp3') || basePath.endsWith('.ogg') ? basePath : (basePath + '.mp3');
+      const url = basePath.endsWith('.mp3') ? basePath : (basePath + '.mp3');
 
       const a = new Audio(url);
       a.preload = 'auto';
-      a.volume = Number.isFinite(st.huVolume) ? st.huVolume : 1.0;
+      a.volume = getHurryVolume();
 
       const isMario = MARIO_IDS.has(st.huValue) || MARIO_IDS.has(basePath.replace(/^.*\/(hurryup-[^\/]+)$/, '$1'));
       // Mario: pause music, play HU once, then restart music at 1.25x.
@@ -575,32 +811,13 @@ function ensureYT(id){
       }
     }
 
-    async function playVolumeTest(vol){
+    async function playTenSecondBeep(){
       try {
-        const a = new Audio(`${HURRY_DIR}volume_test.wav`);
-        a.volume = Number.isFinite(vol) ? vol : 1.0;
+        const a = new Audio(`${HURRY_DIR}time_warning.wav`);
+        a.volume = 1.0;
         a.preload='auto';
         await a.play();
       } catch {}
-    }
-
-    async function playTenSecondBeep(){
-      // Try multiple formats so exports don't break if the asset extension differs.
-      const sources = [
-        `${HURRY_DIR}time_warning.wav`,
-        `${HURRY_DIR}time_warning.mp3`,
-        `${HURRY_DIR}time_warning.ogg`
-      ];
-      for (const src of sources){
-        try {
-          const a = new Audio(src);
-          a.volume = 1.0;
-          a.preload = 'auto';
-          // Some browsers need a tiny delay for src assignment before play()
-          await a.play();
-          return;
-        } catch {}
-      }
     }
 
     /* ==== PERSISTENCE ==== */
@@ -681,19 +898,14 @@ function ensureYT(id){
       st.lastMs=performance.now();
       startPauseBtn.textContent='Pause';
 
+      if (st.ytId && !st.ytReady) st.ytAutoplayWhenReady = true;
+      playBGM();
 
       const trigger = computeFlashTrigger();
       const left = timeLeftTicks();
-      const willHurryNow = (!st.huPlayed && st.huValue && left <= trigger);
-
-      // If the timer starts already inside the Hurry-Up window (e.g., a 00:00:30 timer),
-      // do NOT start the normal music first — let Hurry-Up logic take over.
-      if (willHurryNow){
-        st.huPlayed = true;
+      if (!st.huPlayed && st.huValue && left <= trigger){
+        st.huPlayed=true;
         doHurryUp();
-      } else {
-        if (st.ytId && !st.ytReady) st.ytAutoplayWhenReady = true;
-        playBGM();
       }
 
       syncMinuteState();
@@ -815,31 +1027,58 @@ function ensureYT(id){
       const isInteractive = el =>
         el && (['INPUT','SELECT','BUTTON','A','LABEL','TEXTAREA','AUDIO','IFRAME'].includes(el.tagName) ||
         el.closest('.status-tip'));
+      const clearSelection = () => { try { window.getSelection?.().removeAllRanges?.(); } catch {} };
+      const setDragLock = on => {
+        document.documentElement.classList.toggle('gs-modal-dragging', on);
+        document.body.classList.toggle('modal-dragging', on);
+        document.body.style.userSelect = on ? 'none' : '';
+        clearSelection();
+      };
+      const dragTo = (x, y) => {
+        setModalOffset(x, y);
+        clearSelection();
+      };
       modalCard.addEventListener('mousedown', e => {
         if (isInteractive(e.target)) return;
         dragging=true; e.preventDefault();
         sx=e.clientX; sy=e.clientY;
         bx=st.modalX; by=st.modalY;
+        setDragLock(true);
       });
       window.addEventListener('mousemove', e => {
         if (!dragging) return;
-        setModalOffset(bx + (e.clientX - sx), by + (e.clientY - sy));
+        dragTo(bx + (e.clientX - sx), by + (e.clientY - sy));
+        e.preventDefault();
       });
-      ['mouseup','mouseleave'].forEach(t => window.addEventListener(t, () => dragging=false));
+      ['mouseup','mouseleave'].forEach(t => window.addEventListener(t, () => {
+        if (!dragging) return;
+        dragging=false;
+        setDragLock(false);
+      }));
       modalCard.addEventListener('touchstart', ev => {
         const t=ev.touches[0];
         if (!t || isInteractive(ev.target)) return;
         dragging=true; sx=t.clientX; sy=t.clientY; bx=st.modalX; by=st.modalY;
+        setDragLock(true);
+        ev.preventDefault();
       }, { passive:false });
       window.addEventListener('touchmove', ev => {
         if (!dragging) return;
         ev.preventDefault();
         const t=ev.touches[0];
         if (!t) return;
-        setModalOffset(bx + (t.clientX - sx), by + (t.clientY - sy));
+        dragTo(bx + (t.clientX - sx), by + (t.clientY - sy));
       }, { passive:false });
-      window.addEventListener('touchend', () => dragging=false);
-      window.addEventListener('touchcancel', () => dragging=false);
+      window.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging=false;
+        setDragLock(false);
+      });
+      window.addEventListener('touchcancel', () => {
+        if (!dragging) return;
+        dragging=false;
+        setDragLock(false);
+      });
     })();
 
     /* ==== FONTS ==== */
@@ -858,19 +1097,38 @@ function ensureYT(id){
       if (document.getElementById(id)) return;
       const el=document.createElement('style');
       el.id=id;
-      el.textContent=`@font-face{font-family:'FancyCatPX';src:url('./fonts/FancyCatPX.ttf');font-display:swap;}`;
+      el.textContent=`@font-face{font-family:'GSFancyCatPX';src:url('${window.GSGlobal?.globalsBase ? new URL('fonts/FancyCatPX.ttf', window.GSGlobal.globalsBase).href : './fonts/FancyCatPX.ttf'}');font-display:swap;}`;
       document.head.appendChild(el);
     }
+    function getThemeFontStack(){
+      const root = getComputedStyle(document.documentElement);
+      const themeFont = (root.getPropertyValue('--theme-font-family') || '').trim();
+      return themeFont ? `'${themeFont.replace(/^['"]|['"]$/g,'')}', ${window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif'}` : '';
+    }
+
+    function applyClockFontStack(stack){
+      const resolved = stack || (window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif');
+      document.documentElement.style.setProperty('--clock-face-font', resolved);
+    }
+
     function applyFont(mode){
       st.fontMode=mode;
-      if (mode==='custom' && st.customFontFamily){
-        injectCustomFace();
-        document.body.style.fontFamily=`'${st.customFontFamily}', system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+      if (mode==='bitmap'){
+        loadBitmapFont().catch(()=>{});
+        applyClockFontStack(window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif");
+      } else if (mode==='custom'){
+        if (st.customFontFamily && st.customFontData) {
+          injectCustomFace();
+          applyClockFontStack(`'${st.customFontFamily}', ${window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif'}`);
+        } else {
+          applyClockFontStack(window.GSGlobal?.getClockFontStack?.('custom') || window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif");
+        }
       } else if (mode==='default'){
         ensureDefaultFontFace();
-        document.body.style.fontFamily=`'FancyCatPX', system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+        const themeStack = getThemeFontStack();
+        applyClockFontStack(themeStack || (window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif"));
       } else {
-        document.body.style.fontFamily=`system-ui,"Segoe UI",Roboto,-apple-system,"SF Pro Display",Arial,sans-serif`;
+        applyClockFontStack(window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif');
       }
       save();
     }
@@ -949,6 +1207,7 @@ function ensureYT(id){
     /* ==== INIT ==== */
     st.initialTicks = 9*60*st.tickBase + 59*st.tickBase + (st.tickBase-1);
     load();
+    try { if (!localStorage.getItem(LS_KEY)) { st.fontMode = window.GSGlobal?.getClockFontMode?.() || st.fontMode; } } catch {}
 
     if (sizeLabel) sizeLabel.textContent=String(st.size);
     if (fontSelect) fontSelect.value=st.fontMode;
@@ -973,6 +1232,7 @@ function ensureYT(id){
     }
     if (tenSecondBeepToggle) tenSecondBeepToggle.checked=!!st.tenSecondBeep;
 
+    document.addEventListener('gs:theme-assets-changed', () => { if (st.fontMode==='bitmap') { resetBitmapFont(); loadBitmapFont().catch(()=>{}); } });
     applyFont(st.fontMode);
     document.documentElement.style.setProperty('--clock-vw', `${(SIZE_VW[st.size]||8)}vw`);
     render();
@@ -1058,16 +1318,20 @@ function ensureYT(id){
     directionBtn2 && directionBtn2.addEventListener('click', flipDirection);
 
     if (hurryVolumeSel){
-      const applyVol = () => {
+      const applyVol = (event) => {
         const pct = clamp(parseInt(hurryVolumeSel.value,10) || 0, 0, 100);
         hurryVolumeSel.value = String(pct);
         st.huVolume = pct / 100;
         if (hurryVolumeLabel) hurryVolumeLabel.textContent = `${pct}%`;
-        if (st.huAudio){ try { st.huAudio.volume = st.huVolume; } catch {} }
+        if (st.huAudio){ try { st.huAudio.volume = getHurryVolume(); } catch {} }
+        if (event) {
+          event.gsSoundHandled = true;
+          window.GSGlobal?.playSliderSound?.('hurry', st.huVolume);
+        }
         save();
       };
       hurryVolumeSel.addEventListener('input', applyVol);
-      hurryVolumeSel.addEventListener('change', () => { applyVol(); if (!st.huAudio) playVolumeTest(st.huVolume); });
+      hurryVolumeSel.addEventListener('change', applyVol);
     }
 
     if (tenSecondBeepToggle){

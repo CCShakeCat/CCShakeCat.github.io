@@ -26,6 +26,8 @@ body {
     margin: 0;
     height: 100vh;
     width: 100vw;
+    overflow: hidden;
+    overscroll-behavior: none;
 }
 
 .stopwatch {
@@ -36,11 +38,12 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    margin-top: 60px;
+    padding-top: 60px;
+    box-sizing: border-box;
 }
 
 #display {
-    font-size: 7em;
+    font-size: var(--clock-size, 7em);
     font-family: inherit;
     letter-spacing: 0.05em;
     margin: 0.4em 0 1em 0;
@@ -54,6 +57,7 @@ body {
     line-height: 1.1;
     word-break: keep-all;
     white-space: nowrap;
+    max-width: min(94vw, 1500px);
 }
 
 #display .monochar {
@@ -62,6 +66,29 @@ body {
     text-align: center;
     /* font-variant-numeric: tabular-nums; */
     vertical-align: baseline;
+}
+
+#display .rtc-wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    max-width: min(94vw, 1500px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.1;
+}
+
+#display .rtc-sentence {
+    font-size: clamp(0.42em, 8vw, 0.72em);
+}
+
+#display .rtc-dense {
+    font-size: clamp(0.38em, 7vw, 0.68em);
+}
+
+#display .timequery {
+    font-size: clamp(0.55em, 9vw, 0.95em);
 }
 
 /* NEW: Smaller, baseline unit letters for Lettered mode */
@@ -273,11 +300,11 @@ input[type="checkbox"] {
 }
 
 .modal-content.system-font {
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: var(--ui-font-stack, var(--gs-system-font, 'Segoe UI', Arial, sans-serif));
 }
 
-body[data-os="android"] .modal-content.system-font { font-family: Roboto, Arial, sans-serif; }
-body[data-os="apple"] .modal-content.system-font { font-family: 'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+body[data-os="android"] .modal-content.system-font { font-family: var(--ui-font-stack, var(--gs-system-font, Roboto, Arial, sans-serif)); }
+body[data-os="apple"] .modal-content.system-font { font-family: var(--ui-font-stack, var(--gs-system-font, 'San Francisco', 'Helvetica Neue', Helvetica, Arial, sans-serif)); }
 
 .show-hide-row {
     font-size: 1.35em;
@@ -353,11 +380,17 @@ body[data-os="apple"] .modal-content.system-font { font-family: 'San Francisco',
 }
 
 .minecraft-clock-face {
+  --mc-size: min(82vh, 92vw);
+  width: var(--mc-size);
+  height: var(--mc-size);
   display: inline-block;
   background-repeat: no-repeat;
+  background-position: 0 calc(var(--mc-frame, 0) * var(--mc-size) * -1);
+  background-size: var(--mc-size) calc(var(--mc-size) * 64);
   image-rendering: pixelated;
-  box-shadow: 0 2px 12px #000a;
+  box-shadow: none;
   vertical-align: middle;
+  box-sizing: border-box;
 }
 
 /* === Universal responsive modal tweaks (Stopwatch / RTC / Timer) === */
@@ -466,4 +499,229 @@ body.modal-open {
   }
 
   .close-btn { right: 12px; top: 12px; }
+}
+
+/* ===== Phase 1 Globals bridge ===== */
+body{
+  background: var(--page-bg, var(--ui-bg, #000)) !important;
+  color: var(--page-text, var(--ui-fg, #fff)) !important;
+}
+.modal-content, .gs-modal-content{
+  background: var(--page-panel, #0b0b0b) !important;
+  color: var(--page-text, #fff) !important;
+  border-color: var(--page-border, rgba(255,255,255,.14)) !important;
+}
+button, .chip, .stopwatch-app button, .buttons button, .status-btn, #startPauseBtn, #resetBtn, #startStopBtn{
+  background: var(--page-button-bg, #222);
+  color: var(--page-button-text, var(--page-text, #fff));
+}
+button:hover, .chip:hover, .stopwatch-app button:hover:enabled, .buttons button:hover, .status-btn:hover{
+  background: var(--page-button-hover, #333);
+}
+select, input[type="text"], input[type="number"], input[type="range"]{
+  color: var(--page-text, #fff);
+}
+.modal-content.system-font, .gs-modal-content.system-font {
+  font-family: var(--ui-font-stack, var(--gs-system-font, Arial, sans-serif)) !important;
+}
+
+
+/* === ClockFix theme overrides === */
+html{
+  background: var(--page-bg, #000) !important;
+}
+
+body{
+  background: var(--page-bg, #000) !important;
+  color: var(--page-text, #fff) !important;
+  font-family: var(--clock-font-stack, var(--gs-clock-default, 'GSFancyCatPX', sans-serif)) !important;
+}
+#display{ color: var(--page-text, #fff) !important; }
+.stopwatch button, .setting-input, #importCustomFont{
+  background: var(--page-button-bg, #666);
+  color: var(--page-button-text, #fff);
+  border-color: var(--page-border, #888);
+}
+.stopwatch button:hover:enabled{
+  background: var(--page-button-hover, #aaf) !important;
+  color: var(--page-button-hover-text, #000) !important;
+}
+.modal{ background: transparent !important; pointer-events:none; }
+.modal.show{ display:block; }
+.modal-content{
+  background: var(--page-panel, #111) !important;
+  color: var(--page-text, #fff) !important;
+  border-color: var(--page-border, #888) !important;
+  pointer-events:auto;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  --modal-x: 0px;
+  --modal-y: 0px;
+  transform: translate(-50%, -50%) translate(var(--modal-x), var(--modal-y));
+  cursor: grab;
+}
+.modal-content.dragging{ cursor: grabbing; }
+
+html.gs-modal-dragging,
+body.modal-dragging,
+body.modal-dragging *{
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+
+.modal-content,
+.modal-content *{
+  -webkit-user-select:none;
+  user-select:none;
+}
+
+.modal-content input,
+.modal-content textarea{
+  -webkit-user-select:text;
+  user-select:text;
+}
+#closeSettings{ color: var(--page-text, #fff); }
+select, input[type="text"], input[type="number"]{
+  background: color-mix(in srgb, var(--page-panel, #111) 80%, white 20%);
+  color: var(--page-text, #fff);
+  border-color: var(--page-border, #888);
+}
+
+.modal-page{
+  display:none;
+  width:100%;
+}
+.modal-page.active{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+}
+.settings-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+  width:100%;
+}
+.chip,
+.grow,
+.global-settings-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:36px;
+  padding:6px 16px;
+  border:1px solid var(--page-border, #666);
+  border-radius:10px;
+  background:var(--page-button-bg, #222);
+  color:var(--page-button-text, #fff);
+  font-family:inherit;
+  font-weight:800;
+  text-decoration:none;
+  cursor:pointer;
+}
+.grow{
+  width:min(100%, 620px);
+}
+.size-title{
+  margin-top:8px;
+  font-weight:900;
+}
+.size-label{
+  display:inline-block;
+  min-width:2ch;
+  text-align:center;
+  font-weight:900;
+}
+.modal .size-row > *{
+  flex:0 0 auto;
+  min-width:0;
+}
+.modal-back-btn{
+  align-self:flex-start;
+  font:inherit;
+  line-height:1;
+  padding:6px 14px;
+  background:#333;
+  color:#fff;
+  border:1px solid #666;
+  border-radius:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.colour-mode-row{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.colour-mode-btn{
+  font:inherit;
+  padding:8px 18px;
+  border-radius:12px;
+  border:2px solid #666;
+  background:#111;
+  color:#fff;
+  cursor:pointer;
+}
+.colour-mode-btn.active{
+  background:#fff;
+  color:#000;
+  border-color:#fff;
+}
+.color-input-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex:1 1 360px;
+  min-width:min(360px, 100%);
+}
+.color-input-row input{
+  flex:1 1 auto;
+  min-width:0;
+}
+.color-preview-btn{
+  width:42px;
+  height:42px;
+  border-radius:10px;
+  border:2px solid #777;
+  background:#fff;
+  flex:0 0 auto;
+}
+.colour-editor{
+  display:none;
+  flex-direction:column;
+  gap:16px;
+  width:100%;
+}
+.colour-editor.active{
+  display:flex;
+}
+.channel-row{
+  display:grid;
+  grid-template-columns:44px minmax(180px, 1fr) 110px;
+  align-items:center;
+  gap:16px;
+  width:100%;
+}
+.channel-label{
+  font-size:2.4rem;
+  line-height:1;
+  text-align:center;
+}
+.channel-number{
+  width:100%;
+  min-width:0;
+  padding:8px 10px;
+}
+.channel-row input[type="range"]{
+  width:100%;
+  accent-color:var(--ui-accent, #4f7dff);
+}
+
+@media (max-width: 560px) {
+  .channel-row{ grid-template-columns:32px minmax(120px, 1fr) 78px; gap:10px; }
+  .channel-label{ font-size:1.8rem; }
 }

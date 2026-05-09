@@ -5,28 +5,33 @@
   <title>Real Time Clock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../../globals/styles.css">
 </head>
-<body>
+<body class="theme-dark">
   <div class="stopwatch">
     <p id="display"></p>
     <button id="settingsBtn" aria-label="Clock Settings">
-        <img src="icons/gear_2699-fe0f.png" alt="Settings" class="icon" />
+        <img src="../../globals/icons/gear.png" alt="Settings" class="icon" />
     </button>
   </div>
 
   <div class="modal" id="settingsModal">
-    <div class="modal-content system-font">
-      <button id="closeSettings" class="close-btn" aria-label="Close Settings">&times;</button>
+    <div id="modalCard" class="modal-content system-font">
+      <button id="closeSettings" class="close-btn" aria-label="Close Settings">
+        <img src="../../globals/icons/close.png" alt="Close" class="icon" />
+      </button>
       <div class="settings-header">
         <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
         <span class="font-header-text">FONT OPTIONS</span>
       </div>
+      <section id="page-main" class="modal-page active">
       <div class="setting-row">
         <label for="fontSelect" class="setting-label">Font:</label>
         <select id="fontSelect">
           <option value="default">Default</option>
           <option value="system">System</option>
           <option value="custom">Custom</option>
+          <option value="bitmap">Bitmap</option>
         </select>
         <button id="importCustomFont" class="icon-btn">Import Custom Font...</button>
         <input type="file" id="customFontFile" accept=".ttf,.otf,.woff,.woff2" style="display:none;">
@@ -34,30 +39,112 @@
         <div id="customFontNotice">Custom font is used for the clock display.</div>
       </div>
 
-      <div class="setting-row">
-        <label for="is24Hour" class="setting-label">24-hour clock:</label>
-        <input type="checkbox" id="is24Hour" />
-      </div>
+        <div class="size-title lbl">Size</div>
+        <div class="setting-row size-row">
+          <button id="sizePrev" class="chip" type="button">◀</button>
+          <span id="sizeLabel" class="size-label">3</span>
+          <button id="sizeNext" class="chip" type="button">▶</button>
+        </div>
 
-      <div class="setting-row">
-        <label for="clockModeSelect" class="setting-label">Clock Mode:</label>
-        <select id="clockModeSelect"></select>
-      </div>
+        <button id="openStyle" class="chip grow" type="button">Customize Style &gt;</button>
+        <button id="openColors" class="chip grow" type="button">Colour Customization &gt;</button>
+        <a class="global-settings-btn" href="../../globals/global_settings.html" data-global-settings-link>Global Settings</a>
+      </section>
 
-      <div class="show-hide-row">
-        <strong>SHOW ON CLOCK:</strong>
-        <label><input type="checkbox" id="showSeconds">Seconds</label>
-        <label><input type="checkbox" id="showTicks">Ticks</label>
-      </div>
-      <div class="show-hide-row" id="showAMPMRow" style="display:none;">
-        <label>
-          <input type="checkbox" id="showAMPM" />
-          AM/PM
-        </label>
-      </div>
+      <section id="page-style" class="modal-page">
+        <button id="backFromStyle" class="modal-back-btn" type="button">&lt; Back</button>
+        <h2 class="lbl">Clock Customization</h2>
+
+        <div class="settings-stack">
+          <div class="setting-row">
+            <label for="is24Hour" class="setting-label">24-hour clock:</label>
+            <input type="checkbox" id="is24Hour" />
+          </div>
+
+          <div class="setting-row">
+            <label for="clockModeSelect" class="setting-label">Clock Mode:</label>
+            <select id="clockModeSelect"></select>
+          </div>
+
+          <div class="show-hide-row">
+            <strong>SHOW ON CLOCK:</strong>
+            <label><input type="checkbox" id="showHours">Hours</label>
+            <label><input type="checkbox" id="showMinutes">Minutes</label>
+            <label><input type="checkbox" id="showSeconds">Seconds</label>
+            <label><input type="checkbox" id="showTicks">Ticks</label>
+          </div>
+          <div class="show-hide-row" id="showAMPMRow" style="display:none;">
+            <label>
+              <input type="checkbox" id="showAMPM" />
+              AM/PM
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="page-colors" class="modal-page">
+        <button id="backFromColors" class="modal-back-btn" type="button">&lt; Back</button>
+        <h2 class="lbl">Colour Customization</h2>
+
+        <div class="settings-stack colour-settings" data-no-ui-sound data-no-drag>
+          <div class="colour-mode-row">
+            <button type="button" id="colourModeRGB" class="colour-mode-btn active">RGB</button>
+            <button type="button" id="colourModeHSV" class="colour-mode-btn">HSV</button>
+          </div>
+
+          <div class="setting-row color-field">
+            <label class="lbl" for="colourValue">HEX / CSS</label>
+            <div class="color-input-row">
+              <input type="text" id="colourValue" placeholder="#FFFFFF or rgb(255,255,255)">
+              <button type="button" id="colourPreview" class="color-preview-btn" aria-label="Colour preview"></button>
+            </div>
+          </div>
+
+          <div id="rgbEditor" class="colour-editor active">
+            <div class="channel-row">
+              <div class="channel-label">R</div>
+              <input type="range" id="rgbRRange" min="0" max="255" step="1">
+              <input type="number" id="rgbRInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">G</div>
+              <input type="range" id="rgbGRange" min="0" max="255" step="1">
+              <input type="number" id="rgbGInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">B</div>
+              <input type="range" id="rgbBRange" min="0" max="255" step="1">
+              <input type="number" id="rgbBInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+          </div>
+
+          <div id="hsvEditor" class="colour-editor">
+            <div class="channel-row">
+              <div class="channel-label">H</div>
+              <input type="range" id="hsvHRange" min="0" max="360" step="1">
+              <input type="number" id="hsvHInput" class="channel-number" min="0" max="360" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">S</div>
+              <input type="range" id="hsvSRange" min="0" max="100" step="1">
+              <input type="number" id="hsvSInput" class="channel-number" min="0" max="100" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">V</div>
+              <input type="range" id="hsvVRange" min="0" max="100" step="1">
+              <input type="number" id="hsvVInput" class="channel-number" min="0" max="100" step="1">
+            </div>
+          </div>
+
+          <button id="resetColours" class="chip grow" type="button">Reset to Default</button>
+        </div>
+      </section>
     </div>
   </div>
 
+  <script src="../../globals/themes/theme_runtime.js"></script>
+  <script src="../../globals/global.js"></script>
+  <script src="../../globals/modal.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

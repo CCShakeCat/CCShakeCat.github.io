@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "light": "light",
+    "dark": "dark"
+  },
+  "packs": [
+    {
+      "id": "light",
+      "folder": "theme_light",
+      "label": "Light Mode"
+    },
+    {
+      "id": "dark",
+      "folder": "theme_dark",
+      "label": "Dark Mode"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 body {
   --ui-scale: 1rem;
+  --edit-invert-filter: invert(1) hue-rotate(180deg) saturate(1.12) brightness(1.08);
 
   --glyph-size: 8px;
   --glyph-stride: 9px;   /* 8px glyph + 1px separator */
@@ -160,6 +161,11 @@ body[data-running="true"] #customAudioBox{
   image-rendering: -moz-crisp-edges;
   flex: 0 0 auto;
   pointer-events: none;
+}
+
+body.editing #display,
+body.editing .sprite-display{
+  filter: var(--edit-invert-filter);
 }
 
 /* invisible edit layer */

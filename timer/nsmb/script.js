@@ -118,6 +118,19 @@
     audioStatus.textContent = msg || '';
   }
 
+  function getGlobalVolume(kind) {
+    return window.GSGlobal?.getEffectiveAudioVolume?.(kind) ?? 1;
+  }
+
+  function applyAudioVolumes() {
+    try { hurryAudio.volume = getGlobalVolume('hurry'); } catch {}
+    try { nsmb2WarningAudio.volume = getGlobalVolume('warning'); } catch {}
+    try { bgAudio.volume = getGlobalVolume('music'); } catch {}
+    if (youTubePlayer && typeof youTubePlayer.setVolume === 'function') {
+      try { youTubePlayer.setVolume(Math.round(getGlobalVolume('music') * 100)); } catch {}
+    }
+  }
+
   function clearWarningFlash() {
     if (warningFlashTimer) {
       clearInterval(warningFlashTimer);
@@ -270,6 +283,7 @@
     if (state !== 'running') return;
 
     wantPlayback = true;
+    applyAudioVolumes();
 
     if (mediaType === 'audio') {
       try {
@@ -460,6 +474,7 @@
     pauseBackgroundMedia();
     stopWarningOverlays();
     clearHurryResumeTimeout();
+    applyAudioVolumes();
 
     let resumed = false;
     const resume = () => {
@@ -499,6 +514,7 @@
     try {
       const overlay = nsmb2WarningAudio.cloneNode(true);
       overlay.currentTime = 0;
+      overlay.volume = getGlobalVolume('warning');
       activeWarningOverlays.push(overlay);
 
       const cleanup = () => {
@@ -754,6 +770,7 @@
 
   if (bgAudio) {
     bgAudio.loop = true;
+    applyAudioVolumes();
     bgAudio.addEventListener('ended', () => {
       if (state === 'running') {
         try {
@@ -795,5 +812,10 @@
     }
   }
 
+  window.addEventListener('storage', (event) => {
+    if (String(event.key || '').startsWith('gs.audio.')) applyAudioVolumes();
+  });
+
   initFromDOM();
+  applyAudioVolumes();
 })();

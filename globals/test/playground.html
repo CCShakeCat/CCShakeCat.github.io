@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>ClockStuffs Playground</title>
+
+  <!-- Global styles (globals/test -> globals) -->
+  <link rel="stylesheet" href="../styles.css" />
+
+  <!-- Page styles -->
+  <link rel="stylesheet" href="./styles.css" />
+    
+    <script src="/globals/themes/theme_runtime.js"></script>
+    <script src="../global.js"></script>
+    <script src="../modal.js"></script>
+</head>
+
+<body>
+  <!-- Visible error bar (only shown if globals imports fail) -->
+  <div id="jsError" class="js-error" aria-live="polite"></div>
+
+  <!-- Settings button -->
+  <button data-modal-open="settingsModal" id="settingsBtn" class="icon-btn settings-btn" aria-label="Settings">
+    <img class="icon icon--lg" src="../icons/gear.png" alt="" />
+  </button>
+
+  <main class="playground">
+    <div id="clockFace" class="clock-face tabular">TEST</div>
+
+    <div class="controls">
+      <button id="btnStartStop" class="ui-btn accent">Start</button>
+      <button id="btnReset" class="ui-btn">Reset</button>
+    </div>
+
+    <div class="ui-subtitle desc">
+      This page is only for verifying global UI, modal behavior, and themes.
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <!-- REQUIRED wrapper for autoSetupModals() -->
+    <div id="modalCard" class="modal-content" role="dialog" aria-label="Testing Options">
+      <!-- REQUIRED close button for autoSetupModals() -->
+      <button id="closeSettings" class="icon-btn modal-close" data-modal-close aria-label="Close">
+        <img class="icon" src="../icons/close.png" alt="" />
+      </button>
+
+      <div class="modal-header">
+        <div class="ui-title">Testing Options</div>
+      </div>
+
+      <div class="ui-subtitle">
+        This is a testing site where you can try out themes and such
+      </div>
+
+      <hr class="ui-hr" />
+
+      <!-- Dropdowns -->
+      <div class="ui-stack">
+        <div class="ui-subtitle">Dropdowns (both are the same)</div>
+
+        <div class="ui-row">
+          <label for="testSelect1">Dropdown</label>
+          <select id="testSelect1">
+            <option>TEST OPTION 1</option>
+            <option>TEST OPTION 2</option>
+            <option>TEST OPTION 3</option>
+          </select>
+        </div>
+
+        <div class="ui-row">
+          <label for="testSelect2">Disabled</label>
+          <select id="testSelect2" disabled>
+            <option>TEST OPTION 1</option>
+            <option>TEST OPTION 2</option>
+            <option>TEST OPTION 3</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="ui-stack">
+        <div class="ui-row">
+          <button id="btnTestEnabled" class="ui-btn accent">TEST</button>
+          <button class="ui-btn" disabled>Nope</button>
+        </div>
+      </div>
+
+      <!-- Checkbox group -->
+<!-- Checkbox group (single row layout) -->
+<div class="ui-row ui-check-row">
+  <span>Checkbox</span>
+  <input type="checkbox" checked>
+
+  <span>Disabled On</span>
+  <input type="checkbox" checked disabled>
+
+  <span>Disabled Off</span>
+  <input type="checkbox" disabled>
+</div>
+        
+      <!-- Radio buttons group -->
+      <div class="ui-stack">
+        <div class="ui-subtitle">Radio Buttons</div>
+
+<div class="ui-radio-group centered">
+  <label class="ui-radio">
+    <input type="radio" name="radioEnabled" checked>
+    <span>Option 1</span>
+  </label>
+
+  <label class="ui-radio">
+    <input type="radio" name="radioEnabled">
+    <span>Option 2</span>
+  </label>
+</div>
+
+<div class="ui-radio-group centered">
+  <label class="ui-radio">
+    <input type="radio" name="radioDisabled" checked disabled>
+    <span>Disabled 1</span>
+  </label>
+
+  <label class="ui-radio">
+    <input type="radio" name="radioDisabled" disabled>
+    <span>Disabled 2</span>
+  </label>
+</div>
+      <!-- Slider -->
+      <div class="ui-stack">
+        <div class="ui-row">
+          <label for="testSlider">Slider</label>
+                    <input id="testSlider" type="range" min="1" max="100" value="100" />
+          <span id="sliderValue" class="ui-subtitle">100</span>
+        </div>
+
+        <div class="ui-row" style="margin-top:12px;">
+          <label for="testSliderDisabled">Disabled</label>
+                    <input id="testSliderDisabled" type="range" min="1" max="100" value="50" disabled />
+          <span class="ui-subtitle">50</span>
+        </div>
+      </div>
+
+      <!-- Text field -->
+      <div class="ui-stack">
+        <div class="ui-row">
+          <label for="testText">Text Field</label>
+          <input id="testText" type="text" placeholder="Insert Text Here" />
+        </div>
+
+        <div class="ui-row">
+          <label for="testTextDisabled">Disabled</label>
+          <input id="testTextDisabled" type="text" placeholder="Insert Text Here" disabled />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./script.js"></script>
+</body>
+</html>

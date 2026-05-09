@@ -3,6 +3,11 @@
     src: url('./fonts/AftikaBlack.ttf') format('truetype');
     font-display: swap;
 }
+@font-face {
+    font-family: 'LoewHeavy';
+    src: url('./fonts/Loew-Heavy.otf') format('opentype');
+    font-display: swap;
+}
 
 body {
     color: #fff;
@@ -32,26 +37,53 @@ body {
     margin-bottom: 0.6em;
     margin-top: 0;
     text-align: center;
+    display: none;
+}
+
+#timerRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.14em;
+    font-size: 9.75vw;
+    line-height: 1;
+    width: max-content;
+    max-width: 92vw;
+}
+
+#slwClockIcon {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 0.72em;
+    height: 0.72em;
+    background-image: url('./fonts/clock.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    transform: translateY(0.02em);
 }
 
 #display, #timerInput {
-    font-size: 10vw;
+    font-size: 1em;
     margin: 0;
     text-align: center;
     background: none;
     border: none;
     font-weight: bold;
     outline: none;
-    width: 7.8em;
+    width: 3.2ch;
     padding: 0;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     font-family: inherit;
     color: #fff;
 }
 #display {
-    display: flex;
+    display: inline-flex;
     justify-content: center;
     gap: 0em;
+    width: auto;
 }
 
 .monochar {
@@ -88,24 +120,27 @@ body {
     background: linear-gradient(to bottom, #0000AA 0%, #0088FF 100%);
 }
 
-/* --- Sonic Lost World digits: heavy navy outline, no white --- */
-:root { --slw-outline: #00124D; --slw-fill: #FFF04A; --slw-stroke: 9px; }
+/* Sonic Lost World HUD-style digits: yellow face, navy outline, black drop shadow. */
+:root {
+    --slw-outline: #00004d;
+    --slw-shadow: #000020;
+    --slw-fill: #fff238;
+    --slw-stroke: 0.055em;
+}
+
+.slw-timer.slw-flash {
+    --slw-fill: #FF5555;
+}
 
 .slw-timer #timerLabel,
 .slw-timer #display,
 .slw-timer #timerInput,
 .slw-timer .monochar {
-  font-family: 'AftikaBlack', 'PixelSuperHudPX', Arial, sans-serif;
+  font-family: 'LoewHeavy', 'AftikaBlack', Arial, sans-serif;
   color: var(--slw-fill);
   -webkit-text-stroke: var(--slw-stroke) var(--slw-outline);
-  /* Fallback for browsers without stroke (keeps edges crisp) */
-  text-shadow:
-     -3px -3px 0 var(--slw-outline),
-      3px -3px 0 var(--slw-outline),
-     -3px  3px 0 var(--slw-outline),
-      3px  3px 0 var(--slw-outline),
-      0px -3px 0 var(--slw-outline),
-      0px  3px 0 var(--slw-outline),
-     -3px  0px 0 var(--slw-outline),
-      3px  0px 0 var(--slw-outline);
+  text-shadow: none;
+  filter:
+    drop-shadow(-0.035em 0.04em 0 var(--slw-outline))
+    drop-shadow(-0.055em 0.065em 0 var(--slw-shadow));
 }
