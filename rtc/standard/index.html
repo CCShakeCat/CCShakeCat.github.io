@@ -22,7 +22,7 @@
       </button>
       <div class="settings-header">
         <img src="icons/icn_font.png" alt="Font" class="icon font-header-icon" />
-        <span class="font-header-text">FONT OPTIONS</span>
+        <span class="font-header-text">OPTIONS</span>
       </div>
       <section id="page-main" class="modal-page active">
       <div class="setting-row">
@@ -41,9 +41,9 @@
 
         <div class="size-title lbl">Size</div>
         <div class="setting-row size-row">
-          <button id="sizePrev" class="chip" type="button">◀</button>
+          <button id="sizePrev" class="chip" type="button">&lt;</button>
           <span id="sizeLabel" class="size-label">3</span>
-          <button id="sizeNext" class="chip" type="button">▶</button>
+          <button id="sizeNext" class="chip" type="button">&gt;</button>
         </div>
 
         <button id="openStyle" class="chip grow" type="button">Customize Style &gt;</button>
@@ -78,6 +78,23 @@
               <input type="checkbox" id="showAMPM" />
               AM/PM
             </label>
+          </div>
+
+          <div class="setting-row">
+            <label class="setting-label" for="tpsSelect">Tick Rate:</label>
+            <select id="tpsSelect" aria-label="Tick Rate">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="40">40 (Default)</option>
+              <option value="50">50</option>
+              <option value="60">60</option>
+              <option value="70">70</option>
+              <option value="80">80</option>
+              <option value="90">90</option>
+              <option value="100">100</option>
+            </select>
+            <span>TPS</span>
           </div>
         </div>
       </section>

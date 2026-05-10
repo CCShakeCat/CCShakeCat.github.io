@@ -15,8 +15,18 @@ body{
 
 /* Clock */
 #timerDisplay{ font-size:var(--clock-vw); line-height:1; letter-spacing:.02em; color:#fff; user-select:none; font-family:var(--clock-face-font, inherit) }
-.monochar{display:inline-block;width:.75em;text-align:center}
-.monochar--sep{width:.36em}
+.monochar{
+  display:inline-block;
+  width:auto;
+  min-width:0.45em;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.monochar--sep{
+  min-width:0;
+  width:auto;
+  margin-inline:.04em;
+}
 
 .clock-row{ display:flex; align-items:center; gap:min(3vw,48px); padding-top:6vh }
 .clock-row.stacked #prefixWrap{justify-content:center; min-width:auto}
@@ -152,12 +162,20 @@ body{
 }
 
 #prefixText{
-  color:#FFFF00 !important;
+  color:var(--timer-prefix-color, #FFFF00) !important;
   font-weight:400 !important;
 }
 
 #timerDisplay{
-  color:var(--page-text, #ffffff) !important;
+  color:var(--timer-face-color, #ffffff) !important;
+}
+
+#timerDisplay.flash-face{
+  color:#ff0000 !important;
+}
+
+#prefixText.flash-prefix-text{
+  color:#ff0000 !important;
 }
 
 /* Keep gear/close buttons image-only like the old layout */
@@ -249,6 +267,7 @@ body{
   flex:0 0 auto;
 }
 #openStyle,
+#openColours,
 #openHurry{
   width:100%;
 }
@@ -283,6 +302,29 @@ body{
   min-width:280px;
 }
 
+.colour-stack{
+  width:100%;
+  max-width:760px;
+  align-items:stretch;
+}
+
+.colour-row{
+  display:grid;
+  grid-template-columns:minmax(170px, 1fr) minmax(180px, 2fr) 46px;
+  gap:10px;
+  align-items:center;
+  width:100%;
+}
+
+.colour-row input[type="color"]{
+  width:46px;
+  height:38px;
+  padding:2px;
+  border:1px solid var(--page-border, #888888);
+  border-radius:8px;
+  background:var(--page-panel, #111111);
+}
+
 /* Inputs look centered and readable on dark */
 select,
 input[type="text"],
@@ -301,9 +343,13 @@ input::placeholder{
     padding:16px 14px 18px !important;
   }
   #page-main .row.center,
+  .colour-row,
   #page-style .row,
   #page-hurry .row{
     flex-wrap:wrap;
+  }
+  .colour-row{
+    grid-template-columns:1fr;
   }
   #musicUrlInput,
   .stack > .row.center > .grow,
@@ -350,3 +396,14 @@ input::placeholder{
 .clock-row.bitmap-active #timerBitmapWrap{display:flex !important}
 .clock-row.bitmap-active.bitmap-prefix-active #prefixBitmapWrap{display:flex !important}
 #timerBitmapWrap,#prefixBitmapWrap{display:none}
+
+/* Let the modal fit the currently active page instead of reserving the tallest page. */
+.modal-content{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:calc(100vh - 48px) !important;
+  overflow-y:auto !important;
+}
+.modal-page{
+  min-height:0 !important;
+}

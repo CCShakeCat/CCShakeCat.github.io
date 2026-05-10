@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Timer — Standard</title>
+  <title>Timer - Standard</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="../../globals/styles.css">
 </head>
@@ -17,10 +17,10 @@
   <div class="timer-app">
     <div class="clock-row">
       <div id="prefixWrap">
-        <div id="prefixText">TIME</div>
+        <div id="prefixText" data-no-bitmap>TIME</div>
         <img id="prefixIcon" src="./icons/clock.png" alt="" />
       </div>
-      <div id="timerDisplay" aria-live="polite">00:09:59.39</div>
+      <div id="timerDisplay" aria-live="polite" data-no-bitmap>00:09:59.39</div>
     </div>
 
     <!-- Editable overlay -->
@@ -57,32 +57,36 @@
             </select>
 
             <label id="importCustomFont" class="chip" for="customFontFile" role="button" tabindex="0" style="cursor:pointer;">
-              Import Custom font…
+              Import Custom Font...
             </label>
             <input id="customFontFile" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none;" />
           </div>
 
           <div id="customFontNotice" class="tiny muted" style="display:none;text-align:center;">
-            <span id="customFontName">Loaded: —</span><br>
-            If the font doesn’t change immediately, try refreshing.
+            <span id="customFontName">Loaded: -</span><br>
+            If the font doesn't change immediately, try refreshing.
           </div>
 
           <div class="row center size-row" style="margin-top:6px;">
             <span class="lbl">Size</span>
           </div>
           <div class="row center size-row">
-            <button id="sizePrev" class="chip">◀</button>
+            <button id="sizePrev" class="chip">&lt;</button>
             <span id="sizeLabel" class="size-label">3</span>
-            <button id="sizeNext" class="chip">▶</button>
+            <button id="sizeNext" class="chip">&gt;</button>
           </div>
 
           <div class="row center" style="margin-top:8px;">
             <button id="openStyle" class="chip grow">Customize Style ></button>
           </div>
 
+          <div class="row center" style="margin-top:6px;">
+            <button id="openColours" class="chip grow">Colour Customization ></button>
+          </div>
+
           <!-- Music URL + status -->
           <div class="row center" style="margin-top:6px;">
-            <input id="musicUrlInput" class="grow" type="text" placeholder="Paste YouTube, or direct audio URL…" />
+            <input id="musicUrlInput" class="grow" type="text" placeholder="Paste YouTube, or direct audio URL..." />
             <button id="musicUrlSubmitBtn" class="chip">Submit</button>
 
             <div class="status-wrapper">
@@ -106,6 +110,31 @@
             <button id="openHurry" class="chip grow">Customize Hurry-Up ></button>
           </div>
           <a class="global-settings-btn" href="../../globals/global_settings.html" data-global-settings-link>Global Settings</a>
+        </div>
+      </section>
+
+      <!-- COLOUR PAGE -->
+      <section id="page-colours" class="modal-page">
+        <button id="backFromColours" class="modal-back-btn">&lt; Back</button>
+        <h2 class="lbl" style="text-align:center;margin:0 0 6px;">Colour Customization</h2>
+
+        <div class="stack colour-stack">
+          <label class="colour-row">
+            <span class="lbl">Prefix text colour</span>
+            <input id="prefixColorInput" type="text" value="#FFFF00" aria-label="Prefix text colour">
+            <input id="prefixColorPicker" type="color" value="#ffff00" aria-label="Pick prefix text colour">
+          </label>
+
+          <label class="colour-row">
+            <span class="lbl">Face colour</span>
+            <input id="faceColorInput" type="text" value="#FFFFFF" aria-label="Face colour">
+            <input id="faceColorPicker" type="color" value="#ffffff" aria-label="Pick face colour">
+          </label>
+
+          <div class="row center" style="margin-top:8px;">
+            <button id="resetColours" class="chip grow" type="button">Reset to Default</button>
+          </div>
+        </div>
       </section>
 
       <!-- STYLE PAGE -->
@@ -116,7 +145,7 @@
         <div class="stack">
           <div class="lbl" style="text-align:center;">Show on Clock:</div>
           <div class="row center inline-cb align-center">
-            <label><input id="showAuto" type="checkbox"> Auto — hide what is zero</label>
+            <label><input id="showAuto" type="checkbox"> Auto - hide what is zero</label>
           </div>
           <div class="row center inline-cb align-center">
             <label><input id="showHours" type="checkbox" checked> <b>HH</b></label>
@@ -218,10 +247,6 @@
 
           <div class="row center align-center">
             <span class="lbl">Start flash at</span>
-            <select id="flashType">
-              <option value="time" selected>Time</option>
-              <option value="percent">%</option>
-            </select>
             <input id="flashValue" type="text" placeholder="Default: 00:01:00 (One Minute)" />
           </div>
 

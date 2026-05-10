@@ -33,6 +33,14 @@ body{
   justify-content:center;
   gap:min(3vw,48px);
 }
+.clock-row.stacked{
+  flex-direction:column;
+  gap:min(2vh,24px);
+}
+.clock-row.stacked #prefixWrap{
+  min-width:0;
+  justify-content:center;
+}
 #prefixWrap{
   display:flex;
   align-items:center;
@@ -72,12 +80,22 @@ body{
 /* Fixed-width boxes for each glyph */
 .monochar{
   display:inline-block;
-  width: 1.05ch;
+  width:auto;
+  min-width:0.45em;
   text-align:center;
   line-height: 1;
   transform: translateY(0);
+  font-variant-numeric:tabular-nums;
 }
-.monochar--sep{ width: 0.75ch; }
+.monochar--sep{ min-width:0; width:auto; margin-inline:.04em; }
+.clock-line{
+  display:block;
+  line-height:.95;
+  white-space:nowrap;
+}
+.clock-line-xl{ font-size:1em; }
+.clock-line-large{ font-size:.95em; }
+.clock-line-small{ font-size:.72em; }
 
 @media (max-width:600px){
   .clock-row{ gap:5vw; }
@@ -642,4 +660,15 @@ select, input[type="text"], input[type="number"]{
   background: color-mix(in srgb, var(--page-panel, #111) 80%, white 20%);
   color: var(--page-text, #fff);
   border-color: var(--page-border, #888);
+}
+
+/* Let the modal fit the currently active page instead of reserving the tallest page. */
+.modal-content{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:calc(100vh - 48px) !important;
+  overflow-y:auto !important;
+}
+.modal-page{
+  min-height:0 !important;
 }

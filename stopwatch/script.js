@@ -15,6 +15,7 @@
   const prefixWrap   = $('prefixWrap');
   const prefixText   = $('prefixText');
   const prefixIcon   = $('prefixIcon');
+  const clockRow     = document.querySelector('.clock-row');
 
   const settingsBtn   = $('settingsBtn');
   const settingsModal = $('settingsModal');
@@ -499,6 +500,7 @@
   function applyClockSize() {
     clockSize = Math.min(5, Math.max(1, parseInt(clockSize, 10) || 3));
     document.documentElement.style.setProperty('--clock-vw', `${SIZE_VW[clockSize] || SIZE_VW[3]}vw`);
+    clockRow?.classList.toggle('stacked', clockSize >= 4);
     if (sizeLabel) sizeLabel.textContent = String(clockSize);
   }
 
@@ -607,7 +609,11 @@
   }
 
   function getClockColour(key = getColourTarget()) {
-    return parseCssColor(colours[key]) || DEFAULT_COLOURS[key] || DEFAULT_COLOURS.normal;
+    const parsed = parseCssColor(colours[key]) || DEFAULT_COLOURS[key] || DEFAULT_COLOURS.normal;
+    if (key === 'normal') {
+      return parseCssColor(resolveThemeClockColor(parsed)) || parsed;
+    }
+    return parsed;
   }
 
   function setColourEditorMode(mode, persist = true) {
@@ -831,10 +837,34 @@
   // ---------- Render loop ----------
   let raf = 0;
 
+  function renderStackedTime(text) {
+    const value = String(text || '00');
+    const [main, ticks] = value.split('.');
+    const parts = main.split(':').filter(Boolean);
+    const line = (textValue, className = '') => `<div class="clock-line ${className}">${textValue}</div>`;
+
+    if (clockSize >= 5) {
+      const lines = parts.length ? parts : [main];
+      if (ticks != null) lines.push(`.${ticks}`);
+      return lines.map((part, index) => line(part, index < 2 ? 'clock-line-xl' : 'clock-line-small')).join('');
+    }
+
+    if (clockSize >= 4) {
+      if (parts.length > 1) {
+        const top = parts.slice(0, -1).join(':');
+        const bottom = parts.slice(-1)[0] + (ticks != null ? `.${ticks}` : '');
+        return line(top, 'clock-line-large') + line(bottom, 'clock-line-small');
+      }
+      if (ticks != null) return line(main, 'clock-line-large') + line(`.${ticks}`, 'clock-line-small');
+    }
+
+    return value;
+  }
+
   function render() {
     const msNow = nowElapsedMs();
     applyPrefixMode();
-    displayEl.textContent = formatTime(msNow);
+    displayEl.innerHTML = renderStackedTime(formatTime(msNow));
     applySpeedrunnerColor(msNow);
     if (fontSelect?.value === 'bitmap') window.GSGlobal?.renderBitmapText?.(displayEl, { force: true });
   }
@@ -1247,7 +1277,7 @@
   function startRebind(which, btnEl, labelEl) {
     if (!btnEl) return;
     btnEl.classList.add('waiting');
-    if (labelEl) labelEl.textContent = 'Press keys…';
+    if (labelEl) labelEl.textContent = 'Press keys...';
     if (kbCountdown) kbCountdown.textContent = '3.0';
 
     const t0 = performance.now();

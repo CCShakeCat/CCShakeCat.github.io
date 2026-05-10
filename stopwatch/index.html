@@ -15,7 +15,7 @@
   <div class="stopwatch-app">
     <div class="clock-row">
       <div id="prefixWrap">
-        <div id="prefixText">TIME</div>
+        <div id="prefixText" data-no-bitmap>TIME</div>
         <img id="prefixIcon" src="icons/stopwatch_23f1-fe0f.png" alt="" />
       </div>
       <p id="display" aria-live="polite">00:00:00.00</p>
@@ -54,9 +54,9 @@
 
           <div class="size-title lbl">Size</div>
           <div class="setting-row size-row">
-            <button id="sizePrev" class="chip" type="button">◀</button>
+            <button id="sizePrev" class="chip" type="button">&lt;</button>
             <span id="sizeLabel" class="size-label">3</span>
-            <button id="sizeNext" class="chip" type="button">▶</button>
+            <button id="sizeNext" class="chip" type="button">&gt;</button>
           </div>
 
           <button id="openStyle" class="chip grow" type="button">Customize Style &gt;</button>

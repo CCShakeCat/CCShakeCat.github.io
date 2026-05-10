@@ -1,4 +1,5 @@
-let msPerTick = 25;
+let rtcTickRate = Math.min(100, Math.max(10, parseInt(localStorage.getItem('rtcTickRate') || '40', 10) || 40));
+let msPerTick = 1000 / rtcTickRate;
 
 let savedFont = localStorage.getItem('stopwatchFont') || 'FancyCatPX';
 let savedFontType = localStorage.getItem('stopwatchFontType') || localStorage.getItem('gs.clockFontMode') || 'default';
@@ -24,6 +25,38 @@ function resolveThemeClockColor(color) {
     return rootStyles.getPropertyValue('--page-text').trim() || getComputedStyle(document.body).color || '#ffffff';
   }
   return color;
+}
+
+function rtcMono(text) {
+  return [...String(text || '')].map(ch => `<span class="monochar">${ch}</span>`).join('');
+}
+
+function rtcStackedClock(mainText, suffixText = '') {
+  const raw = String(mainText || '');
+  if (clockSize < 4) return rtcMono(raw) + (suffixText ? rtcMono(suffixText) : '');
+
+  const [main, ticks] = raw.split('.');
+  const parts = main.split(':').filter(Boolean);
+  const line = (text, cls = '') => `<div class="rtc-clock-line ${cls}">${rtcMono(text)}</div>`;
+
+  if (clockSize >= 5) {
+    const lines = parts.length ? parts : [main];
+    if (ticks != null) lines.push(`.${ticks}`);
+    if (suffixText) lines[lines.length - 1] += suffixText;
+    return `<span class="rtc-clock-stack">${lines.map((part, index) => line(part, index < 2 ? 'rtc-line-xl' : 'rtc-line-small')).join('')}</span>`;
+  }
+
+  if (parts.length > 1) {
+    const top = parts.slice(0, -1).join(':');
+    const bottom = parts.slice(-1)[0] + (ticks != null ? `.${ticks}` : '') + suffixText;
+    return `<span class="rtc-clock-stack">${line(top, 'rtc-line-large')}${line(bottom, 'rtc-line-small')}</span>`;
+  }
+
+  if (ticks != null) {
+    return `<span class="rtc-clock-stack">${line(main, 'rtc-line-large')}${line(`.${ticks}${suffixText}`, 'rtc-line-small')}</span>`;
+  }
+
+  return rtcMono(raw) + (suffixText ? rtcMono(suffixText) : '');
 }
 
 // Laggy rendering state
@@ -143,11 +176,8 @@ const clockModes = {
         const msTick = Math.floor((d.getMilliseconds()) / msPerTick);
         joined += (out.length ? "." : "") + msTick.toString().padStart(2, '0');
       }
-      let mono = [...joined].map(ch => `<span class="monochar">${ch}</span>`).join('');
-      if (!is24Hour && showHours && showAMPM && ampm) {
-        mono += `<span class="monochar"> </span><span class="monochar">${ampm[0]}</span><span class="monochar">${ampm[1]}</span>`;
-      }
-      return mono;
+      const suffix = (!is24Hour && showHours && showAMPM && ampm) ? ` ${ampm}` : '';
+      return rtcStackedClock(joined, suffix);
     },
   },
   "*Veryyyyyy* Accurate Clock [23:59:59.9999999999]": {
@@ -881,6 +911,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const clock24Checkbox = document.getElementById('is24Hour');
   const showAMPMCheckbox = document.getElementById('showAMPM');
   const clockModeSelect = document.getElementById('clockModeSelect');
+  const tpsSelect = document.getElementById('tpsSelect');
   const pages = {
     main: document.getElementById('page-main'),
     style: document.getElementById('page-style'),
@@ -941,7 +972,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function syncColourEditorUI() {
-    const hex = parseCssColor(rtcClockColor) || '#ffffff';
+    const hex = parseCssColor(resolveThemeClockColor(rtcClockColor)) || parseCssColor(rtcClockColor) || '#ffffff';
     const rgb = hexToRgb(hex) || { r: 255, g: 255, b: 255 };
     const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
     if (colourValue) colourValue.value = hex;
@@ -1122,6 +1153,7 @@ document.addEventListener("DOMContentLoaded", () => {
       clockModeSelect.appendChild(option);
     });
     clockModeSelect.value = clockMode;
+    if (tpsSelect) tpsSelect.value = String(rtcTickRate);
   }
 
   settingsBtn.addEventListener('click', openSettingsModal);
@@ -1233,6 +1265,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDisplay();
     setClockInterval();
     notifyLaggyModeSwitch(clockMode);
+  });
+  tpsSelect?.addEventListener('change', function() {
+    rtcTickRate = Math.min(100, Math.max(10, parseInt(this.value || '40', 10) || 40));
+    msPerTick = 1000 / rtcTickRate;
+    localStorage.setItem('rtcTickRate', String(rtcTickRate));
+    updateDisplay();
   });
 
   function updateCustomFontNotice() {

@@ -27,11 +27,14 @@
     const pages = {
       main:  $('page-main'),
       style: $('page-style'),
+      colours: $('page-colours'),
       hurry: $('page-hurry')
     };
     const openStyle     = $('openStyle');
+    const openColours   = $('openColours');
     const openHurry     = $('openHurry');
     const backFromStyle = $('backFromStyle');
+    const backFromColours = $('backFromColours');
     const backFromHurry = $('backFromHurry');
 
     const sizePrev = $('sizePrev');
@@ -52,6 +55,12 @@
 
     const tpsSelect   = $('tpsSelect');
     const styleSelect = $('styleSelect');
+
+    const prefixColorInput = $('prefixColorInput');
+    const prefixColorPicker = $('prefixColorPicker');
+    const faceColorInput = $('faceColorInput');
+    const faceColorPicker = $('faceColorPicker');
+    const resetColoursBtn = $('resetColours');
 
     const directionBtn2    = $('directionBtn_style');
     const directionTarget2 = $('directionTarget_style');
@@ -176,7 +185,17 @@
       };
     }
 
-    function drawBitmapText(canvas, text, scale){
+    function tintBitmapCanvas(canvas, color){
+      if (!canvas || !color) return;
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    function drawBitmapText(canvas, text, scale, color){
       if (!canvas || !bitmapReady || !bitmapImg) return;
       const glyphs = [...String(text||'')].map(getBitmapGlyph);
       const w = Math.max(1, glyphs.reduce((sum, g) => sum + g.width, 0) * scale);
@@ -190,6 +209,7 @@
         if (g) ctx.drawImage(bitmapImg, g.x, g.y, BITMAP_CELL, BITMAP_CELL, x, 0, BITMAP_CELL*scale, BITMAP_CELL*scale);
         x += g.width * scale;
       }
+      tintBitmapCanvas(canvas, color);
     }
 
     function measureBitmapLine(text, scale){
@@ -202,12 +222,12 @@
       };
     }
 
-    function drawBitmapLines(canvas, lines){
+    function drawBitmapLines(canvas, lines, color){
       if (!canvas || !bitmapReady || !bitmapImg) return;
       const measured = lines
         .filter(line => line && line.text !== '')
         .map(line => measureBitmapLine(line.text, line.scale));
-      if (!measured.length) return drawBitmapText(canvas, '', 1);
+      if (!measured.length) return drawBitmapText(canvas, '', 1, color);
 
       const gap = Math.max(0, Math.round(Math.min(...measured.map(line => line.scale)) * 2));
       const w = Math.max(1, ...measured.map(line => line.width));
@@ -242,6 +262,7 @@
         }
         y += line.height + gap;
       }
+      tintBitmapCanvas(canvas, color);
     }
 
     function renderBitmapMode(){
@@ -249,18 +270,23 @@
       const nodes = ensureBitmapNodes();
       const fs = parseFloat(getComputedStyle(timerDisplay).fontSize) || 64;
       const prefixScale = Math.max(1, Math.round((parseFloat(getComputedStyle(prefixText).fontSize) || fs) / BITMAP_CELL));
+      const flashTime = st.flashPhase && (st.flashMode === 'time' || st.flashMode === 'all');
+      const flashPrefix = st.flashPhase && (st.flashMode === 'prefix' || st.flashMode === 'all');
+      const flashColor = '#ff0000';
+      const prefixColor = flashPrefix ? flashColor : st.prefixColor;
+      const faceColor = flashTime ? flashColor : resolveThemeClockColor(st.faceColor);
       const lineEls = [...timerDisplay.querySelectorAll('.clock-line')];
       if (lineEls.length){
         drawBitmapLines(nodes.tCanvas, lineEls.map(el => ({
           text: el.textContent || '',
           scale: Math.max(1, Math.round((parseFloat(getComputedStyle(el).fontSize) || fs) / BITMAP_CELL))
-        })));
+        })), faceColor);
       } else {
         const scale = Math.max(1, Math.round(fs / BITMAP_CELL));
         const face = formatFromTicks(st.remainingTicks);
-        drawBitmapText(nodes.tCanvas, face, scale);
+        drawBitmapText(nodes.tCanvas, face, scale, faceColor);
       }
-      if (st.style==='time') drawBitmapText(nodes.pCanvas, 'TIME', prefixScale);
+      if (st.style==='time') drawBitmapText(nodes.pCanvas, 'TIME', prefixScale, prefixColor);
       clockRow?.classList.add('bitmap-active');
       clockRow?.classList.toggle('bitmap-prefix-active', st.style==='time');
       return true;
@@ -355,8 +381,42 @@
     };
 
     const SIZE_VW = { 1:3.5, 2:5, 3:8, 4:14, 5:22 };
+    const DEFAULT_PREFIX_COLOR = '#ffff00';
+    const DEFAULT_FACE_COLOR = '#ffffff';
     const clamp = (v,min,max) => Math.min(max, Math.max(min,v));
     const pad2  = n => String(n).padStart(2,'0');
+    const normalizeColor = (value, fallback) => {
+      const raw = String(value || '').trim();
+      if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toLowerCase();
+      const rgb = raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+      if (rgb) {
+        const parts = rgb.slice(1).map(n => clamp(parseInt(n, 10) || 0, 0, 255));
+        return '#' + parts.map(n => n.toString(16).padStart(2, '0')).join('');
+      }
+      return fallback;
+    };
+    const cssColorToHex = (value, fallback = DEFAULT_FACE_COLOR) => {
+      const raw = String(value || '').trim();
+      if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toLowerCase();
+      const probe = document.createElement('span');
+      probe.style.color = raw;
+      if (!probe.style.color) return fallback;
+      document.body.appendChild(probe);
+      const computed = getComputedStyle(probe).color;
+      probe.remove();
+      const rgb = computed.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+      if (!rgb) return fallback;
+      return '#' + rgb.slice(1, 4).map(n => clamp(parseInt(n, 10) || 0, 0, 255).toString(16).padStart(2, '0')).join('');
+    };
+    const resolveThemeClockColor = color => {
+      const normalized = String(color || '').trim().toLowerCase();
+      if (!normalized || normalized === '#fff' || normalized === '#ffffff' || normalized === 'white') {
+        const rootStyles = getComputedStyle(document.documentElement);
+        return rootStyles.getPropertyValue('--page-text').trim() || getComputedStyle(document.body).color || DEFAULT_FACE_COLOR;
+      }
+      return color;
+    };
+    const resolveThemeClockHex = color => cssColorToHex(resolveThemeClockColor(color), normalizeColor(color, DEFAULT_FACE_COLOR));
 
     /* ==== STATE ==== */
     const st = {
@@ -375,6 +435,8 @@
 
       style:'default',
       size:3,
+      prefixColor:DEFAULT_PREFIX_COLOR,
+      faceColor:DEFAULT_FACE_COLOR,
 
       flashMode:'nothing', // nothing | time | prefix | all
       flashType:'time',    // time | percent
@@ -571,6 +633,31 @@
     }
     const sizeDelta = d => { st.size = clamp(st.size + d, 1, 5); applySize(); };
 
+    function applyColours(){
+      st.prefixColor = normalizeColor(st.prefixColor, DEFAULT_PREFIX_COLOR);
+      st.faceColor = normalizeColor(st.faceColor, DEFAULT_FACE_COLOR);
+      document.documentElement.style.setProperty('--timer-prefix-color', st.prefixColor);
+      const resolvedFaceColor = resolveThemeClockColor(st.faceColor);
+      document.documentElement.style.setProperty('--timer-face-color', resolvedFaceColor);
+
+      if (prefixColorInput) prefixColorInput.value = st.prefixColor.toUpperCase();
+      if (prefixColorPicker) prefixColorPicker.value = st.prefixColor;
+      const faceUiColor = resolveThemeClockHex(st.faceColor);
+      if (faceColorInput) faceColorInput.value = faceUiColor.toUpperCase();
+      if (faceColorPicker) faceColorPicker.value = faceUiColor;
+
+      if (st.fontMode === 'bitmap') renderBitmapMode();
+    }
+
+    function setTimerColour(kind, value){
+      const fallback = kind === 'prefix' ? DEFAULT_PREFIX_COLOR : DEFAULT_FACE_COLOR;
+      const next = normalizeColor(value, fallback);
+      if (kind === 'prefix') st.prefixColor = next;
+      else st.faceColor = next;
+      applyColours();
+      save();
+    }
+
     /* ==== FLASH ==== */
     function stopFlash(){
       if (st.flashTimer){ clearInterval(st.flashTimer); st.flashTimer=null; }
@@ -578,6 +665,7 @@
       timerDisplay.classList.remove('flash-face');
       if (prefixText) prefixText.classList.remove('flash-prefix-text');
       if (st.style==='icon' && prefixIcon) prefixIcon.src = ICON_NORMAL;
+      if (st.fontMode === 'bitmap') renderBitmapMode();
     }
 
     function parsePercentValue(raw){
@@ -598,49 +686,50 @@
 
     function computeFlashTrigger(){
       const base = st.tickBase;
+      if (isSplatoonFixedLastMinute()){
+        return Math.max(0, 60 * base);
+      }
+
       const raw = (st.flashValue || '').trim();
 
       if (!raw){
-        const oneMinuteTicks = 60 * base;
-        const secAligned = Math.floor(oneMinuteTicks / base) * base;
-        return Math.max(0, secAligned - 1);
-      }
-
-      if (st.flashType === 'percent'){
-        const parsed = parsePercentValue(raw);
-        const p = Number.isFinite(parsed) ? clamp(parsed, 0, 100) : 0;
-        const t = Math.floor(st.initialTicks * (p/100));
-        const secAligned = Math.floor(t / base) * base;
-        return Math.max(0, secAligned - 1);
+        return Math.max(0, 60 * base);
       }
 
       const t = parseTimeToTicks(raw, base);
       const secAligned = Math.floor(t / base) * base;
-      return Math.max(0, secAligned - 1);
+      return Math.max(0, secAligned);
+    }
+
+    function applyFlashPhase(){
+      const wantTime   = (st.flashMode==='time'   || st.flashMode==='all');
+      const wantPrefix = (st.flashMode==='prefix' || st.flashMode==='all');
+
+      timerDisplay.classList.toggle('flash-face', wantTime && st.flashPhase);
+
+      if (wantPrefix){
+        if (st.style === 'time' && prefixText){
+          prefixText.classList.toggle('flash-prefix-text', st.flashPhase);
+        } else if (st.style === 'icon' && prefixIcon){
+          prefixIcon.src = st.flashPhase ? ICON_FLASH : ICON_NORMAL;
+        }
+      } else {
+        if (prefixText) prefixText.classList.remove('flash-prefix-text');
+        if (st.style === 'icon' && prefixIcon) prefixIcon.src = ICON_NORMAL;
+      }
+
+      if (st.fontMode === 'bitmap') renderBitmapMode();
     }
 
     function startFlashIfNeeded(){
       if (st.flashTimer || st.flashMode==='nothing') return;
+      st.flashPhase = true;
+      applyFlashPhase();
 
       st.flashTimer = setInterval(() => {
         if (!st.running) return;
         st.flashPhase = !st.flashPhase;
-
-        const wantTime   = (st.flashMode==='time'   || st.flashMode==='all');
-        const wantPrefix = (st.flashMode==='prefix' || st.flashMode==='all');
-
-        timerDisplay.classList.toggle('flash-face', wantTime && st.flashPhase);
-
-        if (wantPrefix){
-          if (st.style === 'time' && prefixText){
-            prefixText.classList.toggle('flash-prefix-text', st.flashPhase);
-          } else if (st.style === 'icon' && prefixIcon){
-            prefixIcon.src = st.flashPhase ? ICON_FLASH : ICON_NORMAL;
-          }
-        } else {
-          if (prefixText) prefixText.classList.remove('flash-prefix-text');
-          if (st.style === 'icon' && prefixIcon) prefixIcon.src = ICON_NORMAL;
-        }
+        applyFlashPhase();
       }, 333);
     }
 
@@ -751,6 +840,22 @@ function ensureYT(id){
       return clamp(local * global, 0, 1);
     }
 
+    function isSplatoonNowOrNever(value = st.huValue){
+      return /\/hurryup\/Splatoon\/now_or_never-/i.test(String(value || ''));
+    }
+
+    function isSplatoonCardsNowOrNever(value = st.huValue){
+      return /\/hurryup\/Splatoon\/now_or_never-3c\.mp3(?:[?#].*)?$/i.test(String(value || ''));
+    }
+
+    function isSplatoonFixedLastMinute(value = st.huValue){
+      return isSplatoonNowOrNever(value) && !isSplatoonCardsNowOrNever(value);
+    }
+
+    function shouldLetHurryUpFinish(){
+      return st.huAudio && isSplatoonFixedLastMinute();
+    }
+
     const stopHU = () => {
       if (st.huAudio){
         try { st.huAudio.pause(); } catch {}
@@ -791,13 +896,18 @@ function ensureYT(id){
       a.volume = getHurryVolume();
 
       const isMario = MARIO_IDS.has(st.huValue) || MARIO_IDS.has(basePath.replace(/^.*\/(hurryup-[^\/]+)$/, '$1'));
+      const isSplatoonFinisher = isSplatoonFixedLastMinute(basePath);
       // Mario: pause music, play HU once, then restart music at 1.25x.
       // GGD Ship: overlay HU once (do NOT stop music).
-      a.loop = !(isMario || isGGDShip);
+      // Splatoon Now or Never: play through once so the finishing chords can land.
+      a.loop = !(isMario || isGGDShip || isSplatoonFinisher);
 
       st.huAudio = a;
 
       try { await a.play(); } catch { st.huAudio = null; return; }
+      a.addEventListener('ended', () => {
+        if (st.huAudio === a) st.huAudio = null;
+      }, { once:true });
 
       if (isMario){
         a.addEventListener('ended', () => {
@@ -827,6 +937,7 @@ function ensureYT(id){
           tickBase:st.tickBase, initial:st.initialTicks, remaining:st.remainingTicks, direction:st.direction,
           auto:st.auto, showH:st.showH, showM:st.showM, showS:st.showS, showT:st.showT,
           style:st.style, size:st.size,
+          prefixColor:st.prefixColor, faceColor:st.faceColor,
           flashMode:st.flashMode, flashType:st.flashType, flashValue:st.flashValue,
           fontMode:st.fontMode, customFontFamily:st.customFontFamily, customFontData:st.customFontData,
           musicUrl:st.musicUrl, ytId:st.ytId,
@@ -852,6 +963,8 @@ function ensureYT(id){
         st.showT = d.showT !== false;
         st.style = d.style || 'default';
         st.size  = clamp(parseInt(d.size || 3,10),1,5);
+        st.prefixColor = normalizeColor(d.prefixColor, DEFAULT_PREFIX_COLOR);
+        st.faceColor = normalizeColor(d.faceColor, DEFAULT_FACE_COLOR);
         st.flashMode  = d.flashMode || 'nothing';
         st.flashType  = d.flashType || 'time';
         st.flashValue = ('flashValue' in d) ? (d.flashValue || '') : '';
@@ -930,7 +1043,8 @@ function ensureYT(id){
     }
 
     function endReached(){
-      stopHU(); stopFlash(); stopAllBGM();
+      if (!shouldLetHurryUpFinish()) stopHU();
+      stopFlash(); stopAllBGM();
       st.running=false;
       startPauseBtn.textContent='Start';
       save();
@@ -1130,6 +1244,7 @@ function ensureYT(id){
       } else {
         applyClockFontStack(window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif');
       }
+      if (mode !== 'bitmap') clearBitmapMode();
       save();
     }
 
@@ -1158,7 +1273,11 @@ function ensureYT(id){
       });
     }
     if (fontSelect){
-      fontSelect.addEventListener('change', () => applyFont(fontSelect.value));
+      fontSelect.addEventListener('change', () => {
+        applyFont(fontSelect.value);
+        render();
+        applyFlashPhase();
+      });
     }
 
     /* ==== HURRY MENU ==== */
@@ -1187,6 +1306,7 @@ function ensureYT(id){
         if (hurryUpDesc) hurryUpDesc.textContent = d?.desc || '';
         st.huKey=hurryUpMain.value;
         st.huValue=hurryUpSub.value;
+        updateFlashControls();
         save();
       }
 
@@ -1197,11 +1317,22 @@ function ensureYT(id){
         if (hurryUpDesc) hurryUpDesc.textContent = d?.desc || '';
         st.huKey=hurryUpMain.value;
         st.huValue=hurryUpSub.value;
+        updateFlashControls();
+        stopFlash();
+        syncMinuteState();
         save();
       });
 
       hurryUpMain.value = (st.huKey in hurryUpPresets) ? st.huKey : 'none';
       refreshSub({ keepValue:true });
+    }
+
+    function updateFlashControls(){
+      if (!flashValueIn) return;
+      const fixed = isSplatoonFixedLastMinute();
+      flashValueIn.disabled = fixed;
+      flashValueIn.placeholder = fixed ? 'Fixed: 00:01:00 (One Minute)' : 'Default: 00:01:00 (One Minute)';
+      if (fixed) flashValueIn.value = '';
     }
 
     /* ==== INIT ==== */
@@ -1234,9 +1365,11 @@ function ensureYT(id){
 
     document.addEventListener('gs:theme-assets-changed', () => { if (st.fontMode==='bitmap') { resetBitmapFont(); loadBitmapFont().catch(()=>{}); } });
     applyFont(st.fontMode);
+    applyColours();
     document.documentElement.style.setProperty('--clock-vw', `${(SIZE_VW[st.size]||8)}vw`);
     render();
     populateHurryUp();
+    updateFlashControls();
     updateDirectionUI();
     setModalOffset(st.modalX || 0, st.modalY || 0);
     save();
@@ -1261,8 +1394,10 @@ function ensureYT(id){
     });
 
     openStyle && openStyle.addEventListener('click', () => showPage('style'));
+    openColours && openColours.addEventListener('click', () => showPage('colours'));
     openHurry && openHurry.addEventListener('click', () => showPage('hurry'));
     backFromStyle && backFromStyle.addEventListener('click', () => showPage('main'));
+    backFromColours && backFromColours.addEventListener('click', () => showPage('main'));
     backFromHurry && backFromHurry.addEventListener('click', () => showPage('main'));
 
     startPauseBtn.addEventListener('click', () => (st.running ? pause() : start()));
@@ -1311,9 +1446,20 @@ function ensureYT(id){
 
     styleSelect && styleSelect.addEventListener('change', () => { st.style=styleSelect.value; save(); render(); });
 
+    prefixColorInput && prefixColorInput.addEventListener('change', () => setTimerColour('prefix', prefixColorInput.value));
+    prefixColorPicker && prefixColorPicker.addEventListener('input', () => setTimerColour('prefix', prefixColorPicker.value));
+    faceColorInput && faceColorInput.addEventListener('change', () => setTimerColour('face', faceColorInput.value));
+    faceColorPicker && faceColorPicker.addEventListener('input', () => setTimerColour('face', faceColorPicker.value));
+    resetColoursBtn && resetColoursBtn.addEventListener('click', () => {
+      st.prefixColor = DEFAULT_PREFIX_COLOR;
+      st.faceColor = DEFAULT_FACE_COLOR;
+      applyColours();
+      save();
+    });
+
     flashModeSel && flashModeSel.addEventListener('change', () => { st.flashMode=flashModeSel.value; stopFlash(); save(); syncMinuteState(); });
     flashTypeSel && flashTypeSel.addEventListener('change', () => { st.flashType=flashTypeSel.value; stopFlash(); save(); syncMinuteState(); });
-    flashValueIn && flashValueIn.addEventListener('input', () => { st.flashValue=flashValueIn.value || ''; stopFlash(); save(); syncMinuteState(); });
+    flashValueIn && flashValueIn.addEventListener('input', () => { st.flashValue=isSplatoonFixedLastMinute() ? '' : (flashValueIn.value || ''); stopFlash(); save(); syncMinuteState(); });
 
     directionBtn2 && directionBtn2.addEventListener('click', flipDirection);
 
@@ -1341,7 +1487,7 @@ function ensureYT(id){
 /* ==== MUSIC UI + STATUS + SUBMIT (RESTORED) ==== */
 const statusMap = {
   unknown: { icon: './icons/question.png', tip: 'No music' },
-  loading: { icon: './icons/wait.gif',     tip: 'Fetching URL…' },
+  loading: { icon: './icons/wait.gif',     tip: 'Fetching URL...' },
   saved:   { icon: './icons/check.png',    tip: 'URL saved' },
   invalid: { icon: './icons/cross.png',    tip: 'Invalid URL' }
 };
@@ -1384,6 +1530,29 @@ if (musicStatusBtn){
 }
 
 /* YouTube helpers */
+let ytReadyPoll = null;
+
+function waitForYouTubeReady(id){
+  if (!id) return;
+  if (ytReadyPoll) clearInterval(ytReadyPoll);
+  let tries = 0;
+  ytReadyPoll = setInterval(() => {
+    if (window.YT && window.YT.Player) {
+      clearInterval(ytReadyPoll);
+      ytReadyPoll = null;
+      st.ytReady = true;
+      ensureYT(id);
+      return;
+    }
+    tries += 1;
+    if (tries >= 80) {
+      clearInterval(ytReadyPoll);
+      ytReadyPoll = null;
+      setMusicStatus('invalid');
+    }
+  }, 250);
+}
+
 function ensureYouTubeAPI(){
   if (window.YT && window.YT.Player) {
     st.ytReady = true;
@@ -1404,7 +1573,10 @@ function ensureYT(id){
   if (ytWrap) ytWrap.style.display = 'block';
 
   // If API not ready yet, wait
-  if (!window.YT || !window.YT.Player) return;
+  if (!window.YT || !window.YT.Player) {
+    waitForYouTubeReady(id);
+    return;
+  }
 
   if (st.yt){
     try { st.yt.loadVideoById(id); } catch {}
