@@ -43,7 +43,7 @@ body {
 }
 
 #display {
-    font-size: var(--clock-size, 7em);
+    font-size: calc(var(--clock-size, 7em) * var(--rtc-fit-scale, 1));
     font-family: inherit;
     letter-spacing: 0.05em;
     margin: 0.4em 0 1em 0;
@@ -128,12 +128,12 @@ body {
 
 @media (max-width: 1000px) {
     #display {
-        font-size: 4em;
+        font-size: calc(var(--clock-size, 7em) * var(--rtc-fit-scale, 1));
     }
 }
 @media (max-width: 600px) {
     #display {
-        font-size: 2.2em;
+        font-size: calc(var(--clock-size, 7em) * var(--rtc-fit-scale, 1));
     }
 }
 

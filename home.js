@@ -29,7 +29,7 @@
       title: "Real Time Clock",
       options: [
         { label: "12:34", href: "rtc/standard/", texture: "ui_clock_standard" },
-        { label: "LI:te", href: "rtc/segmented-lite/", texture: "ui_rtc_segmented_lite" },
+        { label: "LI:te", href: "rtc/segmented/", texture: "ui_rtc_segmented_lite" },
         { label: "Segmented Display", href: "rtc/segmented/", texture: "ui_rtc_segmented" }
       ]
     },

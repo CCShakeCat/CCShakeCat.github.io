@@ -369,12 +369,12 @@
           { value: './hurryup/Splatoon/now_or_never-1bDanFourts.mp3', label: 'Splatoon 1 Beta - Dan Fourts Remake', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-1.mp3', label: 'Splatoon 1 - Now or Never!', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-1e.mp3', label: 'Splatoon 1 - Now or Never! (Splatfest)', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-2.mp3', label: 'Splatoon 2 - Now or Never!', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-2d.mp3', label: 'Splatoon 2 Demo - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2.mp3', label: 'Splatoon 2 - Now or Never!', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-2e.mp3', label: 'Splatoon 2 - Now or Never! (Splatfest)', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-2f.mp3', label: 'Splatoon 2 Final Fest - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2f.mp3', label: 'Splatoon 2 - Now or Never! (Final Fest)', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-3.mp3', label: 'Splatoon 3 - Now or Never!', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-3e.mp3', label: 'Splatoon 3 - Now or Never! (Splatfests)', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-3e.mp3', label: 'Splatoon 3 - Now or Never! (Splatfest)', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-3c.mp3', label: 'Splatoon 3 TableTurf - Now or Never!', desc: 'Plays at Hurry Up start.' }
         ]
       }

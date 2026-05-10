@@ -845,6 +845,7 @@ function updateDisplay() {
   const display = document.getElementById('display');
   if (!display) return;
   const fontType = localStorage.getItem('stopwatchFontType') || localStorage.getItem('gs.clockFontMode') || savedFontType || 'default';
+  document.documentElement.style.setProperty('--rtc-fit-scale', '1');
   document.documentElement.style.setProperty('--clock-size', `${RTC_SIZE_EM[clockSize] || RTC_SIZE_EM[3]}em`);
   display.style.setProperty('color', resolveThemeClockColor(rtcClockColor), 'important');
   display.innerHTML = formatClock(new Date());
@@ -858,6 +859,18 @@ function updateDisplay() {
   } else {
     display.style.transform = "";
   }
+  requestAnimationFrame(fitDisplayToViewport);
+}
+
+function fitDisplayToViewport() {
+  const display = document.getElementById('display');
+  if (!display) return;
+  document.documentElement.style.setProperty('--rtc-fit-scale', '1');
+  const available = Math.max(160, Math.min(window.innerWidth * 0.94, 1500));
+  const width = Math.max(display.scrollWidth, display.getBoundingClientRect().width);
+  if (!Number.isFinite(width) || width <= available) return;
+  const scale = Math.max(0.18, Math.min(1, available / width));
+  document.documentElement.style.setProperty('--rtc-fit-scale', scale.toFixed(3));
 }
 
 function clampNumber(value, min, max) {
@@ -986,6 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (sizeLabel) sizeLabel.textContent = String(clockSize);
     localStorage.setItem('rtcClockSize', String(clockSize));
     requestAnimationFrame(updateMonocharMetrics);
+    requestAnimationFrame(fitDisplayToViewport);
   }
 
   function setColourMode(mode, persist = true) {
