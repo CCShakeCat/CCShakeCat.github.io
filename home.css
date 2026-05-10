@@ -431,3 +431,17 @@ body:not(.theme-dark) .launch-option:hover{
     font-size:clamp(.9rem, 3vh, 1.25rem);
   }
 }
+
+html, body,
+button, a, label, summary, details,
+[role="button"], [tabindex],
+input, select, textarea,
+.home-app, .home-settings-button, .folder-card, .folder-option {
+  cursor: default !important;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

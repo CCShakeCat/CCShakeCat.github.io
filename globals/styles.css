@@ -455,3 +455,18 @@ html.gs-modal-dragging * {
     max-height: calc(100vh - 96px);
   }
 }
+
+html, body,
+button, a, label, summary, details,
+[role="button"], [tabindex],
+input, select, textarea,
+.chip, .icon-btn, .close-btn, .global-settings-btn,
+.gs-modal-close {
+  cursor: default !important;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

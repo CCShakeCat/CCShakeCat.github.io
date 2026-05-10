@@ -437,3 +437,9 @@ body[data-style="smas"].editing #timerInput{
     gap: 0.9em;
   }
 }
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

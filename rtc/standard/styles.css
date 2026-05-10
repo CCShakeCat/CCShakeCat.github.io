@@ -62,12 +62,17 @@ body {
 
 #display .monochar {
     display: inline-block;
-    width: auto;
-    min-width: 0.45em;
+    width: var(--monochar-width, 1em);
+    min-width: var(--monochar-width, 1em);
     text-align: center;
     font-variant-numeric: tabular-nums;
     /* font-variant-numeric: tabular-nums; */
     vertical-align: baseline;
+}
+
+#display .monochar--sep {
+    width: var(--monochar-sep-width, .45em);
+    min-width: var(--monochar-sep-width, .45em);
 }
 
 #display .rtc-clock-stack {
@@ -821,6 +826,16 @@ select, input[type="text"], input[type="number"]{
   font-size:1rem !important;
   line-height:1.1 !important;
   white-space:normal !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  color:var(--page-button-text, var(--page-text, #fff)) !important;
+  background:var(--page-button-bg, #222) !important;
+  border:1px solid var(--page-border, #666) !important;
+  border-radius:12px !important;
+  text-decoration:none !important;
+  font-weight:800 !important;
+  margin-left:0 !important;
 }
 #customFontName,
 #customFontNotice{
@@ -855,7 +870,52 @@ select, input[type="text"], input[type="number"]{
   width:min(620px, 100%) !important;
 }
 
+@media (max-width: 700px){
+  #page-main > .setting-row:first-of-type{
+    flex-direction:column !important;
+    align-items:center !important;
+    gap:10px !important;
+  }
+
+  #page-main > .setting-row:first-of-type .setting-label{
+    width:auto !important;
+    text-align:center !important;
+  }
+
+  #page-main > .setting-row:first-of-type #fontSelect{
+    flex:0 0 auto !important;
+    width:100% !important;
+    max-width:100% !important;
+    height:44px !important;
+    min-height:44px !important;
+    max-height:44px !important;
+  }
+
+  #page-main > .setting-row:first-of-type #importCustomFont{
+    flex:0 0 auto !important;
+    width:auto !important;
+    max-width:100% !important;
+  }
+
+  #page-main .size-row{
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  #page-main > .chip,
+  #page-main > .global-settings-btn{
+    width:100% !important;
+  }
+}
+
 @media (max-width: 560px) {
   .channel-row{ grid-template-columns:32px minmax(120px, 1fr) 78px; gap:10px; }
   .channel-label{ font-size:1.8rem; }
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }

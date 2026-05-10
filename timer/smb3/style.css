@@ -394,3 +394,9 @@ body.no-sprite-hud #timerInput{
     gap: .9em;
   }
 }
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

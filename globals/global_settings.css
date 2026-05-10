@@ -314,9 +314,25 @@ body[data-ui-font-mode="bitmap"] .gs-page{
 
 .gs-audio-row .gs-setting-right{
   display:grid;
-  grid-template-columns:minmax(180px, 1fr) 64px;
+  grid-template-columns:auto minmax(180px, 1fr) 64px;
   gap:12px;
   align-items:center;
+}
+
+.gs-mute-btn{
+  min-width:86px;
+  min-height:38px;
+  border:1px solid var(--ui-border);
+  border-radius:14px;
+  background:var(--gs-card-2);
+  color:var(--gs-text);
+  font:inherit;
+  font-weight:900;
+}
+
+.gs-mute-btn.is-muted{
+  border-color:var(--ui-accent);
+  color:var(--ui-accent);
 }
 
 .gs-range{
@@ -1392,4 +1408,19 @@ details:hover{
       transform:translateX(0);
     }
   }
+}
+
+html, body,
+button, a, label, summary, details,
+[role="button"], [tabindex],
+input, select, textarea,
+.tab-btn, .back-btn, .font-card, .theme-card, .theme-action,
+.gs-modal-close {
+  cursor: default !important;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }

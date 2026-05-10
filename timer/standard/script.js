@@ -366,15 +366,15 @@
       splatoon: {
         label: 'Splatoon',
         sub: [
+          { value: './hurryup/Splatoon/now_or_never-1bDanFourts.mp3', label: 'Splatoon 1 Beta - Dan Fourts Remake', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-1.mp3', label: 'Splatoon 1 - Now or Never!', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-1bDanFourts.mp3', label: 'Splatoon 1 Beta - Dan Fourts', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-1e.mp3', label: 'Splatoon 1 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-1e.mp3', label: 'Splatoon 1 - Now or Never! (Splatfest)', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-2.mp3', label: 'Splatoon 2 - Now or Never!', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-2d.mp3', label: 'Splatoon 2 Demo - Now or Never!', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-2e.mp3', label: 'Splatoon 2 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-2e.mp3', label: 'Splatoon 2 - Now or Never! (Splatfest)', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-2f.mp3', label: 'Splatoon 2 Final Fest - Now or Never!', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-3.mp3', label: 'Splatoon 3 - Now or Never!', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Splatoon/now_or_never-3e.mp3', label: 'Splatoon 3 Event - Now or Never!', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Splatoon/now_or_never-3e.mp3', label: 'Splatoon 3 - Now or Never! (Splatfests)', desc: 'Plays at Hurry Up start.' },
           { value: './hurryup/Splatoon/now_or_never-3c.mp3', label: 'Splatoon 3 TableTurf - Now or Never!', desc: 'Plays at Hurry Up start.' }
         ]
       }
@@ -1223,7 +1223,34 @@ function ensureYT(id){
     function applyClockFontStack(stack){
       const resolved = stack || (window.GSGlobal?.getSystemFontStack?.() || 'system-ui, Arial, sans-serif');
       document.documentElement.style.setProperty('--clock-face-font', resolved);
+      updateMonocharMetrics();
     }
+
+    function updateMonocharMetrics(){
+      const target = timerDisplay || document.body;
+      const styles = getComputedStyle(target);
+      const fontSize = parseFloat(styles.fontSize) || 64;
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;white-space:pre;line-height:1;';
+      probe.style.font = styles.font;
+      probe.style.fontFamily = styles.fontFamily;
+      probe.style.fontVariantNumeric = 'tabular-nums';
+      document.body.appendChild(probe);
+      const measure = text => {
+        probe.textContent = text;
+        return probe.getBoundingClientRect().width / fontSize;
+      };
+      const glyphs = [...'0123456789'].map(ch => measure(ch));
+      const seps = [measure(':'), measure('.')];
+      probe.remove();
+      const clampEm = (v, min, max) => Math.min(max, Math.max(min, v));
+      const glyphWidth = clampEm(Math.max(...glyphs, 0.85) + 0.08, 0.9, 1.45);
+      const sepWidth = clampEm(Math.max(...seps, 0.3) + 0.05, 0.35, 0.75);
+      document.documentElement.style.setProperty('--monochar-width', `${glyphWidth.toFixed(3)}em`);
+      document.documentElement.style.setProperty('--monochar-sep-width', `${sepWidth.toFixed(3)}em`);
+    }
+
+    document.fonts?.ready?.then(updateMonocharMetrics).catch(()=>{});
 
     function applyFont(mode){
       st.fontMode=mode;

@@ -17,15 +17,15 @@ body{
 #timerDisplay{ font-size:var(--clock-vw); line-height:1; letter-spacing:.02em; color:#fff; user-select:none; font-family:var(--clock-face-font, inherit) }
 .monochar{
   display:inline-block;
-  width:auto;
-  min-width:0.45em;
+  width:var(--monochar-width, 1em);
+  min-width:var(--monochar-width, 1em);
   text-align:center;
   font-variant-numeric:tabular-nums;
 }
 .monochar--sep{
-  min-width:0;
-  width:auto;
-  margin-inline:.04em;
+  width:var(--monochar-sep-width, .45em);
+  min-width:var(--monochar-sep-width, .45em);
+  margin-inline:0;
 }
 
 .clock-row{ display:flex; align-items:center; gap:min(3vw,48px); padding-top:6vh }
@@ -406,4 +406,10 @@ input::placeholder{
 }
 .modal-page{
   min-height:0 !important;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }

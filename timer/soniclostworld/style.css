@@ -144,3 +144,9 @@ body {
     drop-shadow(-0.035em 0.04em 0 var(--slw-outline))
     drop-shadow(-0.055em 0.065em 0 var(--slw-shadow));
 }
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

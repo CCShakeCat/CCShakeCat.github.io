@@ -333,3 +333,9 @@ body.nsmb2-timer.warning-fill-white .monochar{
     gap: .8em;
   }
 }
+
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}

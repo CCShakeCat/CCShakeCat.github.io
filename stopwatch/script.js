@@ -441,6 +441,7 @@
       const resolved = stack || window.GSGlobal?.getDefaultFontStack?.() || "'GSFancyCatPX', sans-serif";
       document.documentElement.style.setProperty('--clock-font-stack', resolved);
       document.body.style.fontFamily = resolved;
+      updateMonocharMetrics();
     };
 
     if (val === 'bitmap') {
@@ -475,6 +476,32 @@
     setClockStack(`'${val}', sans-serif`);
   }
 
+  function updateMonocharMetrics() {
+    const target = displayEl || document.body;
+    const styles = getComputedStyle(target);
+    const fontSize = parseFloat(styles.fontSize) || 64;
+    const probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;white-space:pre;line-height:1;';
+    probe.style.font = styles.font;
+    probe.style.fontFamily = styles.fontFamily;
+    probe.style.fontVariantNumeric = 'tabular-nums';
+    document.body.appendChild(probe);
+    const measure = text => {
+      probe.textContent = text;
+      return probe.getBoundingClientRect().width / fontSize;
+    };
+    const glyphs = [...'0123456789'].map(ch => measure(ch));
+    const seps = [measure(':'), measure('.')];
+    probe.remove();
+    const clampEm = (v, min, max) => Math.min(max, Math.max(min, v));
+    const glyphWidth = clampEm(Math.max(...glyphs, 0.85) + 0.08, 0.9, 1.45);
+    const sepWidth = clampEm(Math.max(...seps, 0.3) + 0.05, 0.35, 0.75);
+    document.documentElement.style.setProperty('--monochar-width', `${glyphWidth.toFixed(3)}em`);
+    document.documentElement.style.setProperty('--monochar-sep-width', `${sepWidth.toFixed(3)}em`);
+  }
+
+  document.fonts?.ready?.then(updateMonocharMetrics).catch(() => {});
+
   // ---------- Time formatting ----------
   function readTPS() {
     if (!tpsSelect) return 40;
@@ -502,6 +529,7 @@
     document.documentElement.style.setProperty('--clock-vw', `${SIZE_VW[clockSize] || SIZE_VW[3]}vw`);
     clockRow?.classList.toggle('stacked', clockSize >= 4);
     if (sizeLabel) sizeLabel.textContent = String(clockSize);
+    requestAnimationFrame(updateMonocharMetrics);
   }
 
   function applyPrefixMode() {
@@ -841,7 +869,11 @@
     const value = String(text || '00');
     const [main, ticks] = value.split('.');
     const parts = main.split(':').filter(Boolean);
-    const line = (textValue, className = '') => `<div class="clock-line ${className}">${textValue}</div>`;
+    const monoText = textValue => [...String(textValue || '')].map(ch => {
+      const sep = ch === ':' || ch === '.';
+      return `<span class="monochar${sep ? ' monochar--sep' : ''}">${ch}</span>`;
+    }).join('');
+    const line = (textValue, className = '') => `<div class="clock-line ${className}">${monoText(textValue)}</div>`;
 
     if (clockSize >= 5) {
       const lines = parts.length ? parts : [main];
@@ -858,7 +890,7 @@
       if (ticks != null) return line(main, 'clock-line-large') + line(`.${ticks}`, 'clock-line-small');
     }
 
-    return value;
+    return monoText(value);
   }
 
   function render() {

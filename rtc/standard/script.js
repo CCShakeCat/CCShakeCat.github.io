@@ -28,7 +28,10 @@ function resolveThemeClockColor(color) {
 }
 
 function rtcMono(text) {
-  return [...String(text || '')].map(ch => `<span class="monochar">${ch}</span>`).join('');
+  return [...String(text || '')].map(ch => {
+    const sep = ch === ':' || ch === '.';
+    return `<span class="monochar${sep ? ' monochar--sep' : ''}">${ch}</span>`;
+  }).join('');
 }
 
 function rtcStackedClock(mainText, suffixText = '') {
@@ -776,7 +779,34 @@ function applyFontFamily(fontType) {
   document.documentElement.style.setProperty('--clock-font-stack', fontStack);
   if (sw) sw.style.fontFamily = fontStack;
   localStorage.setItem('stopwatchFont', fontStack);
+  updateMonocharMetrics();
 }
+
+function updateMonocharMetrics() {
+  const target = document.getElementById('display') || document.body;
+  const styles = getComputedStyle(target);
+  const fontSize = parseFloat(styles.fontSize) || 64;
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;white-space:pre;line-height:1;';
+  probe.style.font = styles.font;
+  probe.style.fontFamily = styles.fontFamily;
+  probe.style.fontVariantNumeric = 'tabular-nums';
+  document.body.appendChild(probe);
+  const measure = text => {
+    probe.textContent = text;
+    return probe.getBoundingClientRect().width / fontSize;
+  };
+  const glyphs = [...'0123456789'].map(ch => measure(ch));
+  const seps = [measure(':'), measure('.')];
+  probe.remove();
+  const clampEm = (v, min, max) => Math.min(max, Math.max(min, v));
+  const glyphWidth = clampEm(Math.max(...glyphs, 0.85) + 0.08, 0.9, 1.45);
+  const sepWidth = clampEm(Math.max(...seps, 0.3) + 0.05, 0.35, 0.75);
+  document.documentElement.style.setProperty('--monochar-width', `${glyphWidth.toFixed(3)}em`);
+  document.documentElement.style.setProperty('--monochar-sep-width', `${sepWidth.toFixed(3)}em`);
+}
+
+document.fonts?.ready?.then(updateMonocharMetrics).catch(() => {});
 function applyAndSaveFont(type) {
   if (type === 'system') {
     applyFontFamily('system');
@@ -955,6 +985,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.style.setProperty('--clock-size', `${RTC_SIZE_EM[clockSize] || RTC_SIZE_EM[3]}em`);
     if (sizeLabel) sizeLabel.textContent = String(clockSize);
     localStorage.setItem('rtcClockSize', String(clockSize));
+    requestAnimationFrame(updateMonocharMetrics);
   }
 
   function setColourMode(mode, persist = true) {

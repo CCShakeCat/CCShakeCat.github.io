@@ -11,10 +11,10 @@
   const clockFontSelect = $("#gsClockFontSelect");
   const animScaleSelect = $("#gsAnimScaleSelect");
   const audioSliders = [
-    { kind: "master", input: $("#gsVolumeMaster"), output: $("#gsVolumeMasterValue") },
-    { kind: "music", input: $("#gsVolumeMusic"), output: $("#gsVolumeMusicValue") },
-    { kind: "hurry", input: $("#gsVolumeHurry"), output: $("#gsVolumeHurryValue") },
-    { kind: "warning", input: $("#gsVolumeWarning"), output: $("#gsVolumeWarningValue") }
+    { kind: "master", input: $("#gsVolumeMaster"), output: $("#gsVolumeMasterValue"), mute: $("#gsMuteMaster") },
+    { kind: "music", input: $("#gsVolumeMusic"), output: $("#gsVolumeMusicValue"), mute: $("#gsMuteMusic") },
+    { kind: "hurry", input: $("#gsVolumeHurry"), output: $("#gsVolumeHurryValue"), mute: $("#gsMuteHurry") },
+    { kind: "warning", input: $("#gsVolumeWarning"), output: $("#gsVolumeWarningValue"), mute: $("#gsMuteWarning") }
   ];
   const uiFontRow = $("#gsOpenSettingsFontAdvanced");
   const clockFontRow = $("#gsOpenClockFontAdvanced");
@@ -50,6 +50,7 @@
   const CLOCK_CUSTOM_FONT_FAMILY_KEY = "gs.clockCustomFontFamily";
   const BITMAP_FONT_DATA_KEY = "gs.bitmapFontData";
   const BITMAP_FONT_NAME_KEY = "gs.bitmapFontName";
+  const audioMuteMemoryKey = kind => `gs.audio.${kind}.beforeMute`;
 
 
   try {
@@ -450,6 +451,12 @@
     item.input.value = String(percent);
     item.input.style.setProperty("--gs-range-value", `${percent}%`);
     if (item.output) item.output.textContent = `${percent}%`;
+    if (item.mute) {
+      const muted = percent <= 0;
+      item.mute.classList.toggle("is-muted", muted);
+      item.mute.textContent = muted ? "Unmute" : "Mute";
+      item.mute.setAttribute("aria-pressed", muted ? "true" : "false");
+    }
   }
 
   function syncAudioSliders() {
@@ -469,6 +476,24 @@
       } else {
         window.GSGlobal?.playSliderSound?.(item.kind);
       }
+    });
+
+    item.mute?.addEventListener("click", event => {
+      event.gsSoundHandled = true;
+      const current = window.GSGlobal?.getAudioVolume?.(item.kind) ?? 1;
+      if (current > 0) {
+        localStorage.setItem(audioMuteMemoryKey(item.kind), String(current));
+        window.GSGlobal?.setAudioVolume?.(item.kind, 0);
+        syncAudioSlider(item);
+        window.GSGlobal?.playUISound?.("cancel");
+        return;
+      }
+
+      const remembered = Number(localStorage.getItem(audioMuteMemoryKey(item.kind)));
+      const next = Number.isFinite(remembered) && remembered > 0 ? remembered : 1;
+      window.GSGlobal?.setAudioVolume?.(item.kind, next);
+      syncAudioSlider(item);
+      window.GSGlobal?.playUISound?.("unmute");
     });
   });
 
