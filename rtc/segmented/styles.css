@@ -3,25 +3,32 @@
   src: url('fonts/FancyCatPX.ttf') format('truetype');
 }
 
+:root {
+  --seg-bg: #000000;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   overscroll-behavior: none;
+  background: var(--seg-bg);
 }
 
 body {
   font-family: 'FancyCatPX', sans-serif;
   color: #fff;
-  background: #000;
+  background: var(--seg-bg);
   overflow: hidden;
+  min-height: 100dvh;
 }
 
 .clock-shell {
   width: 100vw;
   height: 100vh;
   position: relative;
+  background: var(--seg-bg);
 }
 
 #settingsBtn {
@@ -75,13 +82,14 @@ body {
   display: inline-flex;
   align-items: flex-start;
   justify-content: center;
-  gap: var(--seg-char-gap);
+  gap: 0;
+  line-height: 0;
   white-space: nowrap;
 }
 
 :root {
-  --seg-char-gap: 0.015em;
-  --seg-sep-gap: 0.006em;
+  --seg-char-gap: 0;
+  --seg-sep-gap: 0;
   --digit-scale: 1;
   --digit-skew: 0deg;
 
@@ -101,6 +109,7 @@ body {
   overflow: hidden;
   transform: skewX(var(--digit-skew));
   transform-origin: center center;
+  margin: 0;
 }
 
 .seg-canvas-img {
@@ -110,6 +119,7 @@ body {
   image-rendering: pixelated;
   user-select: none;
   pointer-events: none;
+  transform: translateZ(0);
 }
 
 .seg-separator {
@@ -118,7 +128,7 @@ body {
   height: calc(var(--digit-height-px) * 1px * var(--digit-scale));
   display: inline-block;
   flex: 0 0 auto;
-  margin-inline: var(--seg-sep-gap);
+  margin: 0 var(--seg-sep-gap);
   transform: skewX(var(--digit-skew));
   transform-origin: center center;
 }

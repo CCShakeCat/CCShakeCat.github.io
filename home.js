@@ -6,6 +6,7 @@
   const launchMenu = document.getElementById("launchMenu");
   const launchMenuTitle = document.getElementById("launchMenuTitle");
   const launchMenuGrid = document.getElementById("launchMenuGrid");
+  const launchMenuCard = launchMenu?.querySelector?.(".launch-menu-card");
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const HOME_LEFT_SESSION_KEY = "gs.homeLeftThisSession";
@@ -17,6 +18,8 @@
     ["ui_clock_standard", "globals/icons/ui_clock_standard.png"],
     ["ui_rtc_segmented", "globals/icons/ui_rtc_segmented.png"],
     ["ui_rtc_segmented_lite", "globals/icons/ui_rtc_segmented_lite.png"],
+    ["ui_timer_segmented", "globals/icons/ui_rtc_segmented.png"],
+    ["ui_stopwatch_segmented", "globals/icons/ui_rtc_segmented.png"],
     ["ui_SMB", "globals/icons/ui_SMB.png"],
     ["ui_SMB3", "globals/icons/ui_SMB3.png"],
     ["ui_SMW", "globals/icons/ui_SMW.png"],
@@ -37,12 +40,20 @@
       title: "Timer",
       options: [
         { label: "Standard", href: "timer/standard/", texture: "ui_clock_standard" },
+        { label: "Segmented Display", href: "timer/segmented/", texture: "ui_timer_segmented" },
         { label: "Super Mario Bros", href: "timer/smb/", texture: "ui_SMB" },
         { label: "Super Mario Bros. 3", href: "timer/smb3/", texture: "ui_SMB3" },
         { label: "Super Mario World", href: "timer/smw/", texture: "ui_SMW" },
         { label: "New Super Mario Bros", href: "timer/nsmb/", texture: "ui_NSMB" },
         { label: "Super Mario 3D Land", href: "timer/3D/", texture: "ui_3DL" },
         { label: "Sonic Lost World", href: "timer/soniclostworld/", texture: "ui_SLW" }
+      ]
+    },
+    stopwatch: {
+      title: "Stopwatch",
+      options: [
+        { label: "Standard", href: "stopwatch/", texture: "ui_stopwatch" },
+        { label: "Segmented Display", href: "stopwatch/segmented/", texture: "ui_stopwatch_segmented" }
       ]
     }
   };
@@ -146,6 +157,7 @@
     if (!launchMenu) return;
     launchMenu.hidden = true;
     launchMenuGrid.innerHTML = "";
+    launchMenuCard?.querySelector?.(".launch-menu-back")?.remove();
   }
 
   async function openLaunchMenu(kind) {
@@ -154,11 +166,26 @@
 
     launchMenuTitle.textContent = menu.title;
     launchMenuGrid.innerHTML = "";
+    launchMenuCard?.querySelector?.(".launch-menu-back")?.remove();
+
+    if (menu.parent && launchMenuCard) {
+      const back = document.createElement("button");
+      back.className = "launch-menu-back";
+      back.type = "button";
+      back.textContent = "< Back";
+      back.addEventListener("click", () => openLaunchMenu(menu.parent));
+      launchMenuCard.insertBefore(back, launchMenuTitle);
+    }
 
     for (const option of menu.options) {
-      const link = document.createElement("a");
+      const link = option.menu ? document.createElement("button") : document.createElement("a");
       link.className = "launch-option";
-      link.href = option.href;
+      if (option.menu) {
+        link.type = "button";
+        link.addEventListener("click", () => openLaunchMenu(option.menu));
+      } else {
+        link.href = option.href;
+      }
 
       const icon = document.createElement("span");
       icon.className = "launch-option-icon";

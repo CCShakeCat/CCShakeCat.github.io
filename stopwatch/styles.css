@@ -23,6 +23,12 @@ body{
   overscroll-behavior:none;
 }
 
+html{
+  background:var(--page-bg, #000) !important;
+  overscroll-behavior:none;
+  overscroll-behavior-y:none;
+}
+
 .sr-only{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 
 /* ===== Stopwatch ===== */
@@ -74,23 +80,24 @@ body{
 
   letter-spacing: 0;
   font-kerning: none;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: normal;
 }
 
-/* Fixed-width boxes for each glyph */
 .monochar{
-  display:inline-block;
+  display:inline-flex;
   width:var(--monochar-width, 1em);
   min-width:var(--monochar-width, 1em);
+  margin-inline:var(--monochar-spacing, .015em);
+  justify-content:center;
   text-align:center;
   line-height: 1;
   transform: translateY(0);
-  font-variant-numeric:tabular-nums;
+  font-variant-numeric:normal;
 }
 .monochar--sep{
   width:var(--monochar-sep-width, .45em);
   min-width:var(--monochar-sep-width, .45em);
-  margin-inline:0;
+  margin-inline:var(--monochar-sep-spacing, .01em);
 }
 .clock-line{
   display:block;
@@ -437,8 +444,29 @@ body{
   padding:8px 10px;
 }
 .channel-row input[type="range"]{
+  -webkit-appearance:none;
+  appearance:none;
   width:100%;
+  height:14px;
+  border-radius:999px;
+  background:var(--channel-track, var(--ui-accent, #4f7dff));
   accent-color:var(--ui-accent, #4f7dff);
+}
+.channel-row input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:2px solid #777;
+  background:#fff;
+}
+.channel-row input[type="range"]::-moz-range-thumb{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:2px solid #777;
+  background:#fff;
 }
 
 .setting-row{

@@ -105,8 +105,16 @@
     return sections.find(sec => sec.dataset.section === sectionName) || null;
   }
 
+  function getThemeControlMode() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--theme-control-mode").trim();
+  }
+
+  function usesCyclingControls() {
+    return getThemeControlMode() === "minecraft-cycle";
+  }
+
   function isMobileView() {
-    return window.matchMedia('(max-width: 900px)').matches;
+    return window.matchMedia('(max-width: 900px)').matches || usesCyclingControls();
   }
 
   function getAnimMs() {
@@ -330,6 +338,7 @@
   });
 
   window.addEventListener('resize', syncLayoutState);
+  document.addEventListener('gs:theme-assets-changed', syncLayoutState);
 
   function changelogCards() {
     const aboutSection = getSection('about');
@@ -978,6 +987,72 @@
     if (themeSelect) themeSelect.value = "custom";
     await renderThemeList();
   }
+
+  function cycleSelect(select) {
+    const options = Array.from(select.options || []).filter(option => !option.disabled);
+    if (!options.length) return;
+
+    const currentIndex = Math.max(0, options.findIndex(option => option.value === select.value));
+    const next = options[(currentIndex + 1) % options.length];
+    if (!next) return;
+
+    select.value = next.value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function openCyclingCustomOptions(select) {
+    if (select === uiFontSelect) {
+      openFontModal("ui");
+      return true;
+    }
+
+    if (select === clockFontSelect) {
+      openFontModal("clock");
+      return true;
+    }
+
+    if (select === themeSelect) {
+      const themesBtn = document.querySelector('.gs-nav-btn[data-section="themes"]');
+      themesBtn?.click();
+      return true;
+    }
+
+    return false;
+  }
+
+  document.addEventListener("pointerdown", event => {
+    if (!usesCyclingControls()) return;
+
+    const select = event.target?.closest?.("select");
+    if (!select) return;
+
+    if (event.shiftKey && String(select.value || "").toLowerCase() === "custom") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openCyclingCustomOptions(select);
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    cycleSelect(select);
+  }, true);
+
+  document.addEventListener("keydown", event => {
+    if (!usesCyclingControls()) return;
+
+    const select = event.target?.closest?.("select");
+    if (!select || (event.key !== "Enter" && event.key !== " ")) return;
+
+    if (event.shiftKey && String(select.value || "").toLowerCase() === "custom") {
+      event.preventDefault();
+      openCyclingCustomOptions(select);
+      return;
+    }
+
+    event.preventDefault();
+    cycleSelect(select);
+  }, true);
 
   if (themeSelect) {
     themeSelect.addEventListener("change", async () => {

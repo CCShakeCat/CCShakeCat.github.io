@@ -17,6 +17,7 @@ const RTC_SIZE_EM = { 1: 2.6, 2: 4, 3: 7, 4: 11, 5: 16 };
 let clockSize = Math.min(5, Math.max(1, parseInt(localStorage.getItem('rtcClockSize') || '3', 10) || 3));
 let rtcClockColor = localStorage.getItem('rtcClockColor') || '#ffffff';
 let rtcColourEditorMode = localStorage.getItem('rtcColourEditorMode') || 'rgb';
+let rtcHsvDraft = null;
 
 function resolveThemeClockColor(color) {
   const normalized = String(color || '').trim().toLowerCase();
@@ -25,6 +26,23 @@ function resolveThemeClockColor(color) {
     return rootStyles.getPropertyValue('--page-text').trim() || getComputedStyle(document.body).color || '#ffffff';
   }
   return color;
+}
+
+function setColourSliderVisual(rangeEl, track) {
+  if (!rangeEl) return;
+  rangeEl.style.setProperty('--channel-track', track);
+}
+
+function refreshColourSliderVisuals() {
+  setColourSliderVisual(document.getElementById('rgbRRange'), '#ff2a2a');
+  setColourSliderVisual(document.getElementById('rgbGRange'), '#1ee66c');
+  setColourSliderVisual(document.getElementById('rgbBRange'), '#2b7fff');
+  setColourSliderVisual(
+    document.getElementById('hsvHRange'),
+    'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
+  );
+  setColourSliderVisual(document.getElementById('hsvSRange'), 'linear-gradient(to right, #777777, #ffffff)');
+  setColourSliderVisual(document.getElementById('hsvVRange'), 'linear-gradient(to right, #000000, #ffffff)');
 }
 
 function rtcMono(text) {
@@ -790,7 +808,7 @@ function updateMonocharMetrics() {
   probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;white-space:pre;line-height:1;';
   probe.style.font = styles.font;
   probe.style.fontFamily = styles.fontFamily;
-  probe.style.fontVariantNumeric = 'tabular-nums';
+  probe.style.fontVariantNumeric = 'normal';
   document.body.appendChild(probe);
   const measure = text => {
     probe.textContent = text;
@@ -1004,6 +1022,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setColourMode(mode, persist = true) {
     rtcColourEditorMode = mode === 'hsv' ? 'hsv' : 'rgb';
+    if (rtcColourEditorMode === 'hsv' && !rtcHsvDraft) {
+      const rgb = hexToRgb(parseCssColor(resolveThemeClockColor(rtcClockColor)) || parseCssColor(rtcClockColor) || '#ffffff') || { r: 255, g: 255, b: 255 };
+      rtcHsvDraft = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    }
     colourModeRGB?.classList.toggle('active', rtcColourEditorMode === 'rgb');
     colourModeHSV?.classList.toggle('active', rtcColourEditorMode === 'hsv');
     rgbEditor?.classList.toggle('active', rtcColourEditorMode === 'rgb');
@@ -1016,10 +1038,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (numberEl) numberEl.value = String(value);
   }
 
+  function getRtcEditorHsv(rgb) {
+    return rtcColourEditorMode === 'hsv' && rtcHsvDraft ? rtcHsvDraft : rgbToHsv(rgb.r, rgb.g, rgb.b);
+  }
+
   function syncColourEditorUI() {
     const hex = parseCssColor(resolveThemeClockColor(rtcClockColor)) || parseCssColor(rtcClockColor) || '#ffffff';
     const rgb = hexToRgb(hex) || { r: 255, g: 255, b: 255 };
-    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    const hsv = getRtcEditorHsv(rgb);
     if (colourValue) colourValue.value = hex;
     if (colourPreview) colourPreview.style.background = hex;
     setInputPair(rgbRRange, rgbRInput, rgb.r);
@@ -1028,15 +1054,17 @@ document.addEventListener("DOMContentLoaded", () => {
     setInputPair(hsvHRange, hsvHInput, hsv.h);
     setInputPair(hsvSRange, hsvSInput, hsv.s);
     setInputPair(hsvVRange, hsvVInput, hsv.v);
+    refreshColourSliderVisuals();
     setColourMode(rtcColourEditorMode, false);
   }
 
-  function commitClockColour(value) {
+  function commitClockColour(value, preserveHsvDraft = false) {
     const parsed = parseCssColor(value);
     if (!parsed) {
       syncColourEditorUI();
       return;
     }
+    if (!preserveHsvDraft) rtcHsvDraft = null;
     rtcClockColor = parsed;
     localStorage.setItem('rtcClockColor', rtcClockColor);
     syncColourEditorUI();
@@ -1230,7 +1258,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   colourModeRGB?.addEventListener('click', () => setColourMode('rgb'));
   colourModeHSV?.addEventListener('click', () => setColourMode('hsv'));
-  colourValue?.addEventListener('change', () => commitClockColour(colourValue.value));
+  colourValue?.addEventListener('change', () => {
+    rtcHsvDraft = null;
+    commitClockColour(colourValue.value);
+  });
 
   [
     [rgbRRange, rgbRInput],
@@ -1239,11 +1270,13 @@ document.addEventListener("DOMContentLoaded", () => {
   ].forEach(([rangeEl, inputEl]) => {
     rangeEl?.addEventListener('input', event => {
       event.gsSoundHandled = true;
+      rtcHsvDraft = null;
       if (inputEl) inputEl.value = rangeEl.value;
       commitClockColour(rgbToHex(rgbRInput?.value ?? rgbRRange?.value, rgbGInput?.value ?? rgbGRange?.value, rgbBInput?.value ?? rgbBRange?.value));
     });
     inputEl?.addEventListener('input', event => {
       event.gsSoundHandled = true;
+      rtcHsvDraft = null;
       if (rangeEl) rangeEl.value = inputEl.value;
       commitClockColour(rgbToHex(rgbRInput?.value ?? rgbRRange?.value, rgbGInput?.value ?? rgbGRange?.value, rgbBInput?.value ?? rgbBRange?.value));
     });
@@ -1257,18 +1290,28 @@ document.addEventListener("DOMContentLoaded", () => {
     rangeEl?.addEventListener('input', event => {
       event.gsSoundHandled = true;
       if (inputEl) inputEl.value = rangeEl.value;
-      const rgb = hsvToRgb(hsvHInput?.value ?? hsvHRange?.value, hsvSInput?.value ?? hsvSRange?.value, hsvVInput?.value ?? hsvVRange?.value);
-      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+      rtcHsvDraft = {
+        h: clamp(parseFloat(hsvHInput?.value ?? hsvHRange?.value) || 0, 0, 360),
+        s: clamp(parseFloat(hsvSInput?.value ?? hsvSRange?.value) || 0, 0, 100),
+        v: clamp(parseFloat(hsvVInput?.value ?? hsvVRange?.value) || 0, 0, 100)
+      };
+      const rgb = hsvToRgb(rtcHsvDraft.h, rtcHsvDraft.s, rtcHsvDraft.v);
+      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b), true);
     });
     inputEl?.addEventListener('input', event => {
       event.gsSoundHandled = true;
       if (rangeEl) rangeEl.value = inputEl.value;
-      const rgb = hsvToRgb(hsvHInput?.value ?? hsvHRange?.value, hsvSInput?.value ?? hsvSRange?.value, hsvVInput?.value ?? hsvVRange?.value);
-      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+      rtcHsvDraft = {
+        h: clamp(parseFloat(hsvHInput?.value ?? hsvHRange?.value) || 0, 0, 360),
+        s: clamp(parseFloat(hsvSInput?.value ?? hsvSRange?.value) || 0, 0, 100),
+        v: clamp(parseFloat(hsvVInput?.value ?? hsvVRange?.value) || 0, 0, 100)
+      };
+      const rgb = hsvToRgb(rtcHsvDraft.h, rtcHsvDraft.s, rtcHsvDraft.v);
+      commitClockColour(rgbToHex(rgb.r, rgb.g, rgb.b), true);
     });
   });
 
-  resetColours?.addEventListener('click', () => commitClockColour('#ffffff'));
+  resetColours?.addEventListener('click', () => { rtcHsvDraft = null; commitClockColour('#ffffff'); });
 
   importCustomFont.addEventListener('click', () => {
     customFontFile.value = '';
@@ -1363,6 +1406,10 @@ document.addEventListener("DOMContentLoaded", () => {
   applyClockSize();
   syncColourEditorUI();
   updateDisplay();
+  document.addEventListener('gs:theme-assets-changed', () => {
+    syncColourEditorUI();
+    updateDisplay();
+  });
 
   let interval = null;
   function setClockInterval() {

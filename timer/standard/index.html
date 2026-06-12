@@ -88,6 +88,9 @@
           <div class="row center" style="margin-top:6px;">
             <input id="musicUrlInput" class="grow" type="text" placeholder="Paste YouTube, or direct audio URL..." />
             <button id="musicUrlSubmitBtn" class="chip">Submit</button>
+            <button id="musicUploadBtn" class="chip" type="button">Upload</button>
+            <button id="musicPauseBtn" class="chip" type="button" aria-pressed="false">Pause Music</button>
+            <input id="musicUploadFile" type="file" accept="audio/*,.mp3,.ogg,.wav,.m4a,.aac,.flac" hidden />
 
             <div class="status-wrapper">
               <button id="musicStatusBtn" class="status-btn" aria-label="Music status">
@@ -95,6 +98,12 @@
               </button>
               <div id="musicStatusTip" class="status-tip">No music</div>
             </div>
+          </div>
+
+          <div class="row center music-volume-row" style="margin-top:6px;">
+            <label class="lbl" for="musicVolume">Music Volume</label>
+            <input id="musicVolume" class="grow" type="range" min="0" max="100" value="100" />
+            <span id="musicVolumeLabel" class="lbl">100%</span>
           </div>
 
           <!-- Mini players INSIDE the modal -->
@@ -118,18 +127,59 @@
         <button id="backFromColours" class="modal-back-btn">&lt; Back</button>
         <h2 class="lbl" style="text-align:center;margin:0 0 6px;">Colour Customization</h2>
 
-        <div class="stack colour-stack">
-          <label class="colour-row">
+        <div class="stack colour-stack" data-no-ui-sound data-no-drag>
+          <label class="colour-row active" data-timer-colour-row="prefix">
             <span class="lbl">Prefix text colour</span>
             <input id="prefixColorInput" type="text" value="#FFFF00" aria-label="Prefix text colour">
-            <input id="prefixColorPicker" type="color" value="#ffff00" aria-label="Pick prefix text colour">
+            <button id="prefixColorPicker" class="color-preview-btn" type="button" aria-label="Edit prefix text colour"></button>
           </label>
 
-          <label class="colour-row">
+          <label class="colour-row" data-timer-colour-row="face">
             <span class="lbl">Face colour</span>
             <input id="faceColorInput" type="text" value="#FFFFFF" aria-label="Face colour">
-            <input id="faceColorPicker" type="color" value="#ffffff" aria-label="Pick face colour">
+            <button id="faceColorPicker" class="color-preview-btn" type="button" aria-label="Edit face colour"></button>
           </label>
+
+          <div class="colour-mode-row" style="margin-top:8px;">
+            <button type="button" id="timerColourModeRGB" class="colour-mode-btn active">RGB</button>
+            <button type="button" id="timerColourModeHSV" class="colour-mode-btn">HSV</button>
+          </div>
+
+          <div id="timerRgbEditor" class="colour-editor active">
+            <div class="channel-row">
+              <div class="channel-label">R</div>
+              <input type="range" id="timerRgbRRange" min="0" max="255" step="1">
+              <input type="number" id="timerRgbRInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">G</div>
+              <input type="range" id="timerRgbGRange" min="0" max="255" step="1">
+              <input type="number" id="timerRgbGInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">B</div>
+              <input type="range" id="timerRgbBRange" min="0" max="255" step="1">
+              <input type="number" id="timerRgbBInput" class="channel-number" min="0" max="255" step="1">
+            </div>
+          </div>
+
+          <div id="timerHsvEditor" class="colour-editor">
+            <div class="channel-row">
+              <div class="channel-label">H</div>
+              <input type="range" id="timerHsvHRange" min="0" max="360" step="1">
+              <input type="number" id="timerHsvHInput" class="channel-number" min="0" max="360" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">S</div>
+              <input type="range" id="timerHsvSRange" min="0" max="100" step="1">
+              <input type="number" id="timerHsvSInput" class="channel-number" min="0" max="100" step="1">
+            </div>
+            <div class="channel-row">
+              <div class="channel-label">V</div>
+              <input type="range" id="timerHsvVRange" min="0" max="100" step="1">
+              <input type="number" id="timerHsvVInput" class="channel-number" min="0" max="100" step="1">
+            </div>
+          </div>
 
           <div class="row center" style="margin-top:8px;">
             <button id="resetColours" class="chip grow" type="button">Reset to Default</button>
@@ -163,7 +213,7 @@
               <option>10</option>
               <option>20</option>
               <option>30</option>
-              <option selected>40 (Default)</option>
+              <option value="40" selected>40 (Default)</option>
               <option>50</option>
               <option>60</option>
               <option>70</option>
@@ -186,11 +236,12 @@
           <!-- Direction summary -->
           <div class="stack" style="margin-top:12px;">
             <div class="row center align-center">
-              <span class="lbl">Count</span>
-              <button id="directionBtn_style" class="chip">FROM</button>
-              <span class="target-time" id="directionTarget_style">00:00:00.00</span>
-              <span class="muted"> (ends at <span id="directionEnds_style">00:00:00.00</span>)</span>
+              <span class="lbl">Count TO</span>
+              <button id="directionBtn_style" class="chip">00:00:00.00</button>
+              <button id="directionTarget_style" class="chip">00:00:00.00</button>
+              <button id="directionTime_style" class="chip">TIME</button>
             </div>
+            <div id="directionEnds_style" class="tiny muted" style="text-align:center;"></div>
           </div>
 
         </div>
@@ -224,14 +275,16 @@
             <span id="hurryVolumeLabel" class="tiny">100%</span>
           </div>
 
-          <!-- Ten-second countdown toggle -->
+          <!-- Ten-second countdown warning -->
           <div class="row center align-center" style="margin-top:6px;">
-            <label class="lbl" for="tenSecondBeep">Count Down Ten Seconds</label>
-            <input
-              id="tenSecondBeep"
-              type="checkbox"
-              style="margin-left:8px;"
-            />
+            <label class="lbl" for="tenSecondWarningSound">Play</label>
+            <select id="tenSecondWarningSound" class="grow">
+              <option value="none">No Sound</option>
+              <option value="sonic">Sonic Advance</option>
+              <option value="soniccd">Sonic CD</option>
+              <option value="mario">Super Mario 3D Land</option>
+            </select>
+            <label class="lbl" for="tenSecondWarningSound">sound when timer is at 10 seconds left</label>
           </div>
           <hr style="border:0;border-top:1px solid #333;margin:10px 0 0;">
 
@@ -248,6 +301,17 @@
           <div class="row center align-center">
             <span class="lbl">Start flash at</span>
             <input id="flashValue" type="text" placeholder="Default: 00:01:00 (One Minute)" />
+          </div>
+
+          <div class="row center align-center">
+            <label class="lbl" for="flashSpeed">Flash Style:</label>
+            <select id="flashSpeed" class="grow">
+              <option value="off">OFF</option>
+              <option value="genesis">Sonic Genesis</option>
+              <option value="triple">Sonic Triple Trouble 16 Bit</option>
+              <option value="progressive">Progressive</option>
+              <option value="superstars">Sonic Superstars</option>
+            </select>
           </div>
 
         </div>

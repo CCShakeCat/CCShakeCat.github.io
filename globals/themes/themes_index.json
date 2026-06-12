@@ -1,19 +1,34 @@
-{
-  "schema_version": 1,
-  "defaults": {
-    "light": "light",
-    "dark": "dark"
-  },
-  "packs": [
-    {
-      "id": "light",
-      "folder": "theme_light",
-      "label": "Light Mode"
-    },
-    {
-      "id": "dark",
-      "folder": "theme_dark",
-      "label": "Dark Mode"
-    }
-  ]
+﻿{
+    "schema_version":  1,
+    "defaults":  {
+                     "light":  "light",
+                     "dark":  "dark"
+                 },
+    "packs":  [
+                  {
+                      "id":  "light",
+                      "folder":  "theme_light",
+                      "label":  "Light Mode"
+                  },
+                  {
+                      "id":  "dark",
+                      "folder":  "theme_dark",
+                      "label":  "Dark Mode"
+                  },
+                  {
+                      "id":  "ios_light",
+                      "folder":  "ios_light",
+                      "label":  "iOS Light"
+                  },
+                  {
+                      "id":  "ios_dark",
+                      "folder":  "ios_dark",
+                      "label":  "iOS Dark"
+                  },
+                  {
+                      "id":  "minecraft_java",
+                      "folder":  "minecraft_java",
+                      "label":  "Minecraft Java UI"
+                  }
+              ]
 }

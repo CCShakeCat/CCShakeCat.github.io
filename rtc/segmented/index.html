@@ -65,6 +65,8 @@
                 <option value="default">Default</option>
                 <option value="classic">Classic</option>
                 <option value="modern">Modern</option>
+                <option value="lcd">Classic LCD</option>
+                <option value="lcdInverted">Inverted LCD</option>
                 <option value="custom">Custom</option>
               </select>
             </div>
@@ -238,10 +240,18 @@
             </div>
 
             <div class="seg-field color-field">
-              <label for="optActiveColor">HEX / CSS</label>
+              <label for="optActiveColor">Face Colour</label>
               <div class="color-input-row">
                 <input type="text" id="optActiveColor" placeholder="#FFFFFF or rgb(255,255,255)">
                 <button type="button" id="activeColorPreview" class="color-preview-btn" aria-label="Active colour preview"></button>
+              </div>
+            </div>
+
+            <div class="seg-field color-field">
+              <label for="optBackgroundColor">Background</label>
+              <div class="color-input-row">
+                <input type="text" id="optBackgroundColor" placeholder="#000000 or rgb(0,0,0)">
+                <button type="button" id="backgroundColorPreview" class="color-preview-btn" aria-label="Background colour preview"></button>
               </div>
             </div>
 

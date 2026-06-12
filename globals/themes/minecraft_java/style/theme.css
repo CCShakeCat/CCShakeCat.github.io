@@ -1,0 +1,603 @@
+:root{
+  --theme-control-mode:minecraft-cycle;
+  --theme-bg:#202020;
+  --theme-panel:transparent;
+  --theme-panel-2:transparent;
+  --theme-fg:#ffffff;
+  --theme-muted:#d6d6d6;
+  --theme-subtle:#b8b8b8;
+  --theme-accent:#ffffff;
+  --theme-accent-2:#ffffa0;
+  --page-bg:var(--theme-bg);
+  --page-text:var(--theme-fg);
+  --page-panel:transparent;
+  --page-border:#000000;
+  --mc-button:#7f7f7f;
+  --mc-button-hover:#9d9d9d;
+  --mc-button-disabled:#4f4f4f;
+  --mc-light:#bdbdbd;
+  --mc-mid:#555555;
+  --mc-dark:#1f1f1f;
+  --mc-shadow:#3f3f3f;
+  --mc-menu-width:min(760px, 86vw);
+  --mc-button-img:url("../textures/button.png");
+  --mc-button-hover-img:url("../textures/button_hover.png");
+  --mc-button-press-img:url("../textures/button_press.png");
+  --mc-button-disabled-img:url("../textures/button_disabled.png");
+  --mc-dropdown-img:url("../textures/dropdown.png");
+  --mc-dropdown-hover-img:url("../textures/dropdown_hover.png");
+  --mc-dropdown-press-img:url("../textures/dropdown_press.png");
+  --mc-slider-img:url("../textures/slider.png");
+  --mc-slider-hover-img:url("../textures/slider_hover.png");
+  --mc-slider-press-img:url("../textures/slider_press.png");
+  --mc-check-img:url("../textures/check.png");
+  --mc-check-hover-img:url("../textures/check_hover.png");
+  --mc-check-press-img:url("../textures/check_press.png");
+  --mc-toggle-img:url("../textures/toggle.png");
+  --mc-toggle-hover-img:url("../textures/toggle_hover.png");
+  --mc-toggle-press-img:url("../textures/toggle_press.png");
+  --mc-control-bg:var(--mc-button-img);
+}
+
+body{
+  background:
+    linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+    url("../textures/options_background.png") repeat,
+    #202020;
+  color:#ffffff;
+  image-rendering:pixelated;
+}
+
+.gs-status-bar,
+.status-bar{
+  background:rgba(0,0,0,.45);
+  backdrop-filter:none;
+  border:0;
+  color:#ffffff;
+  text-shadow:2px 2px 0 #3f3f3f;
+}
+
+.gs-page,
+.home-main{
+  background:transparent;
+}
+
+.gs-title,
+.gs-section-title,
+.launch-menu-card h2,
+.brand h1{
+  color:#ffffff;
+  text-align:center;
+  text-shadow:3px 3px 0 var(--mc-shadow);
+  letter-spacing:0;
+}
+
+.gs-title,
+.brand h1{
+  font-size:clamp(2.6rem, 6vw, 5.2rem);
+  font-weight:900;
+}
+
+.brand p,
+.app-label,
+.launch-option-label,
+.gs-setting-title,
+.gs-setting-sub,
+.gs-footnote,
+.gs-theme-item-name,
+.gs-theme-item-meta,
+.gs-theme-list-title,
+.gs-theme-list-sub,
+.gs-range-value,
+.status-date,
+.status-time{
+  color:#ffffff;
+  text-shadow:2px 2px 0 var(--mc-shadow);
+}
+
+.gs-page{
+  max-width:none;
+  min-height:100vh;
+  padding:calc(var(--gs-status-height) + 26px) 22px 40px;
+}
+
+.gs-header{
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.gs-backbar{
+  display:none;
+  width:var(--mc-menu-width);
+}
+
+.gs-layout{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:26px;
+  width:var(--mc-menu-width);
+  margin:0 auto;
+}
+
+.gs-nav{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(220px, 1fr));
+  gap:14px 34px;
+  width:100%;
+  margin:0 auto;
+}
+
+.gs-panel{
+  width:100%;
+  margin:0 auto;
+}
+
+.gs-panel-backbar{
+  justify-content:flex-start;
+}
+
+.gs-panel-backbar .gs-backbtn{
+  width:100%;
+  justify-content:center;
+}
+
+.gs-panel-backbar .gs-backbtn .gs-mi{
+  display:none;
+}
+
+.gs-panel-backbar .gs-backbtn span:last-child{
+  font-size:0;
+}
+
+.gs-panel-backbar .gs-backbtn span:last-child::after{
+  content:"Done";
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+}
+
+.gs-nav-btn .gs-mi{
+  display:none;
+}
+
+.gs-nav-btn[data-section="themes"] .gs-nav-text,
+.gs-nav-btn[data-section="about"] .gs-nav-text{
+  font-size:0;
+}
+
+.gs-nav-btn[data-section="themes"] .gs-nav-text::after{
+  content:"Theme Packs";
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+}
+
+.gs-nav-btn[data-section="about"] .gs-nav-text::after{
+  content:"About";
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+}
+
+.gs-nav-text{
+  text-align:center;
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+  line-height:1;
+  color:#ffffff;
+}
+
+.gs-card,
+.gs-theme-preview,
+.gs-theme-list,
+.launch-menu-card{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+.gs-card{
+  padding:0;
+}
+
+.gs-divider{
+  border:0;
+  margin:12px 0;
+}
+
+.gs-setting-row,
+.gs-theme-item{
+  grid-template-columns:minmax(0, 1fr);
+  justify-items:stretch;
+  gap:8px;
+  padding:0;
+  text-align:center;
+}
+
+.gs-setting-left{
+  text-align:center;
+}
+
+.gs-setting-right{
+  width:100%;
+  justify-content:center;
+}
+
+.gs-audio-row .gs-setting-right{
+  display:grid;
+  grid-template-columns:92px minmax(180px, 1fr) 72px;
+  align-items:center;
+}
+
+.gs-nav-btn,
+.gs-btn,
+.gs-theme-file-label,
+.gs-backbtn,
+.gs-mute-btn,
+button,
+input[type="text"],
+input[type="number"],
+input[type="url"],
+.launch-option,
+.launch-menu-back,
+.launch-menu-close{
+  min-height:42px;
+  border:0;
+  border-radius:0;
+  background-color:transparent;
+  background-image:var(--mc-button-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  color:#ffffff;
+  box-shadow:none;
+  text-align:center;
+  text-align-last:center;
+  text-shadow:2px 2px 0 var(--mc-shadow);
+  image-rendering:pixelated;
+}
+
+.gs-nav-btn:hover,
+.gs-nav-btn:focus-visible,
+.gs-nav-btn.is-active,
+.gs-btn:hover,
+.gs-select:hover,
+.gs-mute-btn:hover,
+button:hover,
+.launch-option:hover,
+.launch-option:focus-visible{
+  background-image:var(--mc-button-hover-img);
+  background-color:transparent;
+  outline:0;
+}
+
+.gs-nav-btn:active,
+.gs-btn:active,
+.gs-backbtn:active,
+button:active,
+.launch-option:active{
+  background-image:var(--mc-button-press-img);
+  box-shadow:none;
+}
+
+.gs-select{
+  appearance:none;
+  -webkit-appearance:none;
+  width:100%;
+  padding:8px 16px;
+  min-height:42px;
+  border:0;
+  border-radius:0;
+  background-color:transparent;
+  background-image:var(--mc-dropdown-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  color:#ffffff;
+  box-shadow:none;
+  image-rendering:pixelated;
+  text-shadow:2px 2px 0 var(--mc-shadow);
+  text-align:center;
+  text-align-last:center;
+}
+
+.gs-select:hover,
+select:hover{
+  background-image:var(--mc-dropdown-hover-img);
+  background-color:transparent;
+}
+
+.gs-select:active,
+select:active{
+  background-image:var(--mc-dropdown-press-img);
+}
+
+select{
+  border:0;
+  background-color:transparent;
+  background-image:var(--mc-dropdown-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  color:#ffffff;
+}
+
+.gs-setting-button{
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+
+.gs-setting-button:hover{
+  background:transparent;
+}
+
+.gs-range{
+  --gs-range-track-height:18px;
+  --gs-range-thumb-size:28px;
+  --gs-range-fill:#ffffff;
+  --gs-range-track:#555555;
+  height:28px;
+}
+
+.gs-range::-webkit-slider-runnable-track{
+  border:0;
+  border-radius:0;
+  background-color:transparent;
+  background-image:var(--mc-slider-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+}
+
+.gs-range::-webkit-slider-thumb{
+  border:0;
+  border-radius:0;
+  background-color:transparent;
+  background-image:var(--mc-slider-press-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  image-rendering:pixelated;
+}
+
+.gs-range::-moz-range-track,
+.gs-range::-moz-range-progress,
+.gs-range::-moz-range-thumb{
+  border-radius:0;
+}
+
+.gs-range:hover::-webkit-slider-runnable-track{
+  background-image:var(--mc-slider-hover-img);
+}
+
+.gs-range:active::-webkit-slider-runnable-track{
+  background-image:var(--mc-slider-press-img);
+}
+
+input[type="checkbox"],
+input[type="radio"]{
+  appearance:none;
+  -webkit-appearance:none;
+  width:32px;
+  height:32px;
+  margin:0 8px;
+  border:0;
+  background-color:transparent;
+  background-image:var(--mc-check-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  image-rendering:pixelated;
+  vertical-align:middle;
+}
+
+input[type="radio"]{
+  background-image:url("../textures/radio.png");
+}
+
+input[type="checkbox"]:hover{
+  background-image:var(--mc-check-hover-img);
+}
+
+input[type="checkbox"]:checked,
+input[type="checkbox"]:active{
+  background-image:var(--mc-check-press-img);
+}
+
+input[type="radio"]:hover{
+  background-image:url("../textures/radio_hover.png");
+}
+
+input[type="radio"]:checked,
+input[type="radio"]:active{
+  background-image:url("../textures/radio_press.png");
+}
+
+.gs-theme-preview{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+
+.gs-theme-icon-wrap{
+  display:none;
+}
+
+.gs-theme-right,
+.gs-theme-actions,
+.gs-theme-item-left,
+.gs-theme-item-actions{
+  width:100%;
+  text-align:center;
+  justify-content:center;
+}
+
+.gs-theme-list{
+  display:grid;
+  gap:12px;
+}
+
+.gs-theme-item{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) 140px;
+  gap:12px;
+  align-items:center;
+}
+
+.gs-theme-item-icon{
+  display:none;
+}
+
+.home-screen{
+  background:
+    linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+    url("../textures/options_background.png") repeat,
+    #202020;
+}
+
+.home-screen .home-main{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:calc(54px + env(safe-area-inset-top, 0px)) 18px calc(130px + env(safe-area-inset-bottom, 0px));
+}
+
+.home-screen .brand{
+  align-self:auto;
+  margin:0 0 clamp(36px, 9vh, 84px);
+}
+
+.home-screen .brand h1{
+  font-style:normal;
+  line-height:1;
+}
+
+.home-screen .brand p{
+  margin-top:12px;
+  font-size:clamp(.95rem, 2.1vw, 1.3rem);
+}
+
+.home-screen .app-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(220px, 1fr));
+  gap:14px 34px;
+  width:var(--mc-menu-width);
+}
+
+.home-screen .home-dock{
+  position:fixed;
+  left:50%;
+  right:auto;
+  bottom:calc(42px + env(safe-area-inset-bottom, 0px));
+  z-index:8;
+  width:var(--mc-menu-width);
+  padding:0;
+  transform:translateX(-50%);
+}
+
+.home-screen .settings-shortcut{
+  width:100%;
+}
+
+.home-screen .settings-shortcut .app-label{
+  font-size:0;
+}
+
+.home-screen .settings-shortcut .app-label::after{
+  content:"Options";
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+}
+
+.home-screen .app-shortcut,
+.home-screen .settings-shortcut{
+  min-height:42px;
+  padding:8px 18px;
+  border:0;
+  background-color:transparent;
+  background-image:var(--mc-button-img);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  box-shadow:none;
+  image-rendering:pixelated;
+}
+
+.home-screen .app-shortcut:hover,
+.home-screen .settings-shortcut:hover,
+.home-screen .app-shortcut:focus-visible,
+.home-screen .settings-shortcut:focus-visible{
+  background-image:var(--mc-button-hover-img);
+  outline:0;
+}
+
+.home-screen .app-shortcut:active,
+.home-screen .settings-shortcut:active{
+  background-image:var(--mc-button-press-img);
+}
+
+.home-screen .app-icon,
+.home-screen .launch-option-icon{
+  display:none;
+}
+
+.home-screen .app-label,
+.home-screen .launch-option-label{
+  max-width:none;
+  font-size:clamp(1rem, 2.1vw, 1.45rem);
+  line-height:1;
+  color:#ffffff;
+}
+
+.home-screen .launch-menu{
+  padding:calc(54px + env(safe-area-inset-top, 0px)) 20px calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+.home-screen .launch-menu-backdrop{
+  background:
+    linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)),
+    url("../textures/options_background.png") repeat,
+    #202020;
+  backdrop-filter:none;
+}
+
+.home-screen .launch-menu-card{
+  width:var(--mc-menu-width);
+  max-height:none;
+  overflow:visible;
+  padding:0;
+}
+
+.home-screen .launch-menu-card h2{
+  margin:0 0 clamp(26px, 7vh, 70px);
+  font-size:clamp(2.2rem, 5vw, 4.6rem);
+}
+
+.home-screen .launch-menu-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(220px, 1fr));
+  gap:14px 34px;
+}
+
+.home-screen .launch-option,
+.home-screen .launch-menu-back{
+  min-height:42px;
+  padding:8px 18px;
+}
+
+.home-screen .launch-menu-close{
+  position:fixed;
+  right:18px;
+  top:calc(18px + env(safe-area-inset-top, 0px));
+  width:44px;
+  height:44px;
+}
+
+@media (max-width:720px){
+  :root{
+    --mc-menu-width:min(430px, 92vw);
+  }
+
+  .gs-nav,
+  .home-screen .app-grid,
+  .home-screen .launch-menu-grid{
+    grid-template-columns:1fr;
+  }
+
+  .gs-theme-item{
+    grid-template-columns:1fr;
+  }
+
+  .gs-audio-row .gs-setting-right{
+    grid-template-columns:1fr;
+  }
+}

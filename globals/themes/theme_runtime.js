@@ -141,6 +141,25 @@
     return new URL(`${folder}/${relPath}`, THEMES_BASE).href;
   }
 
+  function waitForStylesheet(link) {
+    return new Promise(resolve => {
+      if (!link || !link.href) {
+        resolve();
+        return;
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        link.removeEventListener("load", finish);
+        link.removeEventListener("error", finish);
+        resolve();
+      };
+      link.addEventListener("load", finish, { once: true });
+      link.addEventListener("error", finish, { once: true });
+      setTimeout(finish, 700);
+    });
+  }
 
   async function resolveBitmapUrl(folder) {
     if (!folder) return "";
@@ -195,6 +214,7 @@
 
     const link = ensureLink();
     link.href = folderUrl(folder, "style/theme.css");
+    await waitForStylesheet(link);
     const bitmapUrl = await resolveBitmapUrl(folder);
     applyAssetVars(bitmapUrl);
     return folder;

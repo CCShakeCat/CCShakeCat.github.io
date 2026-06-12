@@ -1,0 +1,214 @@
+@font-face{
+  font-family:"iOS San Francisco";
+  src:url("../fonts/default9.otf") format("opentype");
+  font-display:swap;
+}
+
+:root{
+  --accent-color:#0a84ff;
+  --theme-accent:#0a84ff;
+  --theme-accent-2:#64d2ff;
+
+  --bg-main:#000000;
+  --bg-panel:#000000;
+  --bg-card:#1c1c1e;
+
+  --text-primary:#ffffff;
+  --text-secondary:#8e8e93;
+  --text-muted:#8e8e93;
+
+  --border-color:#38383a;
+  --control-bg:#2c2c2e;
+  --control-hover:#3a3a3c;
+  --control-press:#48484a;
+  --control-disabled:#1c1c1e;
+  --control-radius:0;
+  --control-border-width:0;
+
+  --theme-bg:var(--bg-main);
+  --theme-panel:var(--bg-panel);
+  --theme-panel-2:var(--bg-card);
+  --theme-fg:var(--text-primary);
+  --theme-muted:var(--text-secondary);
+  --theme-subtle:var(--text-muted);
+  --theme-font-family:"iOS San Francisco", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --page-bg:var(--theme-bg);
+  --page-text:var(--theme-fg);
+  --page-panel:var(--theme-panel);
+  --page-border:var(--border-color);
+}
+
+body{
+  background:var(--bg-main);
+  color:var(--text-primary);
+}
+
+.gs-status-bar{
+  background:rgba(0,0,0,.92);
+  color:#ffffff;
+  border-bottom:1px solid var(--border-color);
+  box-shadow:none;
+  backdrop-filter:blur(18px) saturate(180%);
+}
+
+.gs-page{
+  background:var(--bg-main);
+}
+
+.gs-title,
+.gs-section-title{
+  color:#ffffff;
+  text-shadow:none;
+  text-align:center;
+  font-weight:700;
+  letter-spacing:0;
+}
+
+.gs-title{
+  font-size:clamp(2rem, 5vw, 3rem);
+}
+
+.gs-backbtn,
+.gs-link,
+a{
+  color:var(--accent-color);
+}
+
+.gs-backbtn{
+  background:transparent;
+  border:0;
+  box-shadow:none !important;
+  border-radius:0;
+}
+
+.gs-backbtn:hover,
+.gs-backbtn:active{
+  background:transparent;
+}
+
+.gs-nav,
+.gs-panel{
+  background:transparent;
+  border:0;
+  box-shadow:none !important;
+}
+
+.gs-nav-btn,
+.gs-card,
+.gs-theme-item{
+  background:var(--bg-card);
+  border:0;
+  border-radius:0;
+  box-shadow:none !important;
+}
+
+.gs-nav{
+  gap:0;
+}
+
+.gs-nav-btn{
+  min-height:56px;
+  justify-content:flex-start;
+  border-top:1px solid var(--border-color);
+}
+
+.gs-nav-btn:last-child{
+  border-bottom:1px solid var(--border-color);
+}
+
+.gs-nav-btn:hover,
+.gs-nav-btn:active,
+.gs-nav-btn.is-active{
+  background:#aaaaaa;
+  border-color:var(--border-color);
+}
+
+.gs-card{
+  padding:0;
+  overflow:hidden;
+}
+
+.gs-setting-row,
+.gs-theme-item{
+  min-height:54px;
+  padding:8px 16px;
+  background:var(--bg-card);
+}
+
+.gs-setting-row.gs-setting-button::after,
+.gs-theme-item::after,
+.gs-nav-btn::after{
+  content:"›";
+  margin-left:auto;
+  color:#636366;
+  font-size:2rem;
+  line-height:1;
+}
+
+.gs-divider{
+  margin:0 0 0 16px;
+  border:0;
+  border-top:1px solid var(--border-color);
+}
+
+.gs-setting-title,
+.gs-theme-item-name,
+.gs-theme-list-title{
+  color:#ffffff;
+  font-weight:400;
+}
+
+.gs-setting-sub,
+.gs-theme-item-meta,
+.gs-theme-list-sub,
+.gs-theme-desc,
+.gs-theme-byline,
+.gs-theme-version{
+  color:var(--text-secondary);
+}
+
+.gs-select,
+.gs-btn,
+.gs-theme-file-label,
+.gs-mute-btn,
+button,
+select,
+input[type="text"],
+input[type="number"],
+input[type="url"]{
+  background:var(--control-bg);
+  color:#ffffff;
+  border:1px solid var(--border-color);
+  border-radius:8px;
+  box-shadow:none !important;
+}
+
+.gs-select:hover,
+.gs-btn:hover,
+.gs-theme-file-label:hover,
+.gs-mute-btn:hover,
+button:hover,
+select:hover{
+  background:var(--control-hover);
+}
+
+.gs-select:active,
+.gs-btn:active,
+.gs-theme-file-label:active,
+.gs-mute-btn:active,
+button:active{
+  background:var(--control-press);
+}
+
+select option{
+  background:#1c1c1e;
+  color:#ffffff;
+}
+
+.gs-theme-preview,
+.gs-theme-icon-wrap{
+  background:#1c1c1e;
+  border:1px solid var(--border-color);
+  border-radius:0;
+  box-shadow:none !important;
+}

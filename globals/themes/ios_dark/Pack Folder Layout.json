@@ -1,0 +1,62 @@
+Each of these folders nest files that will be read
+Please follow this structure
+
+
+ fonts
+> default8.png (Sprite based approach)
+> default9.ttf (ttf approach)
+> default9.otf (otf approach)
+
+ sound
+> click.ogg
+> unmute.ogg
+> volume.ogg
+
+ style
+
+ textures
+> button.png
+> button_hover.png
+> button_press.png
+> button_disabled.png
+> button_hover_disabled.png
+> button_press_disabled.png
+> check.png
+> check_hover.png
+> check_press.png
+> check_disabled.png
+> check_hover_disabled.png
+> check_press_disabled.png
+> dropdown.png
+> dropdown_hover.png
+> dropdown_press.png
+> dropdown_disabled.png
+> dropdown_hover_disabled.png
+> dropdown_press_disabled.png
+> radio.png
+> radio_hover.png
+> radio_press.png
+> radio_disabled.png
+> radio_hover_disabled.png
+> radio_press_disabled.png
+> slider.png
+> slider_hover.png
+> slider._presspng
+> slider_disabled.png
+> slider_hover_disabled.png
+> slider_press_disabled.png
+> toggle.png
+> toggle_hover.png
+> toggle_press.png
+> toggle_disabled.png
+> toggle_hover_disabled.png
+> toggle_press_disabled.png
+
+ 
+> ui_rtc.png
+> ui_stopwatch.png
+> ui_timer.png
+> ui_settings.png
+pack.json
+
+ pack_icon.png

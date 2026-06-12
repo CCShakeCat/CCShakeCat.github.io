@@ -1,0 +1,18 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 115" width="76" height="115">
+	<defs>
+		<image width="30" height="10" id="img1" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAKAQMAAACZuXxsAAAAAXNSR0IB2cksfwAAAANQTFRF////p8QbyAAAAA5JREFUeJxjZAACRlIIAAFFAAunKqcfAAAAAElFTkSuQmCC"/>
+		<image width="10" height="44" id="img2" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAsAQMAAABmCbvVAAAAAXNSR0IB2cksfwAAAANQTFRF////p8QbyAAAAA5JREFUeJxjZGBgHGgEAAweAC374UNVAAAAAElFTkSuQmCC"/>
+		<image  width="10" height="44" id="img3" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAsAQMAAABmCbvVAAAAAXNSR0IB2cksfwAAAANQTFRF////p8QbyAAAAA5JREFUeJxjZGBgHGgEAAweAC374UNVAAAAAElFTkSuQmCC"/>
+	</defs>
+	<style>
+	</style>
+	<g id="Digit Texture">
+		<use id="seg-g" href="#img1" transform="matrix(1,0,0,1,23,52)"/>
+		<use id="seg-f" href="#img2" transform="matrix(1,0,0,1,11,12)"/>
+		<use id="seg-e" href="#img2" transform="matrix(1,0,0,1,11,59)"/>
+		<use id="seg-d" href="#img1" transform="matrix(1,0,0,1,23,93)"/>
+		<use id="seg-c" href="#img3" x="55" y="59"/>
+		<use id="seg-b" href="#img2" transform="matrix(1,0,0,1,55,12)"/>
+		<use id="seg-a" href="#img1" transform="matrix(1,0,0,1,23,12)"/>
+	</g>
+</svg>

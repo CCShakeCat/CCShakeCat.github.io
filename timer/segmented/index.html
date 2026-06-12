@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segmented Timer</title>
+  <link rel="stylesheet" href="../../globals/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../../globals/themes/theme_runtime.js" defer></script>
+  <script src="../../globals/global.js" defer></script>
+  <script src="../../globals/modal.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body data-theme-visuals="off">
+  <div class="clock-shell segmented-tool-shell">
+    <div id="display" aria-live="polite"></div>
+    <input id="timerInput" class="segmented-time-input" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Set timer">
+    <div class="segmented-controls">
+      <button id="startPauseBtn" type="button">Start</button>
+      <button id="resetBtn" type="button">Reset</button>
+    </div>
+
+    <button id="settingsBtn" aria-label="Timer Settings" type="button">
+      <img src="../../globals/icons/gear.png" alt="Settings" class="gear" width="48" height="48" />
+    </button>
+  </div>
+
+  <div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-content system-font draggable segmented-modal">
+      <button id="closeSettings" class="close-btn" aria-label="Close Settings">
+        <img src="../../globals/icons/close.png" alt="Close" class="icon" />
+      </button>
+
+      <div class="settings-header">
+        <span class="font-header-text">SEGMENTED TIMER</span>
+      </div>
+
+      <div class="seg-pages">
+        <section class="seg-page active" id="segPageMain">
+          <div class="seg-setting-list seg-timer-settings">
+            <button class="seg-nav-btn primary-category" type="button" data-page="segPageTimer">Timer...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageStyle">Customize Style...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageDigits">Digits...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageFlash">Flashing Separators...</button>
+            <button class="seg-nav-btn" type="button" data-page="segPageColors">Colours...</button>
+            <a class="global-settings-btn" href="../../globals/global_settings.html" data-global-settings-link>Global Settings</a>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageTimer">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">&lt; Back</button>
+            <h2>Timer</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <div class="seg-field">
+              <label>Count</label>
+              <div class="seg-button-row">
+                <button id="countFromBtn" class="seg-nav-btn mini" type="button">FROM</button>
+                <button id="countToBtn" class="seg-nav-btn mini" type="button">TO</button>
+                <button id="countTimeBtn" class="seg-nav-btn mini" type="button">TIME</button>
+              </div>
+            </div>
+
+            <div class="seg-field">
+              <label for="hurryUpStyleSelect">Hurry Up Style</label>
+              <select id="hurryUpStyleSelect">
+                <option value="none">None</option>
+                <option value="mario">Mario</option>
+                <option value="sonic">Sonic</option>
+                <option value="ggd">Goose Goose Duck</option>
+                <option value="splatoon">Splatoon</option>
+              </select>
+            </div>
+
+            <div class="seg-field">
+              <label for="hurryUpSelect">Hurry Up Track</label>
+              <select id="hurryUpSelect">
+                <option value="">None</option>
+                <option value="__speedup__">Speed Up Current Music</option>
+              </select>
+            </div>
+
+            <div id="hurryUpDesc" class="seg-help"></div>
+
+            <div class="seg-field seg-music-field">
+              <label for="musicUrlInput">Music</label>
+              <div class="seg-music-controls">
+                <input id="musicUrlInput" type="text" placeholder="Paste YouTube, or direct audio URL...">
+                <button id="musicUrlSubmitBtn" class="seg-nav-btn mini" type="button">Submit</button>
+                <button id="musicUploadBtn" class="seg-nav-btn mini" type="button">Upload</button>
+                <button id="musicPauseBtn" class="seg-nav-btn mini" type="button" aria-pressed="false">Pause Music</button>
+                <input id="musicUploadFile" type="file" accept="audio/*,.mp3,.ogg,.wav,.m4a,.aac,.flac" hidden>
+                <span id="musicStatusText" class="seg-music-status">No music</span>
+              </div>
+            </div>
+
+            <div class="seg-field">
+              <label for="musicVolume">Music Volume</label>
+              <div class="seg-music-volume">
+                <input id="musicVolume" type="range" min="0" max="100" value="100">
+                <span id="musicVolumeLabel">100%</span>
+              </div>
+            </div>
+
+            <div class="seg-music-players">
+              <audio id="bgAudio" controls></audio>
+              <div id="ytWrap"><div id="ytPlayer"></div></div>
+            </div>
+
+            <div class="seg-field">
+              <label for="tenSecondWarningSound">10s Warning</label>
+              <select id="tenSecondWarningSound">
+                <option value="none">No Sound</option>
+                <option value="sonic">Sonic Advance</option>
+                <option value="soniccd">Sonic CD</option>
+                <option value="mario">Super Mario 3D Land</option>
+              </select>
+            </div>
+
+            <div class="seg-field">
+              <label for="flashSpeed">Hurry Flash</label>
+              <select id="flashSpeed">
+                <option value="off">OFF</option>
+                <option value="genesis">Sonic Genesis</option>
+                <option value="triple">Sonic Triple Trouble 16 Bit</option>
+                <option value="progressive">Progressive</option>
+              </select>
+            </div>
+
+            <div class="seg-field">
+              <label for="flashValue">Start flash at</label>
+              <input id="flashValue" type="text" placeholder="00:01:00">
+            </div>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageStyle">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">&lt; Back</button>
+            <h2>Customize Style</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <div class="seg-field">
+              <label for="optPreset">Preset</label>
+              <select id="optPreset">
+                <option value="default">Default</option>
+                <option value="classic">Classic</option>
+                <option value="modern">Modern</option>
+                <option value="lcd">Classic LCD</option>
+                <option value="lcdInverted">Inverted LCD</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="seg-field seg-radio-field">
+              <span class="seg-field-label">Digit Style</span>
+              <div class="seg-radio-group">
+                <label><input type="radio" name="optCorners" value="square"> Square</label>
+                <label><input type="radio" name="optCorners" value="chop"> Chopped</label>
+                <label><input type="radio" name="optCorners" value="round"> Rounded</label>
+                <label><input type="radio" name="optCorners" value="custom"> Custom</label>
+              </div>
+            </div>
+
+            <div class="seg-field seg-radio-field">
+              <span class="seg-field-label">Corner Segment Height</span>
+              <div class="seg-radio-group">
+                <label><input type="radio" name="optSegmentHeight" value="normal"> Normal</label>
+                <label><input type="radio" name="optSegmentHeight" value="half"> Half-Digit Height</label>
+              </div>
+            </div>
+
+            <div class="seg-field custom-digit-import" id="customDigitImportRow" hidden>
+              <label for="optCustomDigitFile">Custom Digit SVG</label>
+              <div class="custom-digit-import-controls">
+                <button class="seg-nav-btn custom-import-btn" type="button" id="importCustomDigitBtn">Import Custom SVG</button>
+                <input type="file" id="optCustomDigitFile" accept=".svg,image/svg+xml" hidden>
+                <a class="custom-template-link" href="icons/digit-seven_seg_template.svg" download="digit-seven_seg_template.svg">Download Template SVG</a>
+              </div>
+            </div>
+
+            <label class="seg-check-row">
+              <span>Segment Symmetry</span>
+              <input type="checkbox" id="optSymmetry">
+            </label>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageDigits">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">&lt; Back</button>
+            <h2>Digits</h2>
+          </div>
+
+          <div class="seg-setting-list">
+            <label class="seg-check-row"><span>Auto - hide what is zero</span><input type="checkbox" id="optAuto"></label>
+            <label class="seg-check-row"><span>HH</span><input type="checkbox" id="optHours"></label>
+            <label class="seg-check-row"><span>MM</span><input type="checkbox" id="optMinutes"></label>
+            <label class="seg-check-row"><span>SS</span><input type="checkbox" id="optSeconds"></label>
+            <label class="seg-check-row"><span>.TT</span><input type="checkbox" id="optTicks"></label>
+
+            <div class="seg-field">
+              <label for="optTPS">Tick Rate (TPS)</label>
+              <select id="optTPS">
+                <option value="10">10</option><option value="20">20</option><option value="30">30</option>
+                <option value="40">40</option><option value="50">50</option><option value="60">60</option>
+                <option value="70">70</option><option value="80">80</option><option value="90">90</option><option value="100">100</option>
+              </select>
+            </div>
+
+            <label class="seg-check-row"><span>Italic</span><input type="checkbox" id="optItalic"></label>
+            <button class="seg-nav-btn" type="button" data-page="segPageNumberStyles">Number Styles...</button>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageNumberStyles">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageDigits">&lt; Back</button>
+            <h2>Number Styles</h2>
+          </div>
+          <div class="seg-setting-list">
+            <div class="num-style-block"><div class="seg-field seg-radio-field"><span class="seg-field-label">7 Style</span><div class="seg-radio-group"><label><input type="radio" name="optSevenStyle" value="default"> Default</label><label><input type="radio" name="optSevenStyle" value="simple"> Simple</label></div></div><div class="num-demo-row" id="demoSeven"></div></div>
+            <div class="num-style-block"><div class="seg-field seg-radio-field"><span class="seg-field-label">6 Style</span><div class="seg-radio-group"><label><input type="radio" name="optSixStyle" value="default"> Default</label><label><input type="radio" name="optSixStyle" value="simple"> Simple</label></div></div><div class="num-demo-row" id="demoSix"></div></div>
+            <div class="num-style-block"><div class="seg-field seg-radio-field"><span class="seg-field-label">9 Style</span><div class="seg-radio-group"><label><input type="radio" name="optNineStyle" value="default"> Default</label><label><input type="radio" name="optNineStyle" value="simple"> Simple</label></div></div><div class="num-demo-row" id="demoNine"></div></div>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageFlash">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">&lt; Back</button>
+            <h2>Flashing Separators</h2>
+          </div>
+          <div class="seg-setting-list">
+            <label class="seg-check-row"><span>Enable</span><input type="checkbox" id="optFlashSeparators"></label>
+            <div class="seg-field"><label for="optFlashEvery">Flash every (s)</label><input type="number" id="optFlashEvery" min="0.1" step="0.1"></div>
+            <label class="seg-check-row"><span>Even Flashing</span><input type="checkbox" id="optEvenFlashing"></label>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageColors">
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageMain">&lt; Back</button>
+            <h2>Colours</h2>
+          </div>
+          <div class="seg-setting-list" data-no-drag>
+            <div class="colour-mode-row"><button type="button" class="colour-mode-btn active" id="colorModeRGB">RGB</button><button type="button" class="colour-mode-btn" id="colorModeHSV">HSV</button></div>
+            <div class="seg-field color-field"><label for="optActiveColor">Face Colour</label><div class="color-input-row"><input type="text" id="optActiveColor"><button class="color-preview-btn" id="activeColorPreview" type="button"></button></div></div>
+            <div class="seg-field color-field"><label for="optBackgroundColor">Background</label><div class="color-input-row"><input type="text" id="optBackgroundColor"><button class="color-preview-btn" id="backgroundColorPreview" type="button"></button></div></div>
+            <div class="colour-editor active" id="rgbEditor">
+              <div class="channel-row"><div class="channel-label">R</div><div class="channel-slider rgb-r"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="rgbRInput" type="number" min="0" max="255"></div>
+              <div class="channel-row"><div class="channel-label">G</div><div class="channel-slider rgb-g"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="rgbGInput" type="number" min="0" max="255"></div>
+              <div class="channel-row"><div class="channel-label">B</div><div class="channel-slider rgb-b"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="rgbBInput" type="number" min="0" max="255"></div>
+            </div>
+            <div class="colour-editor" id="hsvEditor">
+              <div class="channel-row"><div class="channel-label">H</div><div class="channel-slider hsv-h"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="hsvHInput" type="number" min="0" max="360"></div>
+              <div class="channel-row"><div class="channel-label">S</div><div class="channel-slider hsv-s"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="hsvSInput" type="number" min="0" max="100"></div>
+              <div class="channel-row"><div class="channel-label">V</div><div class="channel-slider hsv-v"><div class="channel-track"></div><div class="channel-fill"></div><div class="channel-thumb"></div></div><input class="channel-number" id="hsvVInput" type="number" min="0" max="100"></div>
+            </div>
+            <label class="seg-check-row"><span>Inactive Colour</span><input type="checkbox" id="optInactiveEnabled"></label>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

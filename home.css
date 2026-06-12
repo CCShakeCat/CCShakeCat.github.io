@@ -330,6 +330,16 @@ body:not(.theme-dark) .launch-option:hover{
   cursor:pointer;
 }
 
+.launch-menu-back{
+  margin:0 0 14px;
+  padding:8px 14px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+  color:var(--home-text);
+  font:inherit;
+}
+
 .launch-menu-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(132px, 1fr));
@@ -337,6 +347,8 @@ body:not(.theme-dark) .launch-option:hover{
 }
 
 .launch-option{
+  appearance:none;
+  -webkit-appearance:none;
   display:flex;
   flex-direction:column;
   align-items:center;

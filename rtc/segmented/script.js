@@ -5,6 +5,8 @@ const closeSettings = document.getElementById("closeSettings");
 
 const optActiveColor = document.getElementById("optActiveColor");
 const activeColorPreview = document.getElementById("activeColorPreview");
+const optBackgroundColor = document.getElementById("optBackgroundColor");
+const backgroundColorPreview = document.getElementById("backgroundColorPreview");
 const optInactiveEnabled = document.getElementById("optInactiveEnabled");
 const optPreset = document.getElementById("optPreset");
 const customDigitImportRow = document.getElementById("customDigitImportRow");
@@ -48,6 +50,7 @@ const settings = {
   evenFlashing: loadBool("seg_even_flashing", false),
 
   activeColor: localStorage.getItem("seg_active_color") || "#ffffff",
+  backgroundColor: localStorage.getItem("seg_background_color") || "#000000",
   inactiveEnabled: loadBool("seg_inactive_enabled", true),
 
   sevenStyle: localStorage.getItem("seg_seven_style") || "default",
@@ -76,6 +79,7 @@ let renderToken = 0;
 let intervalId = null;
 let suppressPresetAutoCustom = false;
 let colorEditorMode = localStorage.getItem("seg_color_editor_mode") || "rgb";
+let colorHsvDraft = null;
 
 function loadBool(key, fallback) {
   const v = localStorage.getItem(key);
@@ -111,6 +115,7 @@ function saveSettings() {
   localStorage.setItem("seg_even_flashing", settings.evenFlashing ? "1" : "0");
 
   localStorage.setItem("seg_active_color", settings.activeColor);
+  localStorage.setItem("seg_background_color", settings.backgroundColor);
   localStorage.setItem("seg_inactive_enabled", settings.inactiveEnabled ? "1" : "0");
 
   localStorage.setItem("seg_seven_style", settings.sevenStyle);
@@ -348,7 +353,20 @@ function getUsePart(use, images) {
   const width = (images[ref].width || 0) * (matrix.a || 1);
   const height = (images[ref].height || 0) * (matrix.d || 1);
   const fill = getInlineFillColor(use) || getImageGuideColor(images[ref]);
-  return { useId, ref, fill, x, y, width, height, cx: x + width / 2, cy: y + height / 2, imageSrc: images[ref].href };
+  return {
+    useId,
+    ref,
+    fill,
+    x,
+    y,
+    width,
+    height,
+    sourceWidth: images[ref].width || width,
+    sourceHeight: images[ref].height || height,
+    cx: x + width / 2,
+    cy: y + height / 2,
+    imageSrc: images[ref].href
+  };
 }
 
 function rectIntersection(a, b) {
@@ -365,15 +383,17 @@ function rectIntersection(a, b) {
 function makePaintPartFromTextureAndGuide(tex, guide) {
   const clipped = rectIntersection(tex, guide);
   if (!clipped) return null;
+  const scaleX = tex.sourceWidth && tex.width ? tex.sourceWidth / tex.width : 1;
+  const scaleY = tex.sourceHeight && tex.height ? tex.sourceHeight / tex.height : 1;
   return {
     x: clipped.x,
     y: clipped.y,
     width: clipped.width,
     height: clipped.height,
-    sx: clipped.x - tex.x,
-    sy: clipped.y - tex.y,
-    sw: clipped.width,
-    sh: clipped.height,
+    sx: (clipped.x - tex.x) * scaleX,
+    sy: (clipped.y - tex.y) * scaleY,
+    sw: clipped.width * scaleX,
+    sh: clipped.height * scaleY,
     sourceWidth: tex.width,
     sourceHeight: tex.height,
     imageSrc: tex.imageSrc
@@ -436,7 +456,15 @@ function parseSvgAssetText(text, options = {}) {
       const part = getUsePart(use, images);
       if (!part) return;
       const segName = /^[A-G]$/i.test(part.useId) ? part.useId.toUpperCase() : inferSegmentName(part);
-      mapped[segName] = { x: part.x, y: part.y, width: part.width, height: part.height, imageSrc: part.imageSrc };
+      mapped[segName] = {
+        x: part.x,
+        y: part.y,
+        width: part.width,
+        height: part.height,
+        sourceWidth: part.sourceWidth,
+        sourceHeight: part.sourceHeight,
+        imageSrc: part.imageSrc
+      };
     });
     variants[group.id] = mapped;
   });
@@ -542,12 +570,8 @@ function hsvToRgb(h, s, v) {
 
 function darkenColor(cssColor, factor = 0.133) {
   const rgb = parseCssColor(cssColor);
-  if (!rgb) return "#222222";
-  return rgbToHex(
-    Math.round(rgb.r * factor),
-    Math.round(rgb.g * factor),
-    Math.round(rgb.b * factor)
-  );
+  if (!rgb) return "rgba(255, 255, 255, 0.133)";
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${factor})`;
 }
 
 async function paintSegment(ctx, part, color) {
@@ -562,17 +586,19 @@ async function paintSegment(ctx, part, color) {
 
   const sx = Number.isFinite(part.sx) ? part.sx : 0;
   const sy = Number.isFinite(part.sy) ? part.sy : 0;
-  const sw = Number.isFinite(part.sw) ? part.sw : (part.sourceWidth || part.width);
-  const sh = Number.isFinite(part.sh) ? part.sh : (part.sourceHeight || part.height);
+  const sw = Number.isFinite(part.sw) ? part.sw : (part.sourceWidth || img.naturalWidth || img.width || part.width);
+  const sh = Number.isFinite(part.sh) ? part.sh : (part.sourceHeight || img.naturalHeight || img.height || part.height);
 
   const octx = off.getContext("2d");
+  octx.imageSmoothingEnabled = false;
   octx.clearRect(0, 0, off.width, off.height);
   octx.drawImage(img, sx, sy, sw, sh, 0, 0, off.width, off.height);
   octx.globalCompositeOperation = "source-in";
   octx.fillStyle = color;
   octx.fillRect(0, 0, off.width, off.height);
 
-  ctx.drawImage(off, part.x, part.y, w, h);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(off, Math.round(part.x), Math.round(part.y), Math.round(w), Math.round(h));
 }
 
 async function buildDigitCanvas(char, asset, opts = {}) {
@@ -829,6 +855,10 @@ async function renderNumberStyleDemos() {
 function setColorEditorMode(mode) {
   colorEditorMode = mode;
   localStorage.setItem("seg_color_editor_mode", mode);
+  if (mode === "hsv" && !colorHsvDraft) {
+    const rgb = getActiveRgb();
+    colorHsvDraft = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  }
 
   colorModeRGB.classList.toggle("active", mode === "rgb");
   colorModeHSV.classList.toggle("active", mode === "hsv");
@@ -840,9 +870,15 @@ function getActiveRgb() {
   return parseCssColor(settings.activeColor) || { r: 255, g: 255, b: 255 };
 }
 
+function getActiveHsv() {
+  if (colorEditorMode === "hsv" && colorHsvDraft) return colorHsvDraft;
+  const rgb = getActiveRgb();
+  return rgbToHsv(rgb.r, rgb.g, rgb.b);
+}
+
 function syncColorEditorUI() {
   const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  const hsv = getActiveHsv();
 
   rgbRInput.value = rgb.r;
   rgbGInput.value = rgb.g;
@@ -883,7 +919,8 @@ function syncColorEditorUI() {
   activeColorPreview.style.background = normalizeCssColor(settings.activeColor) || "#ffffff";
 }
 
-function commitActiveColorFromRgb(r, g, b) {
+function commitActiveColorFromRgb(r, g, b, preserveHsvDraft = false) {
+  if (!preserveHsvDraft) colorHsvDraft = null;
   settings.activeColor = rgbToHex(clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
   maybeSetPresetCustom();
   saveSettings();
@@ -893,8 +930,13 @@ function commitActiveColorFromRgb(r, g, b) {
 }
 
 function commitActiveColorFromHsv(h, s, v) {
-  const rgb = hsvToRgb(clamp(h, 0, 360), clamp(s, 0, 1), clamp(v, 0, 1));
-  commitActiveColorFromRgb(rgb.r, rgb.g, rgb.b);
+  colorHsvDraft = {
+    h: clamp(h, 0, 360),
+    s: clamp(s, 0, 1),
+    v: clamp(v, 0, 1)
+  };
+  const rgb = hsvToRgb(colorHsvDraft.h, colorHsvDraft.s, colorHsvDraft.v);
+  commitActiveColorFromRgb(rgb.r, rgb.g, rgb.b, true);
 }
 
 function bindChannelSlider(selector, maxValue, onChange) {
@@ -947,13 +989,17 @@ function syncCssVars() {
   root.style.setProperty("--digit-skew", settings.italic ? "-5deg" : "0deg");
 
   const active = normalizeCssColor(settings.activeColor) || "#ffffff";
+  const background = normalizeCssColor(settings.backgroundColor) || "#000000";
   const inactive = settings.inactiveEnabled ? darkenColor(active) : "transparent";
 
+  root.style.setProperty("--seg-bg", background);
   root.style.setProperty("--sep-active", active);
   root.style.setProperty("--sep-inactive", inactive);
 
   activeColorPreview.style.background = active;
   optActiveColor.value = settings.activeColor;
+  if (backgroundColorPreview) backgroundColorPreview.style.background = background;
+  if (optBackgroundColor) optBackgroundColor.value = settings.backgroundColor;
   optInactiveEnabled.checked = settings.inactiveEnabled;
   optPreset.value = settings.preset;
 
@@ -1036,6 +1082,7 @@ function applyPreset(name) {
     settings.evenFlashing = false;
 
     settings.activeColor = "#ffffff";
+    settings.backgroundColor = "#000000";
     settings.inactiveEnabled = true;
 
     settings.sevenStyle = "default";
@@ -1056,6 +1103,7 @@ function applyPreset(name) {
     settings.evenFlashing = true;
 
     settings.activeColor = "#ff0000";
+    settings.backgroundColor = "#000000";
     settings.inactiveEnabled = true;
 
     settings.sevenStyle = "simple";
@@ -1076,11 +1124,54 @@ function applyPreset(name) {
     settings.evenFlashing = true;
 
     settings.activeColor = "#0000ff";
+    settings.backgroundColor = "#000000";
     settings.inactiveEnabled = true;
 
     settings.sevenStyle = "default";
     settings.sixStyle = "default";
     settings.nineStyle = "default";
+  } else if (name === "lcd") {
+    settings.corners = "square";
+    settings.segmentHeight = "normal";
+    settings.symmetry = true;
+    settings.italic = true;
+
+    settings.seconds = true;
+    settings.ticks = true;
+    settings.tps = 40;
+
+    settings.flashSeparators = true;
+    settings.flashEvery = 0.5;
+    settings.evenFlashing = true;
+
+    settings.activeColor = "#222222";
+    settings.backgroundColor = "#c6c6c6";
+    settings.inactiveEnabled = true;
+
+    settings.sevenStyle = "simple";
+    settings.sixStyle = "simple";
+    settings.nineStyle = "simple";
+  } else if (name === "lcdInverted") {
+    settings.corners = "square";
+    settings.segmentHeight = "normal";
+    settings.symmetry = true;
+    settings.italic = true;
+
+    settings.seconds = true;
+    settings.ticks = true;
+    settings.tps = 40;
+
+    settings.flashSeparators = true;
+    settings.flashEvery = 0.5;
+    settings.evenFlashing = true;
+
+    settings.activeColor = "#c6c6c6";
+    settings.backgroundColor = "#222222";
+    settings.inactiveEnabled = true;
+
+    settings.sevenStyle = "simple";
+    settings.sixStyle = "simple";
+    settings.nineStyle = "simple";
   }
 
   syncInputsFromSettings();
@@ -1373,12 +1464,25 @@ optActiveColor.addEventListener("change", () => {
     optActiveColor.value = settings.activeColor;
     return;
   }
+  colorHsvDraft = null;
   settings.activeColor = normalized;
   maybeSetPresetCustom();
   saveSettings();
   syncCssVars();
   syncColorEditorUI();
   render();
+});
+
+optBackgroundColor?.addEventListener("change", () => {
+  const normalized = normalizeCssColor(optBackgroundColor.value);
+  if (!normalized) {
+    optBackgroundColor.value = settings.backgroundColor;
+    return;
+  }
+  settings.backgroundColor = normalized;
+  maybeSetPresetCustom();
+  saveSettings();
+  syncCssVars();
 });
 
 optInactiveEnabled.addEventListener("change", () => {
@@ -1392,36 +1496,33 @@ optInactiveEnabled.addEventListener("change", () => {
 colorModeRGB.addEventListener("click", () => setColorEditorMode("rgb"));
 colorModeHSV.addEventListener("click", () => setColorEditorMode("hsv"));
 
-rgbRInput.addEventListener("change", () => {
+rgbRInput.addEventListener("input", () => {
   const rgb = getActiveRgb();
   commitActiveColorFromRgb(parseInt(rgbRInput.value || "0", 10), rgb.g, rgb.b);
 });
 
-rgbGInput.addEventListener("change", () => {
+rgbGInput.addEventListener("input", () => {
   const rgb = getActiveRgb();
   commitActiveColorFromRgb(rgb.r, parseInt(rgbGInput.value || "0", 10), rgb.b);
 });
 
-rgbBInput.addEventListener("change", () => {
+rgbBInput.addEventListener("input", () => {
   const rgb = getActiveRgb();
   commitActiveColorFromRgb(rgb.r, rgb.g, parseInt(rgbBInput.value || "0", 10));
 });
 
-hsvHInput.addEventListener("change", () => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+hsvHInput.addEventListener("input", () => {
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(parseFloat(hsvHInput.value || "0"), hsv.s, hsv.v);
 });
 
-hsvSInput.addEventListener("change", () => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+hsvSInput.addEventListener("input", () => {
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(hsv.h, parseFloat(hsvSInput.value || "0") / 100, hsv.v);
 });
 
-hsvVInput.addEventListener("change", () => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+hsvVInput.addEventListener("input", () => {
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(hsv.h, hsv.s, parseFloat(hsvVInput.value || "0") / 100);
 });
 
@@ -1441,20 +1542,17 @@ bindChannelSlider(".channel-slider.rgb-b", 255, (value) => {
 });
 
 bindChannelSlider(".channel-slider.hsv-h", 360, (value) => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(value, hsv.s, hsv.v);
 });
 
 bindChannelSlider(".channel-slider.hsv-s", 100, (value) => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(hsv.h, value / 100, hsv.v);
 });
 
 bindChannelSlider(".channel-slider.hsv-v", 100, (value) => {
-  const rgb = getActiveRgb();
-  const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+  const hsv = getActiveHsv();
   commitActiveColorFromHsv(hsv.h, hsv.s, value / 100);
 });
 
@@ -1473,6 +1571,8 @@ if (importCustomDigitBtn && optCustomDigitFile) {
   if (settings.preset === "default") applyPreset("default");
   else if (settings.preset === "classic") applyPreset("classic");
   else if (settings.preset === "modern") applyPreset("modern");
+  else if (settings.preset === "lcd") applyPreset("lcd");
+  else if (settings.preset === "lcdInverted") applyPreset("lcdInverted");
   else {
     syncInputsFromSettings();
     syncCssVars();

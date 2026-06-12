@@ -1,0 +1,12 @@
+﻿{
+    "schema_version":  1,
+    "name":  "iOS Light",
+    "author":  "CCShakeCat",
+    "version":  "0.1.0",
+    "description":  "A soft translucent iOS-style light theme for ClockOS.",
+    "show_bitfont_toggle":  false,
+    "branding":  {
+                     "accent_color":  "#007aff",
+                     "preview_background":  "light"
+                 }
+}

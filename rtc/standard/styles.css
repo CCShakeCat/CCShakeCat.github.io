@@ -61,18 +61,20 @@ body {
 }
 
 #display .monochar {
-    display: inline-block;
+    display: inline-flex;
     width: var(--monochar-width, 1em);
     min-width: var(--monochar-width, 1em);
+    margin-inline: var(--monochar-spacing, .015em);
+    justify-content: center;
     text-align: center;
-    font-variant-numeric: tabular-nums;
-    /* font-variant-numeric: tabular-nums; */
+    font-variant-numeric: normal;
     vertical-align: baseline;
 }
 
 #display .monochar--sep {
     width: var(--monochar-sep-width, .45em);
     min-width: var(--monochar-sep-width, .45em);
+    margin-inline: var(--monochar-sep-spacing, .01em);
 }
 
 #display .rtc-clock-stack {
@@ -743,8 +745,29 @@ select, input[type="text"], input[type="number"]{
   padding:8px 10px;
 }
 .channel-row input[type="range"]{
+  -webkit-appearance:none;
+  appearance:none;
   width:100%;
+  height:14px;
+  border-radius:999px;
+  background:var(--channel-track, var(--ui-accent, #4f7dff));
   accent-color:var(--ui-accent, #4f7dff);
+}
+.channel-row input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:2px solid #777;
+  background:#fff;
+}
+.channel-row input[type="range"]::-moz-range-thumb{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:2px solid #777;
+  background:#fff;
 }
 
 /* Match the newer timer/stopwatch modal shell and size to the active page. */
@@ -918,4 +941,13 @@ html,
 body {
   overscroll-behavior: none;
   overscroll-behavior-y: none;
+}
+
+#rgbRRange,
+#rgbGRange,
+#rgbBRange,
+#hsvHRange,
+#hsvSRange,
+#hsvVRange{
+  color:inherit;
 }

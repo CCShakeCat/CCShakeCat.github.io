@@ -207,6 +207,8 @@
   let colours = { ...DEFAULT_COLOURS };
   let colourEditorMode = 'rgb';
   let speedColourEditorMode = 'rgb';
+  let colourHsvDraft = null;
+  let speedColourHsvDraft = null;
   let activeSpeedColourTarget = 'zero';
 
   // Personal best
@@ -484,7 +486,7 @@
     probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;white-space:pre;line-height:1;';
     probe.style.font = styles.font;
     probe.style.fontFamily = styles.fontFamily;
-    probe.style.fontVariantNumeric = 'tabular-nums';
+    probe.style.fontVariantNumeric = 'normal';
     document.body.appendChild(probe);
     const measure = text => {
       probe.textContent = text;
@@ -646,6 +648,10 @@
 
   function setColourEditorMode(mode, persist = true) {
     colourEditorMode = mode === 'hsv' ? 'hsv' : 'rgb';
+    if (colourEditorMode === 'hsv' && !colourHsvDraft) {
+      const rgb = hexToRgb(getClockColour()) || { r: 255, g: 255, b: 255 };
+      colourHsvDraft = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    }
     colourModeRGB?.classList.toggle('active', colourEditorMode === 'rgb');
     colourModeHSV?.classList.toggle('active', colourEditorMode === 'hsv');
     rgbEditor?.classList.toggle('active', colourEditorMode === 'rgb');
@@ -655,6 +661,10 @@
 
   function setSpeedColourEditorMode(mode, persist = true) {
     speedColourEditorMode = mode === 'hsv' ? 'hsv' : 'rgb';
+    if (speedColourEditorMode === 'hsv' && !speedColourHsvDraft) {
+      const rgb = hexToRgb(getClockColour(getSpeedColourTarget())) || { r: 171, g: 171, b: 171 };
+      speedColourHsvDraft = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    }
     speedColourModeRGB?.classList.toggle('active', speedColourEditorMode === 'rgb');
     speedColourModeHSV?.classList.toggle('active', speedColourEditorMode === 'hsv');
     speedRgbEditor?.classList.toggle('active', speedColourEditorMode === 'rgb');
@@ -667,10 +677,33 @@
     if (numberEl) numberEl.value = String(value);
   }
 
+  function setColourSliderVisual(rangeEl, track) {
+    if (!rangeEl) return;
+    rangeEl.style.setProperty('--channel-track', track);
+  }
+
+  function refreshColourSliderVisuals() {
+    const hueTrack = 'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)';
+    [
+      [rgbRRange, '#ff2a2a'],
+      [rgbGRange, '#1ee66c'],
+      [rgbBRange, '#2b7fff'],
+      [speedRgbRRange, '#ff2a2a'],
+      [speedRgbGRange, '#1ee66c'],
+      [speedRgbBRange, '#2b7fff'],
+      [hsvHRange, hueTrack],
+      [speedHsvHRange, hueTrack],
+      [hsvSRange, 'linear-gradient(to right, #777777, #ffffff)'],
+      [speedHsvSRange, 'linear-gradient(to right, #777777, #ffffff)'],
+      [hsvVRange, 'linear-gradient(to right, #000000, #ffffff)'],
+      [speedHsvVRange, 'linear-gradient(to right, #000000, #ffffff)']
+    ].forEach(([rangeEl, track]) => setColourSliderVisual(rangeEl, track));
+  }
+
   function syncColourEditorUI() {
     const hex = getClockColour();
     const rgb = hexToRgb(hex) || { r: 255, g: 255, b: 255 };
-    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    const hsv = colourEditorMode === 'hsv' && colourHsvDraft ? colourHsvDraft : rgbToHsv(rgb.r, rgb.g, rgb.b);
 
     if (colourValue) colourValue.value = hex;
     if (colourPreview) colourPreview.style.background = hex;
@@ -681,6 +714,7 @@
     setInputPair(hsvHRange, hsvHInput, hsv.h);
     setInputPair(hsvSRange, hsvSInput, hsv.s);
     setInputPair(hsvVRange, hsvVInput, hsv.v);
+    refreshColourSliderVisuals();
     setColourEditorMode(colourEditorMode, false);
   }
 
@@ -690,6 +724,7 @@
 
   function setActiveSpeedColourTarget(key) {
     activeSpeedColourTarget = DEFAULT_COLOURS[key] ? key : 'zero';
+    speedColourHsvDraft = null;
     speedColourRows.forEach(row => row.classList.toggle('active', row.dataset.speedRow === activeSpeedColourTarget));
     syncSpeedColourEditorUI();
   }
@@ -697,7 +732,7 @@
   function syncSpeedColourEditorUI() {
     const hex = getClockColour(getSpeedColourTarget());
     const rgb = hexToRgb(hex) || { r: 171, g: 171, b: 171 };
-    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    const hsv = speedColourEditorMode === 'hsv' && speedColourHsvDraft ? speedColourHsvDraft : rgbToHsv(rgb.r, rgb.g, rgb.b);
 
     speedColourInputs.forEach(input => {
       const key = input.dataset.speedColour;
@@ -715,16 +750,18 @@
     setInputPair(speedHsvHRange, speedHsvHInput, hsv.h);
     setInputPair(speedHsvSRange, speedHsvSInput, hsv.s);
     setInputPair(speedHsvVRange, speedHsvVInput, hsv.v);
+    refreshColourSliderVisuals();
     setSpeedColourEditorMode(speedColourEditorMode, false);
   }
 
-  function commitColour(value) {
+  function commitColour(value, preserveHsvDraft = false) {
     const parsed = parseCssColor(value);
     if (!parsed) {
       syncColourEditorUI();
       return;
     }
 
+    if (!preserveHsvDraft) colourHsvDraft = null;
     colours[getColourTarget()] = parsed;
     syncColourEditorUI();
     saveSettings();
@@ -740,21 +777,27 @@
   }
 
   function commitHSVFromInputs() {
+    colourHsvDraft = {
+      h: clampNumber(hsvHInput?.value ?? hsvHRange?.value, 0, 360),
+      s: clampNumber(hsvSInput?.value ?? hsvSRange?.value, 0, 100),
+      v: clampNumber(hsvVInput?.value ?? hsvVRange?.value, 0, 100)
+    };
     const rgb = hsvToRgb(
-      clampNumber(hsvHInput?.value ?? hsvHRange?.value, 0, 360),
-      clampNumber(hsvSInput?.value ?? hsvSRange?.value, 0, 100),
-      clampNumber(hsvVInput?.value ?? hsvVRange?.value, 0, 100)
+      colourHsvDraft.h,
+      colourHsvDraft.s,
+      colourHsvDraft.v
     );
-    commitColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+    commitColour(rgbToHex(rgb.r, rgb.g, rgb.b), true);
   }
 
-  function commitSpeedColour(value) {
+  function commitSpeedColour(value, preserveHsvDraft = false) {
     const parsed = parseCssColor(value);
     if (!parsed) {
       syncSpeedColourEditorUI();
       return;
     }
 
+    if (!preserveHsvDraft) speedColourHsvDraft = null;
     colours[getSpeedColourTarget()] = parsed;
     syncSpeedColourEditorUI();
     saveSettings();
@@ -768,6 +811,7 @@
       return;
     }
 
+    speedColourHsvDraft = null;
     colours[key] = parsed;
     activeSpeedColourTarget = key;
     syncSpeedColourEditorUI();
@@ -784,12 +828,17 @@
   }
 
   function commitSpeedHSVFromInputs() {
+    speedColourHsvDraft = {
+      h: clampNumber(speedHsvHInput?.value ?? speedHsvHRange?.value, 0, 360),
+      s: clampNumber(speedHsvSInput?.value ?? speedHsvSRange?.value, 0, 100),
+      v: clampNumber(speedHsvVInput?.value ?? speedHsvVRange?.value, 0, 100)
+    };
     const rgb = hsvToRgb(
-      clampNumber(speedHsvHInput?.value ?? speedHsvHRange?.value, 0, 360),
-      clampNumber(speedHsvSInput?.value ?? speedHsvSRange?.value, 0, 100),
-      clampNumber(speedHsvVInput?.value ?? speedHsvVRange?.value, 0, 100)
+      speedColourHsvDraft.h,
+      speedColourHsvDraft.s,
+      speedColourHsvDraft.v
     );
-    commitSpeedColour(rgbToHex(rgb.r, rgb.g, rgb.b));
+    commitSpeedColour(rgbToHex(rgb.r, rgb.g, rgb.b), true);
   }
 
   function setDisplayColor(color) {
@@ -1009,7 +1058,10 @@
     el?.addEventListener('change', () => { saveSettings(); render(); });
   });
 
-  colourTarget?.addEventListener('change', syncColourEditorUI);
+  colourTarget?.addEventListener('change', () => {
+    colourHsvDraft = null;
+    syncColourEditorUI();
+  });
   colourModeRGB?.addEventListener('click', () => setColourEditorMode('rgb'));
   colourModeHSV?.addEventListener('click', () => setColourEditorMode('hsv'));
   colourValue?.addEventListener('change', () => commitColour(colourValue.value));
@@ -1046,6 +1098,7 @@
   });
 
   resetColours?.addEventListener('click', () => {
+    colourHsvDraft = null;
     colours.normal = DEFAULT_COLOURS.normal;
     syncColourEditorUI();
     saveSettings();
@@ -1097,6 +1150,7 @@
   });
 
   resetSpeedColours?.addEventListener('click', () => {
+    speedColourHsvDraft = null;
     ['zero', 'paused', 'running', 'pb'].forEach(key => { colours[key] = DEFAULT_COLOURS[key]; });
     syncSpeedColourEditorUI();
     saveSettings();
@@ -1143,6 +1197,12 @@
     saveSettings();
     enforceMenuSystemFonts();
     centerAllMenuOptions();
+  });
+
+  document.addEventListener('gs:theme-assets-changed', () => {
+    syncColourEditorUI();
+    syncSpeedColourEditorUI();
+    render();
   });
 
   importCustomFont?.addEventListener('click', () => customFontFile?.click());
