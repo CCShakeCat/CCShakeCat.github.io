@@ -102,22 +102,43 @@ body {
 
 .segmented-time-input {
   position: fixed;
-  left: 50%;
-  top: calc(50% + min(7vw, 76px));
-  transform: translateX(-50%);
+  left: var(--timer-input-left, 50%);
+  top: var(--timer-input-top, 50%);
+  transform: translate(-50%, -50%);
   z-index: 11;
   display: none;
-  width: min(520px, 80vw);
-  padding: 8px 12px;
+  width: var(--timer-input-width, min(520px, 80vw));
+  height: var(--timer-input-height, 80px);
+  max-width: calc(100vw - 32px);
+  padding: 0;
   text-align: center;
-  background: #111;
-  color: #fff;
-  border: 2px solid #777;
-  border-radius: 10px;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #ffffff;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  font-size: 1px;
+  line-height: 1;
+}
+
+.segmented-time-input::selection {
+  background: transparent;
+  color: transparent;
+}
+
+.segmented-time-input::-moz-selection {
+  background: transparent;
+  color: transparent;
 }
 
 #display.hurry-flash {
   --sep-active: #ff5555;
+}
+
+#display.editing {
+  --sep-active: #4aa3ff;
 }
 
 .seg-button-row {

@@ -212,6 +212,7 @@ let intervalId = null;
 let suppressPresetAutoCustom = false;
 let colorEditorMode = localStorage.getItem("timer_timer_seg_color_editor_mode") || "rgb";
 let colorHsvDraft = null;
+let editPreviewText = null;
 
 function loadBool(key, fallback) {
   const v = localStorage.getItem(key);
@@ -352,7 +353,69 @@ function formatTimerTicks(ticks) {
   return out;
 }
 
+function getEditFields() {
+  if (settings.direction === "time") return ["h", "m"];
+  const fields = [];
+  if (settings.auto || settings.hours) fields.push("h");
+  if (settings.auto || settings.minutes) fields.push("m");
+  if (settings.auto || settings.seconds || !fields.length) fields.push("s");
+  if (settings.ticks) fields.push("tt");
+  return fields;
+}
+
+function formatDigitsForEdit(rawDigits) {
+  const digits = String(rawDigits || "").replace(/\D/g, "");
+  const fields = getEditFields();
+  if (fields.length === 1 && fields[0] === "s") return digits || "0";
+
+  const widths = fields.map(field => field === "h" && fields[0] === "h" && fields.length === 1 ? Math.max(2, digits.length) : 2);
+  const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+  const padded = digits.slice(-totalWidth).padStart(totalWidth, "0");
+  let offset = 0;
+  const values = fields.map((field, index) => {
+    const part = padded.slice(offset, offset + widths[index]);
+    offset += widths[index];
+    return { field, value: part };
+  });
+
+  const timeParts = values.filter(item => item.field !== "tt").map(item => item.value);
+  const tickPart = values.find(item => item.field === "tt")?.value;
+  return `${timeParts.join(":")}${tickPart !== undefined ? `.${tickPart}` : ""}`;
+}
+
+function parseEditDurationToTicks(rawDigits) {
+  const digits = String(rawDigits || "").replace(/\D/g, "");
+  if (!digits) return NaN;
+
+  const fields = getEditFields().filter(field => field !== "tt" || settings.ticks);
+  if (fields.length === 1 && fields[0] === "s") {
+    return parseInt(digits, 10) * settings.tps;
+  }
+
+  const widths = fields.map(() => 2);
+  const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+  const padded = digits.slice(-totalWidth).padStart(totalWidth, "0");
+  let offset = 0;
+  const parts = { h: 0, m: 0, s: 0, tt: 0 };
+  fields.forEach((field, index) => {
+    parts[field] = parseInt(padded.slice(offset, offset + widths[index]), 10) || 0;
+    offset += widths[index];
+  });
+
+  if (fields.includes("m") && parts.s > 59) {
+    parts.m += Math.floor(parts.s / 60);
+    parts.s %= 60;
+  }
+  if (fields.includes("h") && parts.m > 59) {
+    parts.h += Math.floor(parts.m / 60);
+    parts.m %= 60;
+  }
+
+  return ((parts.h * 3600 + parts.m * 60 + parts.s) * settings.tps) + Math.min(settings.tps - 1, parts.tt);
+}
+
 function buildTimeString() {
+  if (editPreviewText !== null) return editPreviewText || "0";
   if (settings.direction === "time" && settings.timeTargetAt) {
     settings.remainingTicks = Math.max(0, Math.ceil((settings.timeTargetAt - Date.now()) * settings.tps / 1000));
   }
@@ -872,6 +935,7 @@ function resetSeparatorFlashCycle() {
 }
 
 function getRenderedActiveColor() {
+  if (editPreviewText !== null) return "#4aa3ff";
   return settings.running && settings.flashPhase
     ? HURRY_FLASH_COLOR
     : (normalizeCssColor(settings.activeColor) || "#ffffff");
@@ -903,6 +967,10 @@ function ensureClockSlots(str) {
   if (structureKey === lastSlotStructureKey && slotState.length) return;
 
   display.innerHTML = `<span class="segment-clock">${[...str].map(makeSlotShellHTML).join("")}</span>`;
+  display.querySelector(".segment-clock")?.addEventListener("click", event => {
+    event.stopPropagation();
+    enterEdit();
+  });
   const slots = display.querySelectorAll(".segment-clock > span");
   slotState = [...slots].map((el) => ({
     el,
@@ -913,6 +981,7 @@ function ensureClockSlots(str) {
   lastSlotStructureKey = structureKey;
   lastRenderedText = "";
   lastRenderedSeparatorsVisible = null;
+  syncTimerInputToClock();
 }
 
 async function getDigitDataUrl(char, asset, styleKey) {
@@ -1899,10 +1968,35 @@ function tickTimer() {
   requestAnimationFrame(tickTimer);
 }
 
+function syncTimerInputToClock() {
+  if (!timerInput) return;
+  const clock = display?.querySelector?.(".segment-clock");
+  if (!clock) return;
+  const rect = clock.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const viewportPadding = 32;
+  const width = Math.max(140, Math.min(rect.width, window.innerWidth - viewportPadding));
+  const center = rect.left + rect.width / 2;
+  const top = rect.top + rect.height / 2;
+  timerInput.style.setProperty("--timer-input-left", `${center}px`);
+  timerInput.style.setProperty("--timer-input-top", `${top}px`);
+  timerInput.style.setProperty("--timer-input-width", `${width}px`);
+  timerInput.style.setProperty("--timer-input-height", `${rect.height}px`);
+}
+
 function enterEdit() {
   if (!timerInput || settings.running) return;
-  timerInput.value = settings.direction === "time" ? (settings.timeTargetLabel || currentClockValue()) : formatTimerTicks(settings.initialTicks);
+  if (timerInput.style.display !== "none" && editPreviewText !== null) {
+    timerInput.focus();
+    return;
+  }
+  const initialDisplay = settings.direction === "time" ? (settings.timeTargetLabel || currentClockValue()) : formatTimerTicks(settings.initialTicks);
+  timerInput.value = initialDisplay.replace(/\D/g, "");
   timerInput.placeholder = settings.direction === "time" ? "17:55" : "HH:MM:SS.TT";
+  editPreviewText = formatDigitsForEdit(timerInput.value);
+  display?.classList.add("editing");
+  markDisplayDirty();
+  render().then(syncTimerInputToClock);
   timerInput.style.display = "block";
   timerInput.focus();
   timerInput.select?.();
@@ -1910,8 +2004,11 @@ function enterEdit() {
 
 function commitEdit() {
   if (!timerInput || timerInput.style.display === "none") return;
+  const nextValue = timerInput.value;
+  editPreviewText = null;
+  display?.classList.remove("editing");
   if (settings.direction === "time") {
-    const target = parseClockTarget(timerInput.value);
+    const target = parseClockTarget(formatDigitsForEdit(nextValue));
     if (target) {
       settings.timeTargetLabel = `${padTimePart(target.getHours())}:${padTimePart(target.getMinutes())}`;
       settings.timeTargetAt = target.getTime();
@@ -1920,13 +2017,14 @@ function commitEdit() {
       startTimer();
     }
   } else {
-    const ticks = parseDurationToTicks(timerInput.value);
+    const ticks = parseEditDurationToTicks(nextValue);
     if (Number.isFinite(ticks)) {
       settings.initialTicks = Math.max(0, ticks);
       settings.remainingTicks = isCountingDown() ? settings.initialTicks : 0;
     }
   }
   timerInput.style.display = "none";
+  markDisplayDirty();
   saveSettings();
   render();
 }
@@ -2388,11 +2486,34 @@ countTimeBtn?.addEventListener("click", () => {
 
 startPauseBtn?.addEventListener("click", () => settings.running ? pauseTimer() : startTimer());
 resetBtn?.addEventListener("click", resetTimer);
-display?.addEventListener("dblclick", enterEdit);
+display?.addEventListener("click", event => {
+  if (event.target?.closest?.(".segment-clock")) enterEdit();
+});
+window.addEventListener("resize", syncTimerInputToClock);
 timerInput?.addEventListener("blur", commitEdit);
+timerInput?.addEventListener("input", () => {
+  const cleaned = String(timerInput.value || "").replace(/\D/g, "");
+  if (timerInput.value !== cleaned) timerInput.value = cleaned;
+  editPreviewText = formatDigitsForEdit(cleaned);
+  markDisplayDirty();
+  render().then(syncTimerInputToClock);
+});
+timerInput?.addEventListener("paste", event => {
+  event.preventDefault();
+  const text = (event.clipboardData || window.clipboardData)?.getData("text") || "";
+  timerInput.value = text.replace(/\D/g, "");
+  timerInput.dispatchEvent(new Event("input", { bubbles: true }));
+});
+timerInput?.addEventListener("drop", event => event.preventDefault());
 timerInput?.addEventListener("keydown", event => {
   if (event.key === "Enter") commitEdit();
-  if (event.key === "Escape") timerInput.style.display = "none";
+  if (event.key === "Escape") {
+    editPreviewText = null;
+    display?.classList.remove("editing");
+    timerInput.style.display = "none";
+    markDisplayDirty();
+    render();
+  }
 });
 
 hurryUpStyleSelect?.addEventListener("change", () => {
