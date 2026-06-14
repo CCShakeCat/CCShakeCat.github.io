@@ -187,6 +187,33 @@ body {
   transform: none;
 }
 
+.burnout-editor {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 12px 0;
+}
+
+.burnout-digit {
+  width: 46px;
+  height: 70px;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.burnout-separator {
+  min-width: 13px;
+  color: var(--seg-active, #ffffff);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 70px;
+  text-align: center;
+  user-select: none;
+}
+
 /* modal */
 .segmented-modal {
   background: #000;

@@ -17,6 +17,9 @@ const customDigitStatus = document.getElementById("customDigitStatus");
 const demoSeven = document.getElementById("demoSeven");
 const demoSix = document.getElementById("demoSix");
 const demoNine = document.getElementById("demoNine");
+const burnoutMenuBtn = document.getElementById("burnoutMenuBtn");
+const burnoutEditor = document.getElementById("burnoutEditor");
+const resetBurnoutBtn = document.getElementById("resetBurnoutBtn");
 
 const colorModeRGB = document.getElementById("colorModeRGB");
 const colorModeHSV = document.getElementById("colorModeHSV");
@@ -72,6 +75,11 @@ const BASE_SEG7_MAP = {
   " ": []
 };
 
+const BURNOUT_STORAGE_KEY = "seg_burnout_map";
+const BURNOUT_UNLOCK_SEQUENCE = ["ArrowLeft", "ArrowLeft", "ArrowLeft", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowUp", "ArrowUp", "ArrowUp"];
+const BURNOUT_DIGITS = ["8", "8", ":", "8", "8", ":", "8", "8", ".", "8", "8"];
+const BURNOUT_SEGMENTS = ["A", "B", "C", "D", "E", "F", "G"];
+
 const svgCache = {};
 const imageCache = new Map();
 
@@ -80,6 +88,10 @@ let intervalId = null;
 let suppressPresetAutoCustom = false;
 let colorEditorMode = localStorage.getItem("seg_color_editor_mode") || "rgb";
 let colorHsvDraft = null;
+let burnoutUnlocked = false;
+let burnoutSequenceIndex = 0;
+let burnoutMap = loadBurnoutMap();
+let burnoutHover = { index: -1, seg: "" };
 
 function loadBool(key, fallback) {
   const v = localStorage.getItem(key);
@@ -123,6 +135,52 @@ function saveSettings() {
   localStorage.setItem("seg_nine_style", settings.nineStyle);
   localStorage.setItem("seg_custom_digit_svg", settings.customDigitSvg || "");
   localStorage.setItem("seg_custom_digit_name", settings.customDigitName || "");
+}
+
+function loadBurnoutMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BURNOUT_STORAGE_KEY) || "{}");
+    if (!parsed || typeof parsed !== "object") return {};
+    const normalized = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      const match = key.match(/^pos:(\d+)$/) || key.match(/^\d+:(\d+)$/) || key.match(/^(\d+)$/);
+      if (!match || !Array.isArray(value)) continue;
+      const posKey = `pos:${match[1]}`;
+      const current = new Set(Array.isArray(normalized[posKey]) ? normalized[posKey] : []);
+      value.filter(seg => BURNOUT_SEGMENTS.includes(seg)).forEach(seg => current.add(seg));
+      if (current.size) normalized[posKey] = [...current];
+    }
+    return normalized;
+  } catch {
+    return {};
+  }
+}
+
+function saveBurnoutMap() {
+  localStorage.setItem(BURNOUT_STORAGE_KEY, JSON.stringify(burnoutMap));
+}
+
+function getBurnoutKey(char, index = 0) {
+  const slot = Number.parseInt(index, 10);
+  return Number.isFinite(slot) ? `pos:${slot}` : "";
+}
+
+function isSegmentBurnedOut(char, seg, index = 0) {
+  const key = getBurnoutKey(char, index);
+  return !!(key && Array.isArray(burnoutMap[key]) && burnoutMap[key].includes(seg));
+}
+
+function setBurnoutSegment(char, index, seg, off) {
+  const key = getBurnoutKey(char, index);
+  if (!key) return;
+  const current = new Set(Array.isArray(burnoutMap[key]) ? burnoutMap[key] : []);
+  off ? current.add(seg) : current.delete(seg);
+  if (current.size) burnoutMap[key] = [...current].filter(s => BURNOUT_SEGMENTS.includes(s));
+  else delete burnoutMap[key];
+}
+
+function getBurnoutCacheKey() {
+  return JSON.stringify(burnoutMap);
 }
 
 function getDigitSegments(char, overrides = null) {
@@ -607,6 +665,12 @@ async function buildDigitCanvas(char, asset, opts = {}) {
 
   const map = asset[variant];
   const lit = new Set(getDigitSegments(char, opts.overrideStyles || null));
+  const digitIndex = Number.isInteger(opts.digitIndex) ? opts.digitIndex : 0;
+  if (!opts.ignoreBurnout) {
+    for (const seg of BURNOUT_SEGMENTS) {
+      if (isSegmentBurnedOut(char, seg, digitIndex)) lit.delete(seg);
+    }
+  }
   const order = ["A", "B", "C", "D", "E", "F", "G"];
 
   const c = document.createElement("canvas");
@@ -678,6 +742,7 @@ function getClockStyleKey() {
     sevenStyle: settings.sevenStyle,
     sixStyle: settings.sixStyle,
     nineStyle: settings.nineStyle,
+    burnout: getBurnoutCacheKey(),
     customLen: settings.customDigitSvg ? settings.customDigitSvg.length : 0,
     customName: settings.customDigitName || ""
   });
@@ -726,11 +791,11 @@ function ensureClockSlots(str) {
   lastRenderedSeparatorsVisible = null;
 }
 
-async function getDigitDataUrl(char, asset, styleKey) {
-  const key = `${styleKey}|${char}`;
+async function getDigitDataUrl(char, asset, styleKey, digitIndex = 0) {
+  const key = `${styleKey}|${char}|${digitIndex}`;
   if (digitDataUrlCache.has(key)) return digitDataUrlCache.get(key);
 
-  const promise = buildDigitCanvas(char, asset).then(canvas => canvas ? canvas.toDataURL() : "");
+  const promise = buildDigitCanvas(char, asset, { digitIndex }).then(canvas => canvas ? canvas.toDataURL() : "");
   digitDataUrlCache.set(key, promise);
   return promise;
 }
@@ -766,7 +831,7 @@ async function renderClockFast(date) {
     const kind = getSlotKind(ch);
     if (kind === "digit") {
       if (force || slot.char !== ch) {
-        const dataUrl = await getDigitDataUrl(ch, asset, styleKey);
+        const dataUrl = await getDigitDataUrl(ch, asset, styleKey, i);
         if (slot.img && slot.img.src !== dataUrl) slot.img.src = dataUrl;
         slot.char = ch;
       }
@@ -792,28 +857,34 @@ async function renderNumberStyleDemos() {
   const asset = await loadSvgAsset(getCornerFilename());
 
   const sevenDefault = await buildDigitCanvas("7", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: "default", sixStyle: settings.sixStyle, nineStyle: settings.nineStyle }
   });
   const sevenSimple = await buildDigitCanvas("7", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: "simple", sixStyle: settings.sixStyle, nineStyle: settings.nineStyle }
   });
 
   const sixDefault = await buildDigitCanvas("6", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: settings.sevenStyle, sixStyle: "default", nineStyle: settings.nineStyle }
   });
   const sixSimple = await buildDigitCanvas("6", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: settings.sevenStyle, sixStyle: "simple", nineStyle: settings.nineStyle }
   });
 
   const nineDefault = await buildDigitCanvas("9", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: settings.sevenStyle, sixStyle: settings.sixStyle, nineStyle: "default" }
   });
   const nineSimple = await buildDigitCanvas("9", asset, {
+    ignoreBurnout: true,
     hideOff: true,
     overrideStyles: { sevenStyle: settings.sevenStyle, sixStyle: settings.sixStyle, nineStyle: "simple" }
   });
@@ -982,6 +1053,168 @@ function bindChannelSlider(selector, maxValue, onChange) {
     window.addEventListener("touchmove", move, { passive: true });
     window.addEventListener("touchend", stop);
   }, { passive: true });
+}
+
+function unlockBurnoutMenu() {
+  if (burnoutUnlocked) return;
+  burnoutUnlocked = true;
+  if (burnoutMenuBtn) burnoutMenuBtn.hidden = false;
+  const page = document.getElementById("segPageBurnout");
+  if (page) page.hidden = false;
+  new Audio("../../globals/unlock.wav").play().catch(() => {});
+  renderBurnoutEditor();
+}
+
+function handleBurnoutUnlockKey(event) {
+  if (event.key === "Shift") return;
+  if (!event.shiftKey || !BURNOUT_UNLOCK_SEQUENCE.includes(event.key)) {
+    burnoutSequenceIndex = 0;
+    return;
+  }
+
+  const expected = BURNOUT_UNLOCK_SEQUENCE[burnoutSequenceIndex];
+  if (event.key === expected) {
+    burnoutSequenceIndex += 1;
+    if (burnoutSequenceIndex >= BURNOUT_UNLOCK_SEQUENCE.length) {
+      burnoutSequenceIndex = 0;
+      unlockBurnoutMenu();
+    }
+    return;
+  }
+
+  burnoutSequenceIndex = event.key === BURNOUT_UNLOCK_SEQUENCE[0] ? 1 : 0;
+}
+
+function getCurrentSegmentMap() {
+  const asset = svgCache[getCornerFilename()];
+  const variant = asset && getVariantName(asset);
+  return variant ? asset[variant] : null;
+}
+
+function getBurnoutSegmentAt(canvas, event) {
+  const map = getCurrentSegmentMap();
+  if (!map) return "";
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * 76 / rect.width;
+  const y = (event.clientY - rect.top) * 115 / rect.height;
+  const pad = 5;
+  let bestSeg = "";
+  let bestScore = Infinity;
+
+  for (const seg of BURNOUT_SEGMENTS) {
+    const part = map[seg];
+    if (!part) continue;
+    const left = part.x - pad;
+    const right = part.x + part.width + pad;
+    const top = part.y - pad;
+    const bottom = part.y + part.height + pad;
+    if (x < left || x > right || y < top || y > bottom) continue;
+
+    const cx = part.x + part.width / 2;
+    const cy = part.y + part.height / 2;
+    const score = Math.hypot(x - cx, y - cy);
+    if (score < bestScore) {
+      bestScore = score;
+      bestSeg = seg;
+    }
+  }
+
+  return bestSeg;
+}
+
+function handleBurnoutCanvasMove(event) {
+  const canvas = event.currentTarget;
+  const index = parseInt(canvas.dataset.index || "0", 10) || 0;
+  const seg = getBurnoutSegmentAt(canvas, event);
+  canvas.style.cursor = seg ? "pointer" : "default";
+  if (burnoutHover.index === index && burnoutHover.seg === seg) return;
+  burnoutHover = { index, seg };
+  paintBurnoutEditor();
+}
+
+function handleBurnoutCanvasLeave(event) {
+  event.currentTarget.style.cursor = "default";
+  if (burnoutHover.index < 0 && !burnoutHover.seg) return;
+  burnoutHover = { index: -1, seg: "" };
+  paintBurnoutEditor();
+}
+
+function handleBurnoutCanvasClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const canvas = event.currentTarget;
+  const seg = getBurnoutSegmentAt(canvas, event);
+  if (!seg) return;
+
+  const char = canvas.dataset.digit || "8";
+  const index = parseInt(canvas.dataset.index || "0", 10) || 0;
+  const turnOff = !isSegmentBurnedOut(char, seg, index);
+
+  if (event.button === 2) {
+    BURNOUT_DIGITS.forEach((digit, idx) => {
+      if (/\d/.test(digit)) setBurnoutSegment(digit, idx, seg, turnOff);
+    });
+  } else {
+    setBurnoutSegment(char, index, seg, turnOff);
+  }
+
+  saveBurnoutMap();
+  markDisplayDirty();
+  paintBurnoutEditor();
+  render();
+}
+
+async function paintBurnoutEditor() {
+  if (!burnoutEditor || !burnoutUnlocked) return;
+  const asset = await loadSvgAsset(getCornerFilename());
+  const map = getCurrentSegmentMap();
+  const canvases = burnoutEditor.querySelectorAll(".burnout-digit");
+  for (const canvas of canvases) {
+    const index = parseInt(canvas.dataset.index || "0", 10) || 0;
+    const digitCanvas = await buildDigitCanvas(canvas.dataset.digit || "8", asset, {
+      digitIndex: index
+    });
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (digitCanvas) ctx.drawImage(digitCanvas, 0, 0);
+    const hoverPart = burnoutHover.index === index ? map?.[burnoutHover.seg] : null;
+    if (hoverPart) {
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      await paintSegment(ctx, hoverPart, "#4aa3ff");
+      ctx.restore();
+    }
+  }
+}
+
+async function renderBurnoutEditor() {
+  if (!burnoutEditor || !burnoutUnlocked) return;
+  await loadSvgAsset(getCornerFilename());
+  burnoutEditor.innerHTML = "";
+
+  BURNOUT_DIGITS.forEach((ch, index) => {
+    if (!/\d/.test(ch)) {
+      const sep = document.createElement("span");
+      sep.className = "burnout-separator";
+      sep.textContent = ch;
+      burnoutEditor.appendChild(sep);
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 76;
+    canvas.height = 115;
+    canvas.className = "burnout-digit";
+    canvas.dataset.digit = ch;
+    canvas.dataset.index = String(index);
+    canvas.addEventListener("pointerdown", handleBurnoutCanvasClick);
+    canvas.addEventListener("pointermove", handleBurnoutCanvasMove);
+    canvas.addEventListener("pointerleave", handleBurnoutCanvasLeave);
+    canvas.addEventListener("contextmenu", event => event.preventDefault());
+    burnoutEditor.appendChild(canvas);
+  });
+
+  await paintBurnoutEditor();
 }
 
 function syncCssVars() {
@@ -1367,10 +1600,21 @@ function openSegPage(id) {
   document.querySelectorAll(".seg-page").forEach(page => page.classList.remove("active"));
   const target = document.getElementById(id);
   if (target) target.classList.add("active");
+  if (id === "segPageBurnout") renderBurnoutEditor();
 }
 
 document.querySelectorAll("[data-page]").forEach(btn => {
   btn.addEventListener("click", () => openSegPage(btn.dataset.page));
+});
+
+document.addEventListener("keydown", handleBurnoutUnlockKey);
+
+resetBurnoutBtn?.addEventListener("click", () => {
+  burnoutMap = {};
+  saveBurnoutMap();
+  markDisplayDirty();
+  paintBurnoutEditor();
+  render();
 });
 
 function bindCheckbox(id, key, needsTimerRestart = false) {

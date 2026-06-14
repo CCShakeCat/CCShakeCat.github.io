@@ -150,6 +150,20 @@
             </label>
 
             <button class="seg-nav-btn" type="button" data-page="segPageNumberStyles">Number Styles...</button>
+            <button class="seg-nav-btn" type="button" id="burnoutMenuBtn" data-page="segPageBurnout" hidden>Simulate Burnout...</button>
+          </div>
+        </section>
+
+        <section class="seg-page" id="segPageBurnout" hidden>
+          <div class="seg-subpage-head">
+            <button class="seg-back-btn" type="button" data-page="segPageDigits">← Back</button>
+            <h2>Simulate Burnout</h2>
+          </div>
+
+          <div class="seg-setting-list" data-no-drag>
+            <div class="burnout-editor" id="burnoutEditor" aria-label="Burnout segment editor"></div>
+            <div class="seg-help">Left click toggles one segment. Right click toggles that same segment for every digit.</div>
+            <button class="seg-nav-btn" type="button" id="resetBurnoutBtn">Reset Burnout</button>
           </div>
         </section>
 
