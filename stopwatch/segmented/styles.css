@@ -490,6 +490,11 @@ body {
   cursor: default;
 }
 
+.color-preview-btn.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #777;
+}
+
 .speed-colour-row {
   display: grid;
   grid-template-columns: minmax(140px, 1fr) minmax(180px, 260px) 48px;
@@ -612,8 +617,7 @@ body {
   background: #2b7fff;
 }
 
-.channel-slider.hsv-h .channel-track,
-.channel-slider.hsv-h .channel-fill {
+.channel-slider.hsv-h .channel-track {
   background: linear-gradient(
     to right,
     #ff0000 0%,
@@ -624,6 +628,10 @@ body {
     #ff00ff 83%,
     #ff0000 100%
   );
+}
+
+.channel-slider.hsv-h .channel-fill {
+  display: none;
 }
 
 @media (max-width: 1000px) {
@@ -637,12 +645,48 @@ body {
 }
 
 @media (max-width: 700px) {
+  .clock-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .segmented-tool-shell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding: 92px 8px 44px;
+    box-sizing: border-box;
+  }
+
   #display {
-    padding-top: 84px;
+    height: auto;
+    min-height: 0;
+    padding-top: 0;
   }
 
   #display.segmented-active {
     font-size: min(13vw, 68px);
+  }
+
+  .segmented-tool-shell #display {
+    grid-row: auto;
+    width: 100%;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .segmented-controls {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    flex: 0 0 auto;
+    margin-top: 4px;
   }
 
   :root {

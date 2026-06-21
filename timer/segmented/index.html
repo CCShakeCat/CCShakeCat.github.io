@@ -12,6 +12,8 @@
   <script src="script.js" defer></script>
 </head>
 <body data-theme-visuals="off">
+  <div id="emergencyFlashOverlay" class="emergency-flash-overlay" aria-hidden="true"></div>
+
   <div class="clock-shell segmented-tool-shell">
     <div id="display" aria-live="polite"></div>
     <input id="timerInput" class="segmented-time-input" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Set timer">
@@ -69,7 +71,7 @@
                 <option value="none">None</option>
                 <option value="mario">Mario</option>
                 <option value="sonic">Sonic</option>
-                <option value="ggd">Goose Goose Duck</option>
+                <option value="ggd">Murder Mystery</option>
                 <option value="splatoon">Splatoon</option>
               </select>
             </div>
@@ -126,7 +128,22 @@
                 <option value="genesis">Sonic Genesis</option>
                 <option value="triple">Sonic Triple Trouble 16 Bit</option>
                 <option value="progressive">Progressive</option>
+                <option value="murder">Murder Mystery</option>
               </select>
+            </div>
+
+            <div id="emergencyFlashControls" class="seg-field emergency-flash-controls" hidden>
+              <label for="emergencyFlashStyle">Emergency Style</label>
+              <select id="emergencyFlashStyle">
+                <option value="ship">Ship</option>
+                <option value="amongus3d">Among Us 3D</option>
+                <option value="victorian">Victorian</option>
+                <option value="retro">Retro</option>
+              </select>
+              <label class="seg-check-row emergency-flash-toggle">
+                <span>Emergency Screen Flash</span>
+                <input id="emergencyFlashEnabled" type="checkbox" checked>
+              </label>
             </div>
 
             <div class="seg-field">

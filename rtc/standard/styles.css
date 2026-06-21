@@ -30,6 +30,13 @@ body {
     overscroll-behavior: none;
 }
 
+html.minecraft-sky-background,
+body.minecraft-sky-background {
+    background: var(--minecraft-sky-background, var(--minecraft-sky-color, #5caeff)) !important;
+    background-color: var(--minecraft-sky-color, #5caeff) !important;
+    transition: background-color 800ms linear, background 800ms linear;
+}
+
 .stopwatch {
     width: 100vw;
     min-height: 1em;
@@ -768,6 +775,10 @@ select, input[type="text"], input[type="number"]{
   border-radius:50%;
   border:2px solid #777;
   background:#fff;
+}
+
+#hsvHRange::-moz-range-progress{
+  background:transparent;
 }
 
 /* Match the newer timer/stopwatch modal shell and size to the active page. */

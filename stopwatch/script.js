@@ -741,6 +741,7 @@
     speedColourPreviews.forEach(preview => {
       const key = preview.dataset.speedPreview;
       preview.style.background = getClockColour(key);
+      preview.classList.toggle('selected', key === activeSpeedColourTarget);
     });
     speedColourRows.forEach(row => row.classList.toggle('active', row.dataset.speedRow === activeSpeedColourTarget));
 

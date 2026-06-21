@@ -469,6 +469,16 @@ html{
   background:#fff;
 }
 
+.color-preview-btn.selected{
+  border-color:#fff;
+  box-shadow:0 0 0 2px #777;
+}
+
+#hsvHRange::-moz-range-progress,
+#speedHsvHRange::-moz-range-progress{
+  background:transparent;
+}
+
 .setting-row{
   display:flex;
   align-items:center;

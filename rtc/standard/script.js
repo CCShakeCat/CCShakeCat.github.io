@@ -18,6 +18,7 @@ let clockSize = Math.min(5, Math.max(1, parseInt(localStorage.getItem('rtcClockS
 let rtcClockColor = localStorage.getItem('rtcClockColor') || '#ffffff';
 let rtcColourEditorMode = localStorage.getItem('rtcColourEditorMode') || 'rgb';
 let rtcHsvDraft = null;
+let minecraftSkyEnabled = (localStorage.getItem('rtcMinecraftSky') ?? '0') === '1';
 
 function resolveThemeClockColor(color) {
   const normalized = String(color || '').trim().toLowerCase();
@@ -78,6 +79,80 @@ function rtcStackedClock(mainText, suffixText = '') {
   }
 
   return rtcMono(raw) + (suffixText ? rtcMono(suffixText) : '');
+}
+
+function mixHexColors(a, b, t) {
+  const read = hex => {
+    const clean = String(hex || '').replace('#', '');
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16)
+    ];
+  };
+  const write = rgb => `#${rgb.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
+  const from = read(a);
+  const to = read(b);
+  return write(from.map((value, index) => value + (to[index] - value) * Math.max(0, Math.min(1, t))));
+}
+
+function getMinecraftDayProgress(date = new Date()) {
+  const hours = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600 + date.getMilliseconds() / 3600000;
+  return ((hours - 6 + 24) % 24) / 24;
+}
+
+function getMinecraftTicks(date = new Date()) {
+  return Math.floor(getMinecraftDayProgress(date) * 24000) % 24000;
+}
+
+function getMinecraftSkyPalette(date = new Date()) {
+  const ticks = getMinecraftTicks(date);
+  const stops = [
+    [0, { top: '#6f95dc', middle: '#8faee8', horizon: '#ccd5e5' }],
+    [1000, { top: '#7fa2e5', middle: '#9cb8ec', horizon: '#d7ddea' }],
+    [6000, { top: '#7ea1e8', middle: '#9bb7ed', horizon: '#d5deec' }],
+    [10500, { top: '#7596da', middle: '#91abe0', horizon: '#cdd5e4' }],
+    [12000, { top: '#c37d6b', middle: '#ba8f8f', horizon: '#d7bdad' }],
+    [13000, { top: '#2d244b', middle: '#3f355f', horizon: '#806579' }],
+    [18000, { top: '#060916', middle: '#0b1024', horizon: '#1d2340' }],
+    [22500, { top: '#1e2344', middle: '#323653', horizon: '#776f86' }],
+    [23500, { top: '#876f8c', middle: '#a18d9c', horizon: '#d0b9ae' }],
+    [24000, { top: '#6f95dc', middle: '#8faee8', horizon: '#ccd5e5' }]
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [startAt, startColors] = stops[i];
+    const [endAt, endColors] = stops[i + 1];
+    if (ticks >= startAt && ticks <= endAt) {
+      const t = (ticks - startAt) / Math.max(1, endAt - startAt);
+      return {
+        top: mixHexColors(startColors.top, endColors.top, t),
+        middle: mixHexColors(startColors.middle, endColors.middle, t),
+        horizon: mixHexColors(startColors.horizon, endColors.horizon, t)
+      };
+    }
+  }
+  return stops[0][1];
+}
+
+function getMinecraftSkyColor(date = new Date()) {
+  return getMinecraftSkyPalette(date).middle;
+}
+
+function getMinecraftSkyBackground(date = new Date()) {
+  const sky = getMinecraftSkyPalette(date);
+  return `linear-gradient(180deg, ${sky.top} 0%, ${sky.middle} 54%, ${sky.horizon} 100%)`;
+}
+
+function isMinecraftSkyTextMode(mode = clockMode) {
+  return mode === 'Time Query' || mode === 'Time Query (Ticks)';
+}
+
+function isMinecraftSkyMode(mode = clockMode) {
+  return mode === 'Minecraft' || mode === 'Time Query' || mode === 'Time Query (Ticks)';
+}
+
+function isMinecraftSkyBackgroundMode(mode = clockMode) {
+  return isMinecraftSkyMode(mode);
 }
 
 // Laggy rendering state
@@ -539,9 +614,7 @@ const clockModes = {
     formatter: (d) => {
       const frameCount = 64;
       const imageSrc = "./images/minecraft_clock_atlas.png";
-      let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600;
-      let mcTime = (hours - 6 + 24) % 24;
-      let frame = Math.floor(mcTime / 24 * frameCount) % frameCount;
+      const frame = Math.floor(getMinecraftTicks(d) / 24000 * frameCount) % frameCount;
       return `
         <div class="minecraft-clock-face"
           style="
@@ -555,7 +628,8 @@ const clockModes = {
     name: "Time Query",
     formatter: (d) => {
       const q = getTimeOfDayAndColor(d);
-      return `<span class="timequery rtc-wrap" style="color:${q.color};">
+      const color = minecraftSkyEnabled ? '#ffffff' : q.color;
+      return `<span class="timequery rtc-wrap" style="color:${color};">
         ${q.label}
       </span>`;
     }
@@ -563,10 +637,10 @@ const clockModes = {
   "Time Query (Ticks)": {
     name: "Time Query (Ticks)",
     formatter: (d) => {
-      let hours = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600 + d.getMilliseconds()/3600000;
-      let ticks = Math.floor((hours / 24) * 24000) % 24000;
+      const ticks = getMinecraftTicks(d);
       const q = getTimeOfDayAndColor(d);
-      return `<span class="timequery rtc-wrap" style="color:${q.color};">
+      const color = minecraftSkyEnabled ? '#ffffff' : q.color;
+      return `<span class="timequery rtc-wrap" style="color:${color};">
         Daytime is ${ticks}
       </span>`;
     }
@@ -862,11 +936,29 @@ function saveShowHideState() {
 function updateDisplay() {
   const display = document.getElementById('display');
   if (!display) return;
+  const now = new Date();
   const fontType = localStorage.getItem('stopwatchFontType') || localStorage.getItem('gs.clockFontMode') || savedFontType || 'default';
   document.documentElement.style.setProperty('--rtc-fit-scale', '1');
   document.documentElement.style.setProperty('--clock-size', `${RTC_SIZE_EM[clockSize] || RTC_SIZE_EM[3]}em`);
-  display.style.setProperty('color', resolveThemeClockColor(rtcClockColor), 'important');
-  display.innerHTML = formatClock(new Date());
+  const skyColor = getMinecraftSkyColor(now);
+  const skyBackground = getMinecraftSkyBackground(now);
+  const useMinecraftSky = minecraftSkyEnabled && isMinecraftSkyBackgroundMode();
+  document.documentElement.style.setProperty('--minecraft-sky-color', skyColor);
+  document.documentElement.style.setProperty('--minecraft-sky-background', skyBackground);
+  document.documentElement.classList.toggle('minecraft-sky-background', useMinecraftSky);
+  document.body.classList.toggle('minecraft-sky-background', useMinecraftSky);
+  document.body.classList.toggle('minecraft-sky-text-mode', false);
+  if (useMinecraftSky) {
+    document.documentElement.style.setProperty('background', skyBackground, 'important');
+    document.body.style.setProperty('background', skyBackground, 'important');
+  } else {
+    document.documentElement.style.removeProperty('background');
+    document.body.style.removeProperty('background');
+  }
+  const useSkyTextStyle = minecraftSkyEnabled && isMinecraftSkyTextMode();
+  display.style.setProperty('color', useSkyTextStyle ? '#ffffff' : resolveThemeClockColor(rtcClockColor), 'important');
+  display.style.setProperty('text-shadow', useSkyTextStyle ? '0 3px 0 rgba(0,0,0,0.7), 0 0 10px rgba(0,0,0,0.55)' : '', 'important');
+  display.innerHTML = formatClock(now);
   if (fontType === 'bitmap') window.GSGlobal?.renderBitmapText?.(display, { force: true });
   if (clockMode === "Upside Down") {
     display.style.transform = "scaleY(-1)";
@@ -971,6 +1063,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const customFontNotice = document.getElementById('customFontNotice');
   const clock24Checkbox = document.getElementById('is24Hour');
   const showAMPMCheckbox = document.getElementById('showAMPM');
+  const minecraftSkyCheckbox = document.getElementById('minecraftSky');
+  const minecraftSkyRow = document.getElementById('minecraftSkyRow');
   const clockModeSelect = document.getElementById('clockModeSelect');
   const tpsSelect = document.getElementById('tpsSelect');
   const pages = {
@@ -1227,6 +1321,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     clockModeSelect.value = clockMode;
     if (tpsSelect) tpsSelect.value = String(rtcTickRate);
+    updateMinecraftSkyVisibility();
+  }
+
+  function updateMinecraftSkyVisibility() {
+    if (!minecraftSkyRow) return;
+    const showSkyControl = isMinecraftSkyMode(clockMode);
+    minecraftSkyRow.hidden = !showSkyControl;
+    minecraftSkyRow.style.display = showSkyControl ? '' : 'none';
   }
 
   settingsBtn.addEventListener('click', openSettingsModal);
@@ -1350,10 +1452,19 @@ document.addEventListener("DOMContentLoaded", () => {
   clockModeSelect.addEventListener('change', function() {
     clockMode = this.value;
     saveShowHideState();
+    updateMinecraftSkyVisibility();
     updateDisplay();
     setClockInterval();
     notifyLaggyModeSwitch(clockMode);
   });
+  if (minecraftSkyCheckbox) {
+    minecraftSkyCheckbox.checked = minecraftSkyEnabled;
+    minecraftSkyCheckbox.addEventListener('change', function() {
+      minecraftSkyEnabled = this.checked;
+      localStorage.setItem('rtcMinecraftSky', minecraftSkyEnabled ? '1' : '0');
+      updateDisplay();
+    });
+  }
   tpsSelect?.addEventListener('change', function() {
     rtcTickRate = Math.min(100, Math.max(10, parseInt(this.value || '40', 10) || 40));
     msPerTick = 1000 / rtcTickRate;

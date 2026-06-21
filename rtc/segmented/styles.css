@@ -418,6 +418,11 @@ body {
   cursor: default;
 }
 
+.color-preview-btn.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #777;
+}
+
 .colour-mode-row {
   display: flex;
   gap: 14px;
@@ -524,8 +529,7 @@ body {
   background: #2b7fff;
 }
 
-.channel-slider.hsv-h .channel-track,
-.channel-slider.hsv-h .channel-fill {
+.channel-slider.hsv-h .channel-track {
   background: linear-gradient(
     to right,
     #ff0000 0%,
@@ -536,6 +540,10 @@ body {
     #ff00ff 83%,
     #ff0000 100%
   );
+}
+
+.channel-slider.hsv-h .channel-fill {
+  display: none;
 }
 
 @media (max-width: 1000px) {

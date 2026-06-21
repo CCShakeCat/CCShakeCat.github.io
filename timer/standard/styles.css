@@ -34,13 +34,15 @@ body{
   margin-inline:var(--monochar-sep-spacing, .01em);
 }
 
-.clock-row{ display:flex; align-items:center; gap:min(3vw,48px); padding-top:6vh }
+.clock-row{ display:flex; align-items:center; justify-content:center; gap:min(3vw,48px); padding-top:6vh }
+.clock-row.no-prefix{ gap:0 }
+.clock-row.no-prefix #prefixWrap{ display:none; min-width:0 }
 .clock-row.stacked #prefixWrap{justify-content:center; min-width:auto}
 #prefixWrap{ display:flex; align-items:center; justify-content:flex-end; min-width:12vw }
 #prefixText{ display:none; font-weight:400; letter-spacing:.02em; color:#ffff00; font-size:var(--clock-vw); font-family:var(--clock-face-font, inherit) }
 #prefixIcon{ display:none; width:calc(var(--clock-vw)*1.2); height:calc(var(--clock-vw)*1.2) }
 
-.timer-app{ display:grid; justify-items:center; align-items:center; gap:16px }
+.timer-app{ position:relative; z-index:10; display:grid; justify-items:center; align-items:center; gap:16px }
 #timerInput{
   position:absolute; left:50%; top:0; transform:translateX(-50%);
   display:none; z-index:2;
@@ -130,6 +132,7 @@ button{ font:inherit }
 @media (max-width:480px){
   :root{ --clock-vw:16vw }
   .clock-row{ gap:5vw; padding-top:3vh }
+  .clock-row.no-prefix{ gap:0 }
   #prefixWrap{ min-width:18vw }
   .modal-content{
   font-family: var(--modal-font-stack);
@@ -194,6 +197,37 @@ body{
 
 #prefixText.flash-prefix-text{
   color:#ff0000 !important;
+}
+
+.emergency-flash-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  opacity:0;
+  background:rgba(255,0,0,.32);
+  transition:none;
+}
+.emergency-flash-overlay.active{ opacity:1; }
+.emergency-flash-overlay.emergency-ship{ background:rgba(255,0,0,.32); }
+.emergency-flash-overlay.emergency-amongus3d{
+  background:rgba(255,0,0,.34);
+  opacity:0;
+  animation:emergency-au3d-pulse 750ms ease-in-out both;
+}
+.emergency-flash-overlay.emergency-victorian{ background:rgba(255,128,0,.32); }
+.emergency-flash-overlay.emergency-retro{ background:rgba(0,255,70,.25); }
+.emergency-flash-controls{
+  display:grid;
+  gap:12px;
+}
+.emergency-flash-controls[hidden]{ display:none; }
+.emergency-flash-toggle{ gap:8px; }
+
+@keyframes emergency-au3d-pulse{
+  0%{ opacity:0; }
+  50%{ opacity:1; }
+  100%{ opacity:0; }
 }
 
 #timerDisplay,
@@ -384,6 +418,11 @@ body{
   background:var(--page-panel, #111111);
 }
 
+.color-preview-btn.selected{
+  border-color:#fff;
+  box-shadow:0 0 0 2px #777;
+}
+
 .colour-mode-row{
   display:flex;
   justify-content:center;
@@ -463,6 +502,10 @@ body{
   border-radius:50%;
   border:2px solid #777;
   background:#fff;
+}
+
+#timerHsvHRange::-moz-range-progress{
+  background:transparent;
 }
 
 /* Inputs look centered and readable on dark */

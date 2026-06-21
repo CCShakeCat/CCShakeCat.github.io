@@ -14,6 +14,10 @@ const hurryUpDesc = document.getElementById("hurryUpDesc");
 const tenSecondWarningSound = document.getElementById("tenSecondWarningSound");
 const flashSpeedSelect = document.getElementById("flashSpeed");
 const flashValueInput = document.getElementById("flashValue");
+const emergencyFlashControls = document.getElementById("emergencyFlashControls");
+const emergencyFlashStyleSelect = document.getElementById("emergencyFlashStyle");
+const emergencyFlashEnabled = document.getElementById("emergencyFlashEnabled");
+const emergencyFlashOverlay = document.getElementById("emergencyFlashOverlay");
 const musicUrlInput = document.getElementById("musicUrlInput");
 const musicUrlSubmitBtn = document.getElementById("musicUrlSubmitBtn");
 const musicUploadBtn = document.getElementById("musicUploadBtn");
@@ -101,11 +105,14 @@ const settings = {
   flashPhase: false,
   flashTimer: null,
   flashDelay: 333,
+  emergencyFlashEnabled: loadBool("timer_seg_murder_emergency_flash", true),
+  emergencyFlashStyle: localStorage.getItem("timer_seg_murder_emergency_style") || "ship",
   tenSecondWarningSound: localStorage.getItem("timer_seg_warning_sound") || "none",
   tenBeepLastSecond: null,
   hurryUpStyle: localStorage.getItem("timer_seg_hurry_up_style") || "none",
   hurryUp: localStorage.getItem("timer_seg_hurry_up") || "",
   hurryUpAudio: null,
+  hurryAlarmTimer: null,
   hurryUpPlayed: false,
   musicUrl: localStorage.getItem("timer_seg_music_url") || "",
   musicSource: localStorage.getItem("timer_seg_music_source") === "upload" ? "upload" : "url",
@@ -179,11 +186,14 @@ const HURRY_UP_PRESETS = {
     ]
   },
   ggd: {
-    label: "Goose Goose Duck",
+    label: "Murder Mystery",
     sub: [
-      { value: "../standard/hurryup/Goose Goose Duck/hurryup-ggdsabo_retro", label: "Sabotage - Retro", desc: "Plays at Hurry Up start." },
-      { value: "../standard/hurryup/Goose Goose Duck/hurryup-ggdsabo_ship", label: "Sabotage - Ship", desc: "Overlays on top of the current music." },
-      { value: "../standard/hurryup/Goose Goose Duck/hurryup-ggdsabo_victorian", label: "Sabotage - Victorian", desc: "Plays at Hurry Up start." }
+      { value: "./hurryup/murder mystery/alarm_sabotage.wav#amongus", label: "Among Us", desc: "Plays the sabotage alarm every other second." },
+      { value: "./hurryup/murder mystery/alarm_airship.wav#airship", label: "Among Us: The Airship", desc: "Plays the Airship alarm every other second." },
+      { value: "./hurryup/murder mystery/alarm_sabotage.wav#amongus3d", label: "Among Us 3D", desc: "Plays the sabotage alarm every 1.5 seconds." },
+      { value: "./hurryup/murder mystery/hurryup-ggdsabo_ship", label: "Goose Goose Duck Ship", desc: "Overlays on top of the current music." },
+      { value: "./hurryup/murder mystery/hurryup-ggdsabo_victorian", label: "Goose Goose Duck Victorian", desc: "Plays at Hurry Up start." },
+      { value: "./hurryup/murder mystery/hurryup-ggdsabo_retro", label: "Goose Goose Duck Retro", desc: "Plays at Hurry Up start." }
     ]
   },
   splatoon: {
@@ -219,6 +229,7 @@ let renderToken = 0;
 let intervalId = null;
 let suppressPresetAutoCustom = false;
 let colorEditorMode = localStorage.getItem("timer_timer_seg_color_editor_mode") || "rgb";
+let colorEditorTarget = "activeColor";
 let colorHsvDraft = null;
 let editPreviewText = null;
 let burnoutUnlocked = false;
@@ -278,6 +289,8 @@ function saveSettings() {
   localStorage.setItem("timer_seg_time_target_at", String(settings.timeTargetAt || 0));
   localStorage.setItem("timer_seg_hurry_flash_speed", settings.flashSpeed || "off");
   localStorage.setItem("timer_seg_hurry_flash_value", settings.flashValue || "");
+  localStorage.setItem("timer_seg_murder_emergency_flash", settings.emergencyFlashEnabled ? "1" : "0");
+  localStorage.setItem("timer_seg_murder_emergency_style", settings.emergencyFlashStyle || "ship");
   localStorage.setItem("timer_seg_warning_sound", settings.tenSecondWarningSound || "none");
   localStorage.setItem("timer_seg_hurry_up_style", settings.hurryUpStyle || "none");
   localStorage.setItem("timer_seg_hurry_up", settings.hurryUp || "");
@@ -917,7 +930,7 @@ async function buildDigitCanvas(char, asset, opts = {}) {
   c.height = 115;
   const ctx = c.getContext("2d");
 
-  const active = getRenderedActiveColor();
+  const active = opts.activeColor || getRenderedActiveColor();
   const inactive = settings.inactiveEnabled ? darkenColor(active) : "transparent";
   const demoHideOff = !!opts.hideOff;
 
@@ -966,9 +979,12 @@ let slotState = [];
 let lastSlotStructureKey = "";
 let lastRenderedText = "";
 let lastRenderedSeparatorsVisible = null;
+let lastRenderedStyleKey = "";
+let renderSequence = 0;
 let displayNeedsFullRefresh = true;
 let demoNeedsRefresh = true;
 let separatorFlashStartedAt = Date.now();
+let lastRuntimeSaveMs = 0;
 
 function getClockStyleKey() {
   return JSON.stringify({
@@ -997,6 +1013,13 @@ function resetSeparatorFlashCycle() {
   separatorFlashStartedAt = Date.now();
   lastRenderedSeparatorsVisible = null;
   markDisplayDirty();
+}
+
+function saveRuntimeState(now = performance.now(), force = false) {
+  if (!force && now - lastRuntimeSaveMs < 1000) return;
+  lastRuntimeSaveMs = now;
+  localStorage.setItem("timer_seg_remaining_ticks", String(settings.remainingTicks));
+  localStorage.setItem("timer_seg_time_target_at", String(settings.timeTargetAt || 0));
 }
 
 function getRenderedActiveColor() {
@@ -1046,14 +1069,15 @@ function ensureClockSlots(str) {
   lastSlotStructureKey = structureKey;
   lastRenderedText = "";
   lastRenderedSeparatorsVisible = null;
+  lastRenderedStyleKey = "";
   syncTimerInputToClock();
 }
 
-async function getDigitDataUrl(char, asset, styleKey, digitIndex = 0) {
+async function getDigitDataUrl(char, asset, styleKey, digitIndex = 0, activeColor = null) {
   const key = `${styleKey}|${char}|${digitIndex}`;
   if (digitDataUrlCache.has(key)) return digitDataUrlCache.get(key);
 
-  const promise = buildDigitCanvas(char, asset, { digitIndex }).then(canvas => canvas ? canvas.toDataURL() : "");
+  const promise = buildDigitCanvas(char, asset, { digitIndex, activeColor }).then(canvas => canvas ? canvas.toDataURL() : "");
   digitDataUrlCache.set(key, promise);
   return promise;
 }
@@ -1070,15 +1094,18 @@ async function renderClockFast(date) {
   const str = buildTimeString(date);
   const sepVisible = separatorsVisible(Date.now());
   const styleKey = getClockStyleKey();
+  const activeColor = getRenderedActiveColor();
 
-  if (!displayNeedsFullRefresh && str === lastRenderedText && sepVisible === lastRenderedSeparatorsVisible) {
+  if (!displayNeedsFullRefresh && str === lastRenderedText && sepVisible === lastRenderedSeparatorsVisible && styleKey === lastRenderedStyleKey) {
     return;
   }
 
+  const renderId = ++renderSequence;
   const asset = await loadSvgAsset(getCornerFilename());
+  if (renderId !== renderSequence) return;
   ensureClockSlots(str);
 
-  const force = displayNeedsFullRefresh;
+  const force = displayNeedsFullRefresh || styleKey !== lastRenderedStyleKey;
   const chars = [...str];
 
   for (let i = 0; i < chars.length; i++) {
@@ -1089,7 +1116,8 @@ async function renderClockFast(date) {
     const kind = getSlotKind(ch);
     if (kind === "digit") {
       if (force || slot.char !== ch) {
-        const dataUrl = await getDigitDataUrl(ch, asset, styleKey, i);
+        const dataUrl = await getDigitDataUrl(ch, asset, styleKey, i, activeColor);
+        if (renderId !== renderSequence) return;
         if (slot.img && slot.img.src !== dataUrl) slot.img.src = dataUrl;
         slot.char = ch;
       }
@@ -1101,6 +1129,7 @@ async function renderClockFast(date) {
 
   lastRenderedText = str;
   lastRenderedSeparatorsVisible = sepVisible;
+  lastRenderedStyleKey = styleKey;
   displayNeedsFullRefresh = false;
 }
 
@@ -1195,8 +1224,19 @@ function setColorEditorMode(mode) {
   hsvEditor.classList.toggle("active", mode === "hsv");
 }
 
+function setColorEditorTarget(target) {
+  if (target !== "activeColor" && target !== "backgroundColor") return;
+  colorEditorTarget = target;
+  colorHsvDraft = null;
+  syncColorEditorUI();
+}
+
+function getColorEditorValue() {
+  return settings[colorEditorTarget] || settings.activeColor || "#ffffff";
+}
+
 function getActiveRgb() {
-  return parseCssColor(settings.activeColor) || { r: 255, g: 255, b: 255 };
+  return parseCssColor(getColorEditorValue()) || { r: 255, g: 255, b: 255 };
 }
 
 function getActiveHsv() {
@@ -1246,11 +1286,17 @@ function syncColorEditorUI() {
 
   optActiveColor.value = settings.activeColor;
   activeColorPreview.style.background = normalizeCssColor(settings.activeColor) || "#ffffff";
+  activeColorPreview.classList.toggle("selected", colorEditorTarget === "activeColor");
+  if (optBackgroundColor) optBackgroundColor.value = settings.backgroundColor;
+  if (backgroundColorPreview) {
+    backgroundColorPreview.style.background = normalizeCssColor(settings.backgroundColor) || "#000000";
+    backgroundColorPreview.classList.toggle("selected", colorEditorTarget === "backgroundColor");
+  }
 }
 
 function commitActiveColorFromRgb(r, g, b, preserveHsvDraft = false) {
   if (!preserveHsvDraft) colorHsvDraft = null;
-  settings.activeColor = rgbToHex(clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
+  settings[colorEditorTarget] = rgbToHex(clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
   maybeSetPresetCustom();
   saveSettings();
   syncCssVars();
@@ -1594,10 +1640,24 @@ function getHurryVolume() {
 }
 
 function stopHurryAudio({ force = false } = {}) {
+  if (settings.hurryAlarmTimer) {
+    clearInterval(settings.hurryAlarmTimer);
+    settings.hurryAlarmTimer = null;
+  }
   if (!settings.hurryUpAudio) return;
   if (!force && isSplatoonFixedLastMinute()) return;
   try { settings.hurryUpAudio.pause(); } catch {}
   settings.hurryUpAudio = null;
+}
+
+function stripAudioMarker(value) {
+  return String(value || "").replace(/[#?].*$/, "");
+}
+
+function murderAlarmIntervalMs(value) {
+  const raw = String(value || "");
+  if (!/murder mystery\/alarm_/i.test(raw)) return 0;
+  return /#amongus3d/i.test(raw) ? 1500 : 2000;
 }
 
 function populateHurryUpTracks({ keepValue = true } = {}) {
@@ -1981,6 +2041,7 @@ function stopHurryFlash() {
   const wasFlashing = settings.flashPhase || display.classList.contains("hurry-flash");
   settings.flashPhase = false;
   display.classList.remove("hurry-flash");
+  applyEmergencyFlashPhase(false);
   syncHurryMusicSpeed();
   if (wasFlashing) {
     displayNeedsFullRefresh = true;
@@ -2001,11 +2062,22 @@ function updateHurryFlashControls() {
   flashValueInput.disabled = fixed;
   flashValueInput.placeholder = fixed ? "Fixed: 00:01:00" : "00:01:00";
   if (fixed) flashValueInput.value = "";
+  if (emergencyFlashControls) emergencyFlashControls.hidden = settings.flashSpeed !== "murder";
+  if (emergencyFlashStyleSelect) emergencyFlashStyleSelect.value = settings.emergencyFlashStyle || "ship";
+  if (emergencyFlashEnabled) emergencyFlashEnabled.checked = settings.emergencyFlashEnabled !== false;
+}
+
+function applyEmergencyFlashPhase(phase = settings.flashPhase) {
+  if (!emergencyFlashOverlay) return;
+  emergencyFlashOverlay.className = "emergency-flash-overlay";
+  if (settings.flashSpeed !== "murder" || settings.emergencyFlashEnabled === false || !phase) return;
+  emergencyFlashOverlay.classList.add("active", `emergency-${settings.emergencyFlashStyle || "ship"}`);
 }
 
 function hurryFlashDelay() {
   if (settings.flashSpeed === "genesis") return 167;
   if (settings.flashSpeed === "triple") return 333;
+  if (settings.flashSpeed === "murder") return settings.emergencyFlashStyle === "amongus3d" ? 750 : 1000;
   if (settings.flashSpeed === "progressive") {
     const trigger = hurryFlashTrigger();
     return trigger > 0 && timeLeftTicks() <= trigger / 2 ? 167 : 333;
@@ -2026,6 +2098,7 @@ function syncHurryFlash() {
   settings.flashDelay = delay;
   settings.flashPhase = true;
   display.classList.add("hurry-flash");
+  applyEmergencyFlashPhase(true);
   displayNeedsFullRefresh = true;
   syncCssVars();
   render();
@@ -2037,6 +2110,7 @@ function syncHurryFlash() {
     }
     settings.flashPhase = !settings.flashPhase;
     display.classList.toggle("hurry-flash", settings.flashPhase);
+    applyEmergencyFlashPhase(settings.flashPhase);
     displayNeedsFullRefresh = true;
     syncCssVars();
     render();
@@ -2062,6 +2136,23 @@ async function doHurryUp() {
     return;
   }
 
+  const murderInterval = murderAlarmIntervalMs(basePath);
+  if (murderInterval) {
+    const alarmPath = stripAudioMarker(basePath);
+    const playAlarm = () => {
+      const alarm = new Audio(alarmPath);
+      alarm.preload = "auto";
+      alarm.volume = getHurryVolume();
+      settings.hurryUpAudio = alarm;
+      alarm.play().catch(() => {
+        if (settings.hurryUpAudio === alarm) settings.hurryUpAudio = null;
+      });
+    };
+    playAlarm();
+    settings.hurryAlarmTimer = setInterval(playAlarm, murderInterval);
+    return;
+  }
+
   const isGGDShip = /ggdsabo_ship$/i.test(basePath) || /\/hurryup-ggdsabo_ship$/i.test(basePath);
   const wasBGMPlaying =
     (bgAudio && bgAudio.src && !bgAudio.paused) ||
@@ -2072,7 +2163,8 @@ async function doHurryUp() {
 
   if (wasBGMPlaying && !isGGDShip) stopAllBGM();
 
-  const url = basePath.endsWith(".mp3") ? basePath : `${basePath}.mp3`;
+  const audioPath = stripAudioMarker(basePath);
+  const url = audioPath.endsWith(".mp3") ? audioPath : `${audioPath}.mp3`;
   const audio = new Audio(url);
   audio.preload = "auto";
   audio.volume = getHurryVolume();
@@ -2142,6 +2234,7 @@ function pauseTimer() {
   stopHurryFlash();
   stopHurryAudio({ force: true });
   stopAllBGM();
+  saveRuntimeState(performance.now(), true);
   saveSettings();
   render();
 }
@@ -2187,13 +2280,14 @@ function tickTimer() {
       playTenSecondWarning();
     }
     render();
-    saveSettings();
+    saveRuntimeState(now);
     if ((isCountingDown() && settings.remainingTicks <= 0) || (!isCountingDown() && settings.remainingTicks >= settings.initialTicks)) {
       settings.running = false;
       syncTimerButtons();
       stopHurryFlash();
       if (!isSplatoonFixedLastMinute()) stopHurryAudio({ force: true });
       stopBGMAndReset();
+      saveRuntimeState(now, true);
       saveSettings();
       return;
     }
@@ -2853,8 +2947,23 @@ tenSecondWarningSound?.addEventListener("change", () => {
 
 flashSpeedSelect?.addEventListener("change", () => {
   settings.flashSpeed = flashSpeedSelect.value;
+  updateHurryFlashControls();
   stopHurryFlash();
   syncHurryFlash();
+  saveSettings();
+});
+
+emergencyFlashStyleSelect?.addEventListener("change", () => {
+  settings.emergencyFlashStyle = emergencyFlashStyleSelect.value;
+  updateHurryFlashControls();
+  stopHurryFlash();
+  syncHurryFlash();
+  saveSettings();
+});
+
+emergencyFlashEnabled?.addEventListener("change", () => {
+  settings.emergencyFlashEnabled = !!emergencyFlashEnabled.checked;
+  applyEmergencyFlashPhase();
   saveSettings();
 });
 
@@ -2880,6 +2989,8 @@ optActiveColor.addEventListener("change", () => {
   render();
 });
 
+activeColorPreview?.addEventListener("click", () => setColorEditorTarget("activeColor"));
+
 optBackgroundColor?.addEventListener("change", () => {
   const normalized = normalizeCssColor(optBackgroundColor.value);
   if (!normalized) {
@@ -2890,7 +3001,11 @@ optBackgroundColor?.addEventListener("change", () => {
   maybeSetPresetCustom();
   saveSettings();
   syncCssVars();
+  syncColorEditorUI();
+  render();
 });
+
+backgroundColorPreview?.addEventListener("click", () => setColorEditorTarget("backgroundColor"));
 
 optInactiveEnabled.addEventListener("change", () => {
   settings.inactiveEnabled = optInactiveEnabled.checked;

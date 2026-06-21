@@ -112,6 +112,10 @@
     const tenSecondBeepToggle = $('tenSecondBeep');
     const tenSecondWarningSoundSel = $('tenSecondWarningSound');
     const flashSpeedSel = $('flashSpeed');
+    const emergencyFlashControls = $('emergencyFlashControls');
+    const emergencyFlashStyleSel = $('emergencyFlashStyle');
+    const emergencyFlashEnabled = $('emergencyFlashEnabled');
+    const emergencyFlashOverlay = $('emergencyFlashOverlay');
 
     const clockRow = document.querySelector('.clock-row');
 
@@ -381,11 +385,14 @@
         ]
       },
       ggd: {
-        label: 'Goose Goose Duck',
+        label: 'Murder Mystery',
         sub: [
-          { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_retro', label: 'Sabotage - Retro', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_ship', label: 'Sabotage - Ship', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/Goose Goose Duck/hurryup-ggdsabo_victorian', label: 'Sabotage - Victorian', desc: 'Plays at Hurry Up start.' }
+          { value: './hurryup/murder mystery/alarm_sabotage.wav#amongus', label: 'Among Us', desc: 'Plays the sabotage alarm every other second.' },
+          { value: './hurryup/murder mystery/alarm_airship.wav#airship', label: 'Among Us: The Airship', desc: 'Plays the Airship alarm every other second.' },
+          { value: './hurryup/murder mystery/alarm_sabotage.wav#amongus3d', label: 'Among Us 3D', desc: 'Plays the sabotage alarm every 1.5 seconds.' },
+          { value: './hurryup/murder mystery/hurryup-ggdsabo_ship', label: 'Goose Goose Duck Ship', desc: 'Overlays on top of the current music.' },
+          { value: './hurryup/murder mystery/hurryup-ggdsabo_victorian', label: 'Goose Goose Duck Victorian', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/murder mystery/hurryup-ggdsabo_retro', label: 'Goose Goose Duck Retro', desc: 'Plays at Hurry Up start.' }
         ]
       },
       splatoon: {
@@ -522,10 +529,12 @@
       flashMode:'nothing', // nothing | time | prefix | all
       flashType:'time',    // time | percent
       flashValue:'',       // allow empty => 1 minute default
-      flashSpeed:'triple',  // off | genesis | triple | progressive | superstars
+      flashSpeed:'triple',  // off | genesis | triple | progressive | superstars | murder
       flashTimer:null,
       flashPhase:false,
       flashDelay:333,
+      emergencyFlashEnabled:true,
+      emergencyFlashStyle:'ship',
 
       fontMode:'system',
       customFontFamily:'',
@@ -545,6 +554,7 @@
       huKey:'none',
       huValue:'',
       huAudio:null,
+      huAlarmTimer:null,
       huPlayed:false,
       huVolume:1.0,
 
@@ -671,6 +681,7 @@
       if (prefixIcon) prefixIcon.style.display = (st.style==='icon') ? 'block' : 'none';
 
       if (clockRow){
+        clockRow.classList.toggle('no-prefix', st.style !== 'time' && st.style !== 'icon');
         if (st.size === 4 || st.size === 5){
           clockRow.classList.add('stacked');
           clockRow.setAttribute('data-size', String(st.size));
@@ -796,6 +807,8 @@
       const faceUiColor = resolveThemeClockHex(st.faceColor);
       if (faceColorInput) faceColorInput.value = faceUiColor.toUpperCase();
       if (faceColorPicker) faceColorPicker.style.background = faceUiColor;
+      prefixColorPicker?.classList.toggle('selected', activeTimerColourTarget === 'prefix');
+      faceColorPicker?.classList.toggle('selected', activeTimerColourTarget === 'face');
       syncTimerColourEditorUI();
 
       if (st.fontMode === 'bitmap') renderBitmapMode();
@@ -821,6 +834,7 @@
       if (prefixIcon) prefixIcon.classList.remove('flash-pulse-prefix');
       document.getElementById('prefixBitmapWrap')?.classList.remove('flash-pulse-prefix');
       if (st.style==='icon' && prefixIcon) prefixIcon.src = ICON_NORMAL;
+      applyEmergencyFlashPhase(false);
       if (st.fontMode === 'bitmap') renderBitmapMode();
     }
 
@@ -887,12 +901,27 @@
         if (prefixBitmapWrap) prefixBitmapWrap.classList.remove('flash-pulse-prefix');
       }
 
+      applyEmergencyFlashPhase(st.flashPhase);
       if (st.fontMode === 'bitmap') renderBitmapMode();
+    }
+
+    function applyEmergencyFlashPhase(phase = st.flashPhase){
+      if (!emergencyFlashOverlay) return;
+      emergencyFlashOverlay.className = 'emergency-flash-overlay';
+      if (st.flashSpeed !== 'murder' || st.emergencyFlashEnabled === false || !phase) return;
+      emergencyFlashOverlay.classList.add('active', `emergency-${st.emergencyFlashStyle || 'ship'}`);
+    }
+
+    function updateEmergencyFlashControls(){
+      if (emergencyFlashControls) emergencyFlashControls.hidden = st.flashSpeed !== 'murder';
+      if (emergencyFlashStyleSel) emergencyFlashStyleSel.value = st.emergencyFlashStyle || 'ship';
+      if (emergencyFlashEnabled) emergencyFlashEnabled.checked = st.emergencyFlashEnabled !== false;
     }
 
     function flashDelayMs(){
       if (st.flashSpeed === 'genesis') return 167;
       if (st.flashSpeed === 'triple' || st.flashSpeed === 'superstars') return 333;
+      if (st.flashSpeed === 'murder') return st.emergencyFlashStyle === 'amongus3d' ? 750 : 1000;
       if (st.flashSpeed === 'progressive'){
         const trigger = computeFlashTrigger();
         const left = timeLeftTicks();
@@ -1089,11 +1118,25 @@ function ensureYT(id){
     }
 
     const stopHU = () => {
+      if (st.huAlarmTimer){
+        clearInterval(st.huAlarmTimer);
+        st.huAlarmTimer = null;
+      }
       if (st.huAudio){
         try { st.huAudio.pause(); } catch {}
         st.huAudio = null;
       }
     };
+
+    function stripAudioMarker(value){
+      return String(value || '').replace(/[#?].*$/, '');
+    }
+
+    function murderAlarmIntervalMs(value){
+      const raw = String(value || '');
+      if (!/murder mystery\/alarm_/i.test(raw)) return 0;
+      return /#amongus3d/i.test(raw) ? 1500 : 2000;
+    }
 
     async function doHurryUp(){
       if (!st.huValue) return;
@@ -1112,7 +1155,24 @@ function ensureYT(id){
         return;
       }
 
-      // Goose Goose Duck (Ship) should OVERLAY on top of whatever music is playing.
+      const murderInterval = murderAlarmIntervalMs(basePath);
+      if (murderInterval){
+        const alarmPath = stripAudioMarker(basePath);
+        const playAlarm = () => {
+          const alarm = new Audio(alarmPath);
+          alarm.preload = 'auto';
+          alarm.volume = getHurryVolume();
+          st.huAudio = alarm;
+          alarm.play().catch(() => {
+            if (st.huAudio === alarm) st.huAudio = null;
+          });
+        };
+        playAlarm();
+        st.huAlarmTimer = setInterval(playAlarm, murderInterval);
+        return;
+      }
+
+      // Goose Goose Duck Ship should OVERLAY on top of whatever music is playing.
       // Everything else keeps existing behavior (stop/pause/restart rules).
       const isGGDShip = /ggdsabo_ship$/i.test(basePath) || /\/hurryup-ggdsabo_ship$/i.test(basePath);
 
@@ -1121,7 +1181,8 @@ function ensureYT(id){
         (st.yt && st.ytReady && (() => { try { return st.yt.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })());
 
       if (wasBGMPlaying && !isGGDShip) stopAllBGM();
-      const url = basePath.endsWith('.mp3') ? basePath : (basePath + '.mp3');
+      const audioPath = stripAudioMarker(basePath);
+      const url = audioPath.endsWith('.mp3') ? audioPath : (audioPath + '.mp3');
 
       const a = new Audio(url);
       a.preload = 'auto';
@@ -1130,7 +1191,7 @@ function ensureYT(id){
       const isMario = MARIO_IDS.has(st.huValue) || MARIO_IDS.has(basePath.replace(/^.*\/(hurryup-[^\/]+)$/, '$1'));
       const isSplatoonFinisher = isSplatoonFixedLastMinute(basePath);
       // Mario: pause music, play HU once, then restart music at 1.25x.
-      // GGD Ship: overlay HU once (do NOT stop music).
+      // Goose Goose Duck Ship: overlay HU once (do NOT stop music).
       // Splatoon Now or Never: play through once so the finishing chords can land.
       a.loop = !(isMario || isGGDShip || isSplatoonFinisher);
 
@@ -1179,6 +1240,7 @@ function ensureYT(id){
           style:st.style, size:st.size,
           prefixColor:st.prefixColor, faceColor:st.faceColor,
           flashMode:st.flashMode, flashType:st.flashType, flashValue:st.flashValue, flashSpeed:st.flashSpeed,
+          emergencyFlashEnabled:st.emergencyFlashEnabled, emergencyFlashStyle:st.emergencyFlashStyle,
           fontMode:st.fontMode, customFontFamily:st.customFontFamily, customFontData:st.customFontData,
           musicUrl:st.musicUrl, musicSource:st.musicSource, musicUploadName:st.musicUploadName,
           musicPaused:st.musicPaused, musicVolume:st.musicVolume, ytId:st.ytId,
@@ -1211,7 +1273,9 @@ function ensureYT(id){
         st.flashMode  = d.flashMode || 'nothing';
         st.flashType  = d.flashType || 'time';
         st.flashValue = ('flashValue' in d) ? (d.flashValue || '') : '';
-        st.flashSpeed = ['off','genesis','triple','progressive','superstars'].includes(d.flashSpeed) ? d.flashSpeed : 'triple';
+        st.flashSpeed = ['off','genesis','triple','progressive','superstars','murder'].includes(d.flashSpeed) ? d.flashSpeed : 'triple';
+        st.emergencyFlashEnabled = ('emergencyFlashEnabled' in d) ? !!d.emergencyFlashEnabled : true;
+        st.emergencyFlashStyle = ['ship','amongus3d','victorian','retro'].includes(d.emergencyFlashStyle) ? d.emergencyFlashStyle : 'ship';
         st.fontMode         = d.fontMode || 'system';
         st.customFontFamily = d.customFontFamily || '';
         st.customFontData   = d.customFontData   || '';
@@ -1846,6 +1910,7 @@ function ensureYT(id){
     }
     if (tenSecondBeepToggle) tenSecondBeepToggle.checked=!!st.tenSecondBeep;
     if (tenSecondWarningSoundSel) tenSecondWarningSoundSel.value=st.tenSecondWarningSound || 'none';
+    updateEmergencyFlashControls();
 
     document.addEventListener('gs:theme-assets-changed', () => { if (st.fontMode==='bitmap') { resetBitmapFont(); loadBitmapFont().catch(()=>{}); } });
     applyFont(st.fontMode);
@@ -2020,9 +2085,22 @@ function ensureYT(id){
     flashValueIn && flashValueIn.addEventListener('input', () => { st.flashValue=isSplatoonFixedLastMinute() ? '' : (flashValueIn.value || ''); stopFlash(); save(); syncMinuteState(); });
     flashSpeedSel && flashSpeedSel.addEventListener('change', () => {
       st.flashSpeed = flashSpeedSel.value;
+      updateEmergencyFlashControls();
       stopFlash();
       save();
       syncMinuteState();
+    });
+    emergencyFlashStyleSel && emergencyFlashStyleSel.addEventListener('change', () => {
+      st.emergencyFlashStyle = emergencyFlashStyleSel.value;
+      updateEmergencyFlashControls();
+      stopFlash();
+      save();
+      syncMinuteState();
+    });
+    emergencyFlashEnabled && emergencyFlashEnabled.addEventListener('change', () => {
+      st.emergencyFlashEnabled = !!emergencyFlashEnabled.checked;
+      applyEmergencyFlashPhase();
+      save();
     });
 
     directionBtn2 && directionBtn2.addEventListener('click', () => selectCountTarget('zero'));

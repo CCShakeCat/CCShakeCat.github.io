@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="../../globals/styles.css">
 </head>
 <body class="theme-dark">
+  <div id="emergencyFlashOverlay" class="emergency-flash-overlay" aria-hidden="true"></div>
+
   <!-- Settings (gear) -->
   <button id="settingsBtn" class="icon-btn" aria-label="Settings">
     <img class="icon" src="../../globals/icons/gear.png" alt="" />
@@ -311,7 +313,24 @@
               <option value="triple">Sonic Triple Trouble 16 Bit</option>
               <option value="progressive">Progressive</option>
               <option value="superstars">Sonic Superstars</option>
+              <option value="murder">Murder Mystery</option>
             </select>
+          </div>
+
+          <div id="emergencyFlashControls" class="emergency-flash-controls" hidden>
+            <div class="row center align-center">
+              <label class="lbl" for="emergencyFlashStyle">Emergency Style:</label>
+              <select id="emergencyFlashStyle" class="grow">
+                <option value="ship">Ship</option>
+                <option value="amongus3d">Among Us 3D</option>
+                <option value="victorian">Victorian</option>
+                <option value="retro">Retro</option>
+              </select>
+            </div>
+            <label class="row center align-center emergency-flash-toggle">
+              <input id="emergencyFlashEnabled" type="checkbox" checked>
+              <span class="lbl">Emergency Screen Flash</span>
+            </label>
           </div>
 
         </div>

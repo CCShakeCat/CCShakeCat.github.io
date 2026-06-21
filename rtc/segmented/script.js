@@ -87,6 +87,7 @@ let renderToken = 0;
 let intervalId = null;
 let suppressPresetAutoCustom = false;
 let colorEditorMode = localStorage.getItem("seg_color_editor_mode") || "rgb";
+let colorEditorTarget = "activeColor";
 let colorHsvDraft = null;
 let burnoutUnlocked = false;
 let burnoutSequenceIndex = 0;
@@ -678,7 +679,7 @@ async function buildDigitCanvas(char, asset, opts = {}) {
   c.height = 115;
   const ctx = c.getContext("2d");
 
-  const active = normalizeCssColor(settings.activeColor) || "#ffffff";
+  const active = opts.activeColor || normalizeCssColor(settings.activeColor) || "#ffffff";
   const inactive = settings.inactiveEnabled ? darkenColor(active) : "transparent";
   const demoHideOff = !!opts.hideOff;
 
@@ -727,6 +728,8 @@ let slotState = [];
 let lastSlotStructureKey = "";
 let lastRenderedText = "";
 let lastRenderedSeparatorsVisible = null;
+let lastRenderedStyleKey = "";
+let renderSequence = 0;
 let displayNeedsFullRefresh = true;
 let demoNeedsRefresh = true;
 
@@ -789,13 +792,14 @@ function ensureClockSlots(str) {
   lastSlotStructureKey = structureKey;
   lastRenderedText = "";
   lastRenderedSeparatorsVisible = null;
+  lastRenderedStyleKey = "";
 }
 
-async function getDigitDataUrl(char, asset, styleKey, digitIndex = 0) {
+async function getDigitDataUrl(char, asset, styleKey, digitIndex = 0, activeColor = null) {
   const key = `${styleKey}|${char}|${digitIndex}`;
   if (digitDataUrlCache.has(key)) return digitDataUrlCache.get(key);
 
-  const promise = buildDigitCanvas(char, asset, { digitIndex }).then(canvas => canvas ? canvas.toDataURL() : "");
+  const promise = buildDigitCanvas(char, asset, { digitIndex, activeColor }).then(canvas => canvas ? canvas.toDataURL() : "");
   digitDataUrlCache.set(key, promise);
   return promise;
 }
@@ -812,15 +816,18 @@ async function renderClockFast(date) {
   const str = buildTimeString(date);
   const sepVisible = separatorsVisible(Date.now());
   const styleKey = getClockStyleKey();
+  const activeColor = normalizeCssColor(settings.activeColor) || "#ffffff";
 
-  if (!displayNeedsFullRefresh && str === lastRenderedText && sepVisible === lastRenderedSeparatorsVisible) {
+  if (!displayNeedsFullRefresh && str === lastRenderedText && sepVisible === lastRenderedSeparatorsVisible && styleKey === lastRenderedStyleKey) {
     return;
   }
 
+  const renderId = ++renderSequence;
   const asset = await loadSvgAsset(getCornerFilename());
+  if (renderId !== renderSequence) return;
   ensureClockSlots(str);
 
-  const force = displayNeedsFullRefresh;
+  const force = displayNeedsFullRefresh || styleKey !== lastRenderedStyleKey;
   const chars = [...str];
 
   for (let i = 0; i < chars.length; i++) {
@@ -831,7 +838,8 @@ async function renderClockFast(date) {
     const kind = getSlotKind(ch);
     if (kind === "digit") {
       if (force || slot.char !== ch) {
-        const dataUrl = await getDigitDataUrl(ch, asset, styleKey, i);
+        const dataUrl = await getDigitDataUrl(ch, asset, styleKey, i, activeColor);
+        if (renderId !== renderSequence) return;
         if (slot.img && slot.img.src !== dataUrl) slot.img.src = dataUrl;
         slot.char = ch;
       }
@@ -843,6 +851,7 @@ async function renderClockFast(date) {
 
   lastRenderedText = str;
   lastRenderedSeparatorsVisible = sepVisible;
+  lastRenderedStyleKey = styleKey;
   displayNeedsFullRefresh = false;
 }
 
@@ -937,8 +946,19 @@ function setColorEditorMode(mode) {
   hsvEditor.classList.toggle("active", mode === "hsv");
 }
 
+function setColorEditorTarget(target) {
+  if (target !== "activeColor" && target !== "backgroundColor") return;
+  colorEditorTarget = target;
+  colorHsvDraft = null;
+  syncColorEditorUI();
+}
+
+function getColorEditorValue() {
+  return settings[colorEditorTarget] || settings.activeColor || "#ffffff";
+}
+
 function getActiveRgb() {
-  return parseCssColor(settings.activeColor) || { r: 255, g: 255, b: 255 };
+  return parseCssColor(getColorEditorValue()) || { r: 255, g: 255, b: 255 };
 }
 
 function getActiveHsv() {
@@ -988,11 +1008,17 @@ function syncColorEditorUI() {
 
   optActiveColor.value = settings.activeColor;
   activeColorPreview.style.background = normalizeCssColor(settings.activeColor) || "#ffffff";
+  activeColorPreview.classList.toggle("selected", colorEditorTarget === "activeColor");
+  if (optBackgroundColor) optBackgroundColor.value = settings.backgroundColor;
+  if (backgroundColorPreview) {
+    backgroundColorPreview.style.background = normalizeCssColor(settings.backgroundColor) || "#000000";
+    backgroundColorPreview.classList.toggle("selected", colorEditorTarget === "backgroundColor");
+  }
 }
 
 function commitActiveColorFromRgb(r, g, b, preserveHsvDraft = false) {
   if (!preserveHsvDraft) colorHsvDraft = null;
-  settings.activeColor = rgbToHex(clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
+  settings[colorEditorTarget] = rgbToHex(clamp(r, 0, 255), clamp(g, 0, 255), clamp(b, 0, 255));
   maybeSetPresetCustom();
   saveSettings();
   syncCssVars();
@@ -1717,6 +1743,8 @@ optActiveColor.addEventListener("change", () => {
   render();
 });
 
+activeColorPreview?.addEventListener("click", () => setColorEditorTarget("activeColor"));
+
 optBackgroundColor?.addEventListener("change", () => {
   const normalized = normalizeCssColor(optBackgroundColor.value);
   if (!normalized) {
@@ -1727,7 +1755,11 @@ optBackgroundColor?.addEventListener("change", () => {
   maybeSetPresetCustom();
   saveSettings();
   syncCssVars();
+  syncColorEditorUI();
+  render();
 });
+
+backgroundColorPreview?.addEventListener("click", () => setColorEditorTarget("backgroundColor"));
 
 optInactiveEnabled.addEventListener("change", () => {
   settings.inactiveEnabled = optInactiveEnabled.checked;
