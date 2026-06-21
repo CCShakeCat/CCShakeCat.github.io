@@ -1132,6 +1132,12 @@ function ensureYT(id){
       return String(value || '').replace(/[#?].*$/, '');
     }
 
+    function audioUrl(value){
+      const clean = stripAudioMarker(value);
+      try { return new URL(clean, window.location.href).href; }
+      catch { return clean; }
+    }
+
     function murderAlarmIntervalMs(value){
       const raw = String(value || '');
       if (!/murder mystery\/alarm_/i.test(raw)) return 0;
@@ -1157,7 +1163,7 @@ function ensureYT(id){
 
       const murderInterval = murderAlarmIntervalMs(basePath);
       if (murderInterval){
-        const alarmPath = stripAudioMarker(basePath);
+        const alarmPath = audioUrl(basePath);
         const playAlarm = () => {
           const alarm = new Audio(alarmPath);
           alarm.preload = 'auto';
@@ -1181,7 +1187,7 @@ function ensureYT(id){
         (st.yt && st.ytReady && (() => { try { return st.yt.getPlayerState() === YT.PlayerState.PLAYING; } catch { return false; } })());
 
       if (wasBGMPlaying && !isGGDShip) stopAllBGM();
-      const audioPath = stripAudioMarker(basePath);
+      const audioPath = audioUrl(basePath);
       const url = audioPath.endsWith('.mp3') ? audioPath : (audioPath + '.mp3');
 
       const a = new Audio(url);
