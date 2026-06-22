@@ -387,12 +387,12 @@
       ggd: {
         label: 'Murder Mystery',
         sub: [
-          { value: './hurryup/murder mystery/alarm_sabotage.wav#amongus', label: 'Among Us', desc: 'Plays the sabotage alarm every other second.' },
-          { value: './hurryup/murder mystery/alarm_airship.wav#airship', label: 'Among Us: The Airship', desc: 'Plays the Airship alarm every other second.' },
-          { value: './hurryup/murder mystery/alarm_sabotage.wav#amongus3d', label: 'Among Us 3D', desc: 'Plays the sabotage alarm every 1.5 seconds.' },
-          { value: './hurryup/murder mystery/hurryup-ggdsabo_ship', label: 'Goose Goose Duck Ship', desc: 'Overlays on top of the current music.' },
-          { value: './hurryup/murder mystery/hurryup-ggdsabo_victorian', label: 'Goose Goose Duck Victorian', desc: 'Plays at Hurry Up start.' },
-          { value: './hurryup/murder mystery/hurryup-ggdsabo_retro', label: 'Goose Goose Duck Retro', desc: 'Plays at Hurry Up start.' }
+          { value: './hurryup/Murder Mystery/alarm_sabotage.wav#amongus', label: 'Among Us', desc: 'Plays the sabotage alarm every other second.' },
+          { value: './hurryup/Murder Mystery/alarm_airship.wav#airship', label: 'Among Us: The Airship', desc: 'Plays the Airship alarm every other second.' },
+          { value: './hurryup/Murder Mystery/alarm_sabotage.wav#amongus3d', label: 'Among Us 3D', desc: 'Plays the sabotage alarm every 1.5 seconds.' },
+          { value: './hurryup/Murder Mystery/hurryup-ggdsabo_ship', label: 'Goose Goose Duck Ship', desc: 'Overlays on top of the current music.' },
+          { value: './hurryup/Murder Mystery/hurryup-ggdsabo_victorian', label: 'Goose Goose Duck Victorian', desc: 'Plays at Hurry Up start.' },
+          { value: './hurryup/Murder Mystery/hurryup-ggdsabo_retro', label: 'Goose Goose Duck Retro', desc: 'Plays at Hurry Up start.' }
         ]
       },
       splatoon: {
