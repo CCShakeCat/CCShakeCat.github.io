@@ -3,609 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC1</title>
-<style>
-:root{
-  --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
-  --text:#f7f2fa;--muted:#c9bdcf;--accent:#eb8bc8;--danger:#ff6b7a;--line:#4d4257;
-  --timeline:#0c0b0e;--timeline-ruler:#17131b;--timeline-line:#4d4257;
-}
-html[data-theme="light"]{
-  --bg:#f5f1f5;--panel:#ffffff;--panel2:#eee7ef;--field:#faf7fb;
-  --text:#241d27;--muted:#6f6373;--accent:#d75cae;--danger:#df4f61;--line:#c9becb;
-  --timeline:#f3edf4;--timeline-ruler:#e8e0ea;--timeline-line:#a99cac;
-}
-@media(prefers-color-scheme:light){
-  html[data-theme="system"]{
-    --bg:#f5f1f5;--panel:#ffffff;--panel2:#eee7ef;--field:#faf7fb;
-    --text:#241d27;--muted:#6f6373;--accent:#d75cae;--danger:#df4f61;--line:#c9becb;
-    --timeline:#f3edf4;--timeline-ruler:#e8e0ea;--timeline-line:#a99cac;
-  }
-}
-*{box-sizing:border-box}
-html,body{height:100%;overflow:hidden}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;display:flex;flex-direction:column}
-header{padding:14px 18px;background:var(--panel);display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10}
-h1{font-size:18px;margin:0 12px 0 0}
-button,input,textarea{font:inherit}
-button{background:var(--accent);border:0;color:#1d0f18;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
-button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
-button.danger{background:var(--danger);color:#24090d}
-label.file{background:var(--panel2);border:1px solid var(--line);padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
-label.file input{display:none}
-main{
-  display:grid;
-  grid-template-columns:minmax(280px,30%) minmax(420px,40%) minmax(300px,30%);
-  gap:12px;
-  padding:12px;
-  min-height:0;
-  flex:1;
-  overflow:hidden
-}
-.editorColumn{min-height:0;display:flex;flex-direction:column;gap:12px}
-.panelTitle{
-  margin:0 0 10px;
-  font-size:15px;
-  font-weight:700;
-  letter-spacing:.02em;
-  text-align:center
-}
-.eventsPanel{min-height:0;display:flex;flex-direction:column;flex:1}
-.centerPlayerPanel{flex:0 0 auto}
-.centerTimelinePanel{min-height:0;display:flex;flex-direction:column;flex:1}
-.rightPanel{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
-section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
-#mediaStage{background:#000;border-radius:10px;overflow:hidden;position:relative;min-height:240px;display:flex;align-items:center;justify-content:center}
-#video{width:100%;max-height:520px;display:none;background:#000}
-#audio{width:100%;display:none}
-#mediaEmpty{color:var(--muted);padding:50px 20px;text-align:center}
-#overlayStack{position:absolute;inset:5% 4%;font-family:"DIN 2014",Arial,sans-serif;font-weight:700;font-size:30px;line-height:1.06;pointer-events:none;overflow:hidden}
-.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.transport{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-top:10px}
-.transport input[type="range"]{width:100%}
-.transportTime{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);font-size:13px}
-.small{font-size:12px;color:var(--muted)}
-.previewLine{will-change:transform,opacity;transition:transform 180ms ease-out,opacity 180ms ease-out}
-.previewLine.entering{animation:previewEnter 180ms ease-out}
-@keyframes previewEnter{from{transform:translateY(70%);opacity:0}to{transform:translateY(0);opacity:1}}
-
-#combinedTimeline{position:relative;height:150px;background:var(--timeline);border-radius:8px;overflow:hidden;margin-top:10px;cursor:grab;touch-action:none}
-#wave{position:absolute;inset:0;width:100%;height:100%;display:block}
-#playhead{position:absolute;top:0;bottom:0;width:3px;background:#fff;cursor:ew-resize;z-index:30;transform:translateX(-1px)}
-#playhead::before{content:"";position:absolute;top:0;left:50%;transform:translate(-50%,0);width:18px;height:18px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0)}
-#playheadHit{
-  position:absolute;
-  top:-10px;
-  bottom:-10px;
-  left:50%;
-  width:44px;
-  transform:translateX(-50%);
-  cursor:ew-resize;
-  touch-action:none;
-  user-select:none;
-  pointer-events:auto;
-  z-index:30
-}
-#captionLane{position:absolute;left:0;right:0;top:38px;bottom:0;border-top:1px solid #3d3447}
-.eventBlock{position:absolute;height:34px;border-radius:6px;background:var(--accent);color:#1d0f18;padding:5px 18px 5px 12px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:grab;border:2px solid transparent;user-select:none;touch-action:none}
-.eventBlock:active{cursor:grabbing}
-.eventBlock.selected{border-color:#fff}
-.handle{position:absolute;top:0;bottom:0;width:12px;background:#0003;cursor:ew-resize;touch-action:none}
-.handle.left{left:0}.handle.right{right:0}
-#eventList{min-height:0;overflow-y:auto;overflow-x:hidden;flex:1;overscroll-behavior:contain;padding-right:4px}
-.eventRow{border:1px solid var(--line);border-radius:8px;padding:7px;margin-bottom:7px;background:var(--panel2)}
-.eventRow.selected{outline:2px solid var(--accent)}
-.rowTop{display:grid;grid-template-columns:78px 78px 1fr auto;gap:6px;align-items:center}
-.eventRow textarea{width:100%;min-height:54px;margin-top:7px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px;resize:vertical}
-.timeInput{width:78px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px}
-#transcript{width:100%;min-height:260px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
-.settings{display:grid;grid-template-columns:minmax(120px,1fr) minmax(170px,1.2fr);gap:8px;align-items:center}
-.settings input,.settings select{
-  background:var(--field);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:6px;
-  padding:7px 9px;
-  width:100%;
-  min-width:0;
-}
-.settings select{
-  min-width:170px;
-  max-width:100%;
-}
-.rightColumn,
-.rightColumn section,
-.settings{
-  overflow:visible;
-}
-.status{padding:8px 0;color:var(--muted)}
-
-.tvrollModalBackdrop{
-  position:fixed;
-  inset:0;
-  z-index:1000;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  background:rgba(0,0,0,.72)
-}
-.tvrollModalBackdrop.open{display:flex}
-.tvrollModal{
-  width:min(560px,100%);
-  max-height:calc(100vh - 48px);
-  overflow:auto;
-  background:var(--panel);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:18px
-}
-.tvrollModal h2{margin:0 0 10px;font-size:18px}
-.tvrollModal p{margin:0 0 12px;color:var(--muted)}
-.tvrollChoices{display:grid;gap:10px}
-.tvrollChoice{
-  display:block;
-  width:100%;
-  text-align:left;
-  background:var(--panel2);
-  color:var(--text);
-  border:1px solid var(--line);
-  padding:12px;
-  border-radius:8px
-}
-.tvrollChoice strong{display:block;margin-bottom:4px}
-.tvrollChoice span{display:block;color:var(--muted);font-weight:400;font-size:12px}
-.tvrollModalFooter{display:flex;justify-content:flex-end;margin-top:12px}
-#eventList.readOnly{pointer-events:none;opacity:.82}
-.readOnlyBanner{
-  display:none;
-  margin-bottom:8px;
-  padding:8px 10px;
-  border:1px solid var(--line);
-  border-radius:7px;
-  background:var(--panel2);
-  color:var(--muted);
-  font-size:12px
-}
-.readOnlyBanner.visible{display:block}
-
-
-
-
-.playerTitleRow{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:8px
-}
-.playerTitleRow .panelTitle{
-  flex:1;
-  margin:0
-}
-#playerSizeBtn{display:none}
-@media(min-width:601px) and (max-width:1250px){
-  #playerSizeBtn{display:inline-flex}
-  main.playerLarge #mediaStage{
-    height:clamp(320px,54dvh,620px)
-  }
-  main.playerLarge .leftColumn{
-    min-height:0
-  }
-}
-
-.desktopMenuBar{
-  display:flex;
-  align-items:center;
-  gap:2px;
-  min-height:34px;
-  padding:2px 10px;
-  background:var(--field);
-  border-bottom:1px solid var(--line);
-  position:sticky;
-  top:0;
-  z-index:50
-}
-.desktopMenu{
-  position:relative
-}
-.desktopMenu > button{
-  background:transparent;
-  color:var(--text);
-  border:0;
-  border-radius:5px;
-  padding:7px 11px;
-  font-weight:600
-}
-.desktopMenu.open > button,
-.desktopMenu > button:hover{background:var(--panel2)}
-.desktopMenuPopup{
-  display:block;
-  pointer-events:none;
-  visibility:hidden;
-  position:absolute;
-  top:100%;
-  left:0;
-  z-index:80;
-  min-width:245px;
-  padding:6px;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:8px;
-  box-shadow:0 12px 30px rgba(0,0,0,.38)
-}
-.desktopMenu.open > .desktopMenuPopup{pointer-events:auto;visibility:visible}
-.desktopMenuItem{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:18px;
-  width:100%;
-  padding:8px 10px;
-  text-align:left;
-  border:0;
-  border-radius:5px;
-  background:transparent;
-  color:var(--text);
-  font-weight:500
-}
-.desktopMenuItem:hover,
-.desktopMenuItem:focus{background:var(--panel2)}
-.desktopMenuItem .shortcut{color:var(--muted);font-size:12px}
-.desktopMenuSeparator{
-  height:1px;
-  margin:5px 4px;
-  background:var(--line)
-}
-.menuSubheading{
-  padding:6px 10px 3px;
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.06em
-}
-.followChoice.active::before{content:"● ";color:var(--accent)}
-.followChoice:not(.active)::before{content:"○ ";color:var(--muted)}
-
-.helpSearchWrap{padding:5px}
-.helpSearchWrap input{
-  width:100%;
-  padding:8px 9px;
-  border:1px solid var(--line);
-  border-radius:6px;
-  background:var(--field);
-  color:var(--text)
-}
-.commandResults{
-  display:grid;
-  gap:3px;
-  max-height:300px;
-  overflow:auto;
-  padding-top:5px
-}
-.commandResult{
-  display:block;
-  width:100%;
-  padding:8px 9px;
-  text-align:left;
-  border:0;
-  border-radius:6px;
-  background:transparent;
-  color:var(--text)
-}
-.commandResult:hover,
-.commandResult:focus{background:var(--panel2)}
-.commandResult strong{display:block}
-.commandResult small{
-  display:block;
-  margin-top:2px;
-  color:var(--muted);
-  font-style:italic
-}
-header.desktopQuickBar{
-  position:sticky;
-  top:35px;
-  z-index:40
-}
-@media(min-width:1251px){
-  .mobileMenuButton,.mobileTabBar{display:none!important}
-  header.desktopQuickBar > label.file,
-  header.desktopQuickBar > #parseBtn,
-  header.desktopQuickBar > #exportBtn{display:none}
-  header.desktopQuickBar{padding:8px 14px}
-  header.desktopQuickBar h1{flex:1}
-}
-
-.mobileMenuButton,
-.mobileTabBar,
-.mobileDrawerBackdrop,
-.mobileChoiceBackdrop{display:none}
-
-.mobileMenuButton{
-  align-items:center;
-  justify-content:center;
-  width:44px;
-  height:44px;
-  padding:0;
-  font-size:25px;
-  background:var(--panel2);
-  color:var(--text);
-  border:1px solid var(--line)
-}
-
-.mobileTabBar{
-  position:sticky;
-  top:0;
-  z-index:8;
-  grid-template-columns:1fr 1fr;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:10px 10px 0 0;
-  overflow:hidden
-}
-.mobileTab{
-  border-radius:0;
-  background:var(--panel);
-  color:var(--muted);
-  border-bottom:3px solid transparent
-}
-.mobileTab.active{
-  color:var(--text);
-  border-bottom-color:var(--accent);
-  background:var(--panel2)
-}
-
-.mobileDrawerBackdrop,
-.mobileChoiceBackdrop{
-  position:fixed;
-  inset:0;
-  z-index:1200;
-  background:rgba(0,0,0,.62);
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 220ms ease
-}
-.mobileDrawerBackdrop.open,
-.mobileChoiceBackdrop.open{
-  display:block;
-  opacity:1;
-  pointer-events:auto
-}
-.mobileDrawer{
-  width:min(86vw,360px);
-  height:100%;
-  padding:16px;
-  background:var(--panel);
-  border-right:1px solid var(--line);
-  transform:translateX(-102%);
-  transition:transform 220ms cubic-bezier(.2,.8,.2,1)
-}
-.mobileDrawerBackdrop.open .mobileDrawer{transform:translateX(0)}
-.mobileDrawerHeader{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding-bottom:12px;
-  margin-bottom:8px;
-  border-bottom:1px solid var(--line)
-}
-.mobileDrawerHeader strong{flex:1}
-.mobileDrawerList{display:grid;gap:6px}
-.mobileDrawerItem{
-  width:100%;
-  text-align:left;
-  padding:13px 12px;
-  background:transparent;
-  color:var(--text);
-  border:0;
-  border-radius:8px
-}
-.mobileDrawerItem:hover,
-.mobileDrawerItem:focus{background:var(--panel2)}
-
-.mobileChoiceBackdrop{
-  align-items:flex-end;
-  justify-content:center
-}
-.mobileChoiceBackdrop.open{display:flex}
-.mobileChoiceSheet{
-  width:min(100%,560px);
-  padding:16px;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:16px 16px 0 0;
-  transform:translateY(105%);
-  transition:transform 220ms cubic-bezier(.2,.8,.2,1)
-}
-.mobileChoiceBackdrop.open .mobileChoiceSheet{transform:translateY(0)}
-.mobileChoiceSheet h2{margin:0 0 12px;font-size:18px}
-.mobileChoiceList{display:grid;gap:8px}
-.mobileChoiceList button{
-  width:100%;
-  text-align:left;
-  background:var(--panel2);
-  color:var(--text);
-  border:1px solid var(--line)
-}
-
-
-:root{
-  --anim-fast:120ms;
-  --anim-normal:180ms;
-  --anim-slow:220ms;
-  --anim-ease:cubic-bezier(.2,.8,.2,1)
-}
-button,label.file{
-  transition:transform var(--anim-fast) ease,background-color var(--anim-fast) ease,border-color var(--anim-fast) ease,opacity var(--anim-fast) ease
-}
-button:active,label.file:active{transform:scale(.97)}
-.mobileDrawerBackdrop,.mobileChoiceBackdrop{transition:opacity var(--anim-normal) ease}
-.mobileDrawer{transition:transform var(--anim-slow) var(--anim-ease)}
-.mobileChoiceSheet{transition:transform var(--anim-slow) var(--anim-ease)}
-.tvrollModalBackdrop{opacity:0;transition:opacity var(--anim-normal) ease}
-.tvrollModalBackdrop.open{opacity:1}
-.tvrollModal{
-  transform:translateY(12px) scale(.985);
-  opacity:0;
-  transition:transform var(--anim-normal) var(--anim-ease),opacity var(--anim-normal) ease
-}
-.tvrollModalBackdrop.open .tvrollModal{transform:translateY(0) scale(1);opacity:1}
-.desktopMenuPopup{
-  transform:translateY(-5px) scale(.99);
-  transform-origin:top left;
-  opacity:0;
-  transition:transform var(--anim-fast) var(--anim-ease),opacity var(--anim-fast) ease
-}
-.desktopMenu.open > .desktopMenuPopup{transform:translateY(0) scale(1);opacity:1}
-.mobileTab{transition:background-color var(--anim-fast) ease,color var(--anim-fast) ease,border-color var(--anim-fast) ease}
-.centerTimelinePanel,.leftColumn,.rightColumn{animation:panelFadeIn var(--anim-normal) var(--anim-ease)}
-@keyframes panelFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.eventRow{
-  transition:transform var(--anim-fast) ease,background-color var(--anim-fast) ease,border-color var(--anim-fast) ease,opacity var(--anim-fast) ease
-}
-.eventRow:hover{transform:translateY(-1px)}
-.eventRow.justAdded{animation:eventCardIn var(--anim-normal) var(--anim-ease)}
-@keyframes eventCardIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
-.eventBlock{
-  transition:top var(--anim-fast) ease,background-color var(--anim-fast) ease,border-color var(--anim-fast) ease,opacity var(--anim-fast) ease
-}
-.eventBlock.justAdded{animation:eventBlockIn var(--anim-normal) var(--anim-ease)}
-@keyframes eventBlockIn{from{opacity:0;transform:scaleX(.92)}to{opacity:1;transform:scaleX(1)}}
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{
-    scroll-behavior:auto!important;
-    animation-duration:1ms!important;
-    animation-iteration-count:1!important;
-    transition-duration:1ms!important
-  }
-}
-
-@media(max-width:1180px){
-  main{grid-template-columns:minmax(250px,32%) minmax(400px,68%)}
-  .rightColumn{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:auto}
-  .rightColumn section{min-width:0}
-}
-@media(max-width:800px){
-  html,body{overflow:auto}
-  body{display:block}
-  header{
-    position:sticky;
-    top:0;
-    z-index:20;
-    display:flex;
-    flex-wrap:nowrap;
-    padding:10px 12px
-  }
-  header h1{
-    flex:1;
-    min-width:0;
-    margin:0;
-    font-size:18px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis
-  }
-  header > label.file,
-  header > button:not(.mobileMenuButton){display:none}
-  .mobileMenuButton{display:flex}
-
-  main{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    padding:10px;
-    overflow:visible
-  }
-  .centerColumn{display:contents}
-  .centerPlayerPanel{order:1}
-  .mobileTabBar{display:grid;order:2}
-  .centerTimelinePanel{order:3}
-  .leftColumn{order:4}
-  .rightColumn{
-    order:3;
-    display:none;
-    grid-column:auto;
-    overflow:visible
-  }
-  main.mobileOptionsMode .centerTimelinePanel,
-  main.mobileOptionsMode .leftColumn{display:none}
-  main.mobileOptionsMode .rightColumn{display:flex}
-  main.mobileTimelineMode .rightColumn{display:none}
-
-  .leftColumn,
-  .rightColumn,
-  .centerTimelinePanel{min-height:auto}
-  .eventsPanel{min-height:52vh}
-  #eventList{max-height:none;overflow:visible}
-  #mediaStage{min-height:220px}
-  #video{max-height:52vh}
-  #overlayStack{font-size:22px}
-  .settings{grid-template-columns:minmax(115px,.8fr) minmax(0,1.2fr)}
-  .rightColumn > .panelTitle{display:none}
-  .rightColumn section{width:100%}
-  .transport{grid-template-columns:auto minmax(0,1fr);gap:8px}
-  .transportTime{grid-column:1 / -1;text-align:right}
-  .toolbar{gap:7px}
-  #combinedTimeline{height:150px}
-}
-
-
-#playheadHit{
-  position:absolute;
-  top:-10px;
-  bottom:-10px;
-  left:50%;
-  width:44px;
-  transform:translateX(-50%);
-  cursor:ew-resize;
-  touch-action:none;
-  user-select:none;
-  pointer-events:auto;
-  z-index:30
-}
-#playhead.dragging{filter:drop-shadow(0 0 5px rgba(255,255,255,.7))}
-
-@media(max-width:1250px){
-  .desktopMenuBar{display:none}
-  html,body{overflow:auto}
-  body{display:block}
-  header.desktopQuickBar{
-    position:sticky;
-    top:0;
-    z-index:30;
-    display:flex;
-    flex-wrap:nowrap;
-    padding:10px 12px
-  }
-  header.desktopQuickBar h1{
-    flex:1;
-    min-width:0;
-    margin:0;
-    font-size:18px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis
-  }
-  header.desktopQuickBar > label.file,
-  header.desktopQuickBar > button:not(.mobileMenuButton){display:none}
-  .mobileMenuButton{display:flex}
-
-  main{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    padding:10px;
-    overflow:visible
-  }
-  .centerColumn{display:contents}
-  .centerPlayerPanel{order:1}
-  .mobileTabBar{display:grid;order:2}
-  .centerTimelinePanel{order:3}
-  .leftColumn{order:4}
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MSUBBER v1.0 RC2</title>
 <style>
 :root{
@@ -1270,4 +667,4888 @@ button:active,label.file:active{transform:scale(.97)}
   .centerPlayerPanel{
     position:sticky;
     top:64px;
-    z-
+    z-index:15;
+    flex:0 0 auto;
+    min-height:0;
+    background:var(--bg);
+    padding-bottom:8px
+  }
+  #mediaStage{
+    height:clamp(210px,32dvh,360px);
+    min-height:0;
+    max-height:none
+  }
+  #video{
+    width:100%;
+    height:100%;
+    max-height:none;
+    object-fit:contain
+  }
+
+  .mobileTabBar{
+    position:relative;
+    top:auto;
+    z-index:8;
+    flex:0 0 auto
+  }
+
+  .centerTimelinePanel,
+  .leftColumn,
+  .rightColumn{
+    flex:0 0 auto;
+    min-height:0;
+    height:auto;
+    overflow:visible
+  }
+
+  .eventsPanel{
+    min-height:0;
+    height:auto;
+    overflow:visible
+  }
+  #eventList{
+    max-height:none;
+    min-height:0;
+    overflow:visible
+  }
+
+  .rightColumn{
+    overflow:visible
+  }
+
+  main.mobileTimelineMode .centerTimelinePanel{display:flex}
+  main.mobileTimelineMode .leftColumn{display:flex}
+  main.mobileTimelineMode .rightColumn{display:none}
+
+  main.mobileOptionsMode .centerTimelinePanel,
+  main.mobileOptionsMode .leftColumn{display:none}
+  main.mobileOptionsMode .rightColumn{display:flex}
+
+  main.playerLarge #mediaStage{
+    height:clamp(320px,52dvh,560px)
+  }
+}
+
+
+@media(min-width:601px) and (max-width:1250px){
+  .centerPlayerPanel{
+    box-shadow:0 8px 18px rgba(0,0,0,.22)
+  }
+}
+
+
+#combinedTimeline.panning{cursor:grabbing}
+#combinedTimeline.panning *{cursor:grabbing!important}
+
+
+#combinedTimeline.panning .eventBlock,
+#combinedTimeline.panning #captionLane,
+#combinedTimeline.panning #wave{
+  transition:none!important;
+  animation:none!important
+}
+
+
+.eventTextWrap{position:relative}
+.eventTextWrap textarea{width:100%;padding-right:58px}
+.eventCharCount{
+  position:absolute;
+  right:10px;
+  bottom:8px;
+  min-width:34px;
+  padding:1px 4px;
+  text-align:right;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+  line-height:1.2;
+  pointer-events:none;
+  user-select:none;
+  border-radius:4px;
+  background:rgba(23,19,27,.78)
+}
+.eventCharCount.preferredWarning{color:#ffd37a}
+.eventCharCount.hardWarning{color:#ff8a98}
+
+
+html[data-theme="light"] .eventBlock{color:#2a1723}
+html[data-theme="light"] .eventBlock.selected{border-color:#2a1723}
+@media(prefers-color-scheme:light){
+  html[data-theme="system"] .eventBlock{color:#2a1723}
+  html[data-theme="system"] .eventBlock.selected{border-color:#2a1723}
+}
+
+
+.preferencesBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:1400;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.64);
+  opacity:0;
+  transition:opacity var(--anim-normal) ease
+}
+.preferencesBackdrop.open{
+  display:flex;
+  opacity:1
+}
+.preferencesDialog{
+  width:min(520px,100%);
+  max-height:calc(100dvh - 40px);
+  overflow:auto;
+  padding:18px;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  transform:translateY(10px) scale(.985);
+  opacity:0;
+  transition:
+    transform var(--anim-normal) var(--anim-ease),
+    opacity var(--anim-normal) ease
+}
+.preferencesBackdrop.open .preferencesDialog{
+  transform:translateY(0) scale(1);
+  opacity:1
+}
+.preferencesDialog h2{margin:0 0 14px}
+.preferencesGrid{
+  display:grid;
+  grid-template-columns:minmax(150px,1fr) minmax(180px,1.2fr);
+  gap:10px;
+  align-items:center
+}
+.preferencesGrid select{
+  width:100%;
+  background:var(--field);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:8px 9px
+}
+.preferencesFooter{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:18px
+}
+
+
+.findBackdrop{
+  position:fixed;inset:0;z-index:1450;display:none;align-items:flex-start;
+  justify-content:center;padding:70px 16px 16px;background:rgba(0,0,0,.48);
+  opacity:0;transition:opacity var(--anim-normal) ease
+}
+.findBackdrop.open{display:flex;opacity:1}
+.findDialog{
+  width:min(620px,100%);padding:16px;background:var(--panel);color:var(--text);
+  border:1px solid var(--line);border-radius:12px;
+  transform:translateY(-8px) scale(.99);opacity:0;
+  transition:transform var(--anim-normal) var(--anim-ease),opacity var(--anim-normal) ease
+}
+.findBackdrop.open .findDialog{transform:translateY(0) scale(1);opacity:1}
+.findDialog h2{margin:0 0 12px}
+.findGrid{display:grid;grid-template-columns:110px minmax(0,1fr);gap:9px;align-items:center}
+.findGrid input[type="text"]{
+  width:100%;min-width:0;background:var(--field);color:var(--text);
+  border:1px solid var(--line);border-radius:6px;padding:8px 9px
+}
+.findOptions{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;color:var(--muted)}
+.findStatus{min-height:20px;margin-top:10px;color:var(--muted);font-size:13px}
+.findFooter{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
+.findReplaceOnly{display:none}
+.findBackdrop.replaceMode .findReplaceOnly{display:contents}
+@media(max-width:600px){
+  .findBackdrop{padding-top:18px}
+  .findGrid{grid-template-columns:1fr}
+}
+
+.settings input[type="color"]{
+  width:100%;
+  min-height:36px;
+  padding:3px;
+  cursor:pointer
+}
+
+
+.previewStack{position:absolute;left:0;right:0;display:flex;flex-direction:column;gap:4px}
+.previewStackTop{top:0}
+.previewStackBottom{bottom:0}
+#resetCaptionStyle:disabled{opacity:.5}
+
+.eventContextMenu{
+  position:fixed;
+  z-index:1600;
+  display:none;
+  min-width:220px;
+  padding:6px;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:8px;
+  box-shadow:0 12px 30px rgba(0,0,0,.36);
+  opacity:0;
+  transform:translateY(-4px) scale(.99);
+  transform-origin:top left;
+  transition:
+    opacity var(--anim-fast) ease,
+    transform var(--anim-fast) var(--anim-ease)
+}
+.eventContextMenu.open{
+  display:block;
+  opacity:1;
+  transform:translateY(0) scale(1)
+}
+.eventContextMenu button{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:16px;
+  width:100%;
+  padding:8px 10px;
+  text-align:left;
+  background:transparent;
+  color:var(--text);
+  border:0;
+  border-radius:5px
+}
+.eventContextMenu button:hover,
+.eventContextMenu button:focus{background:var(--panel2)}
+.eventContextMenu .shortcut{color:var(--muted);font-size:12px}
+.eventContextMenu .separator{height:1px;background:var(--line);margin:5px 4px}
+
+
+/* Timeline lane vertical polish */
+#captionLane{
+  top:42px!important;
+  bottom:8px!important;
+}
+#captionLane .eventBlock{
+  height:28px!important;
+}
+
+
+.eventBlock.multiSelected,
+.eventRow.multiSelected{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}
+.eventBlock.selected.multiSelected,
+.eventRow.selected.multiSelected{
+  outline-color:#fff;
+}
+.timelineSelectionBox{
+  position:absolute;
+  z-index:45;
+  display:none;
+  border:2px solid var(--accent);
+  background:rgba(235,139,200,.16);
+  pointer-events:none;
+  border-radius:3px;
+}
+.timelineSelectionBox.active{display:block}
+body.multiSelectMode .eventBlock,
+body.multiSelectMode .eventRow{cursor:pointer}
+
+
+.appModalBackdrop{position:fixed;inset:0;z-index:1500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.62);opacity:0;transition:opacity var(--anim-normal) ease}
+.appModalBackdrop.open{display:flex;opacity:1}
+.appModal{width:min(560px,100%);max-height:calc(100dvh - 40px);overflow:auto;padding:18px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;transform:translateY(10px) scale(.985);opacity:0;transition:transform var(--anim-normal) var(--anim-ease),opacity var(--anim-normal) ease}
+.appModalBackdrop.open .appModal{transform:translateY(0) scale(1);opacity:1}
+.appModalHeader{display:flex;align-items:center;gap:10px;margin-bottom:14px}.appModalHeader h2{flex:1;margin:0}
+.appModalContent{display:grid;gap:14px;line-height:1.45}
+.markdownExample{padding:10px 12px;background:var(--field);border:1px solid var(--line);border-radius:8px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}
+.appModalFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+.karaokeSettings{display:none;grid-column:1/-1;grid-template-columns:minmax(120px,.9fr) minmax(0,1.1fr);gap:10px;align-items:center}
+.karaokeSettings.visible{display:grid}
+.karaokePreviewLine{position:relative;display:inline-block;max-width:100%}
+.karaokeBase,.karaokeActive{white-space:pre-wrap;overflow-wrap:anywhere}
+.karaokeActive{position:absolute;inset:0 auto auto 0;overflow:hidden;pointer-events:none}
+
+.settingRow{display:contents}
+.karaokeManualTools{display:flex;flex-wrap:wrap;gap:8px}
+
+@media(max-width:1250px){
+  .eventsPanel{
+    height:52dvh;
+    min-height:320px;
+    max-height:620px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  .eventsPanel > .panelTitle,
+  .eventsPanel > .readOnlyBanner,
+  .eventsPanel > .toolbar{
+    flex:0 0 auto;
+  }
+
+  #eventList{
+    flex:1 1 auto;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
+@media(max-width:600px){
+  .eventsPanel{
+    height:55dvh;
+    min-height:280px;
+    max-height:none;
+  }
+
+  #eventList{
+    overflow-y:auto;
+    max-height:none;
+  }
+}
+
+
+.saveProjectBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:1550;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.58);
+  opacity:0;
+  transition:opacity var(--anim-normal) ease
+}
+.saveProjectBackdrop.open{
+  display:flex;
+  opacity:1
+}
+.saveProjectDialog{
+  width:min(520px,100%);
+  padding:18px;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  transform:translateY(8px) scale(.99);
+  opacity:0;
+  transition:
+    transform var(--anim-normal) var(--anim-ease),
+    opacity var(--anim-normal) ease
+}
+.saveProjectBackdrop.open .saveProjectDialog{
+  transform:translateY(0) scale(1);
+  opacity:1
+}
+.saveProjectDialog h2{margin:0 0 14px}
+.saveProjectGrid{
+  display:grid;
+  grid-template-columns:110px minmax(0,1fr);
+  gap:10px;
+  align-items:center
+}
+.saveProjectGrid input{
+  width:100%;
+  min-width:0;
+  background:var(--field);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:9px 10px
+}
+.saveProjectFilename{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:13px;
+  overflow-wrap:anywhere
+}
+.saveProjectFooter{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:16px
+}
+@media(max-width:600px){
+  .saveProjectGrid{grid-template-columns:1fr}
+}
+
+
+
+/* Customization + Transcript: independent scrolling on desktop/foldables */
+@media(min-width:901px){
+  .customizationTranscriptScroll{
+    max-height:calc(100dvh - 150px);
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+    padding-right:4px;
+  }
+}
+
+/* Narrow/mobile layouts can still use the normal page flow. */
+@media(max-width:900px){
+  .customizationTranscriptScroll{
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+  }
+}
+
+
+/* More vertical room for the timeline lanes */
+#combinedTimeline{
+  min-height:190px;
+}
+
+#captionLane{
+  min-height:136px;
+}
+
+/* Keep the instruction/help text clearly outside the lane area */
+.centerTimelinePanel > .small{
+  margin-top:8px;
+}
+
+@media(max-width:900px){
+  #combinedTimeline{
+    min-height:176px;
+  }
+
+  #captionLane{
+    min-height:122px;
+  }
+}
+
+
+.exportDialogBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:1560;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.58);
+  opacity:0;
+  transition:opacity var(--anim-normal) ease
+}
+.exportDialogBackdrop.open{display:flex;opacity:1}
+.exportDialog{
+  width:min(620px,100%);
+  max-height:calc(100dvh - 40px);
+  overflow:auto;
+  padding:18px;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  transform:translateY(8px) scale(.99);
+  opacity:0;
+  transition:transform var(--anim-normal) var(--anim-ease),opacity var(--anim-normal) ease
+}
+.exportDialogBackdrop.open .exportDialog{transform:translateY(0) scale(1);opacity:1}
+.exportDialog h2{margin:0 0 14px}
+.exportDialogGrid{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
+.exportDialogGrid input,.exportDialogGrid select{width:100%;min-width:0}
+.exportFormatDetails{
+  margin-top:12px;
+  padding:12px;
+  background:var(--field);
+  border:1px solid var(--line);
+  border-radius:8px
+}
+.exportFormatDetails strong{display:block;margin-bottom:4px}
+.exportDialogFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media(max-width:600px){.exportDialogGrid{grid-template-columns:1fr}}
+
+
+.rcBackdrop{
+  position:fixed;inset:0;z-index:1600;display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.58)
+}
+.rcBackdrop.open{display:flex}
+.rcDialog{
+  width:min(680px,100%);max-height:calc(100dvh - 40px);overflow:auto;padding:18px;
+  background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px
+}
+.rcDialog h2{margin:0 0 14px}
+.rcFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+#debugLog{
+  min-height:220px;max-height:50dvh;overflow:auto;white-space:pre-wrap;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;
+  padding:12px;background:var(--field);border:1px solid var(--line);border-radius:8px
+}
+#todoBackdrop ol{padding-left:24px}
+#todoBackdrop li{margin:7px 0}
+#contactBackdrop a{color:inherit;text-decoration:underline}
+
+#status{display:none!important}
+</style>
+</head>
+<body>
+
+<nav id="desktopMenuBar" class="desktopMenuBar" aria-label="Application menu">
+  <div class="desktopMenu">
+    <button type="button" data-menu-button>FILE</button>
+    <div class="desktopMenuPopup">
+      <button class="desktopMenuItem" type="button" data-command="newProject"><span>New Project</span><span class="shortcut">Ctrl+N</span></button>
+      <button class="desktopMenuItem" type="button" data-command="openProject"><span>Open Project…</span><span class="shortcut">Ctrl+O</span></button>
+      <button class="desktopMenuItem" type="button" data-command="saveProject"><span>Save Project</span><span class="shortcut">Ctrl+S</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="importVideo"><span>Import Video…</span></button>
+      <button class="desktopMenuItem" type="button" data-command="importAudio"><span>Import Audio…</span></button>
+      <button class="desktopMenuItem" type="button" data-command="importSubtitles"><span>Import Subtitles…</span></button>
+      <button class="desktopMenuItem" type="button" data-command="importFont"><span>Import Font…</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="exportAss"><span>Export Subtitles…</span></button>
+    </div>
+  </div>
+
+  <div class="desktopMenu">
+    <button type="button" data-menu-button>EDIT</button>
+    <div class="desktopMenuPopup">
+      <button class="desktopMenuItem" type="button" data-command="undo"><span>Undo</span><span class="shortcut">Ctrl+Z</span></button>
+      <button class="desktopMenuItem" type="button" data-command="redo"><span>Redo</span><span class="shortcut">Ctrl+Y</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="duplicateHere"><span>Duplicate Here</span><span class="shortcut">Ctrl+D</span></button>
+      <button class="desktopMenuItem" type="button" data-command="duplicateEnd"><span>Duplicate to End</span><span class="shortcut">Ctrl+Shift+D</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="find"><span>Find…</span><span class="shortcut">Ctrl+F</span></button>
+      <button class="desktopMenuItem" type="button" data-command="findReplace"><span>Find and Replace…</span><span class="shortcut">Ctrl+H</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="addCaption"><span>Add Caption at Playhead</span></button>
+      <button class="desktopMenuItem" type="button" data-command="splitCaption"><span>Split Selected Here</span></button>
+      <button class="desktopMenuItem" type="button" data-command="deleteCaption"><span>Delete Selected</span><span class="shortcut">Del</span></button>
+      <button class="desktopMenuItem" type="button" data-command="sortCaptions"><span>Sort by Time</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="preferences"><span>Preferences…</span></button>
+    </div>
+  </div>
+
+  <div class="desktopMenu">
+    <button type="button" data-menu-button>VIEW</button>
+    <div class="desktopMenuPopup">
+      <button class="desktopMenuItem" type="button" data-command="zoomIn"><span>Zoom In</span><span class="shortcut">Ctrl++</span></button>
+      <button class="desktopMenuItem" type="button" data-command="zoomOut"><span>Zoom Out</span><span class="shortcut">Ctrl+-</span></button>
+      <button class="desktopMenuItem" type="button" data-command="zoomReset"><span>Reset Zoom</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <div class="menuSubheading">Follow Playhead</div>
+      <button class="desktopMenuItem followChoice" type="button" data-follow-mode="off"><span>Off</span></button>
+      <button class="desktopMenuItem followChoice active" type="button" data-follow-mode="edge"><span>Edge-to-edge</span></button>
+      <button class="desktopMenuItem followChoice" type="button" data-follow-mode="smooth"><span>Smooth (centered)</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="resetLayout"><span>Reset Layout</span></button>
+    </div>
+  </div>
+
+  <div class="desktopMenu">
+    <button type="button" data-menu-button>TOOLS</button>
+    <div class="desktopMenuPopup">
+      <button class="desktopMenuItem" type="button" data-command="parseTranscript"><span>Turn Transcript into Captions</span></button>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="debug"><span>Debug…</span></button>
+    </div>
+  </div>
+
+  <div class="desktopMenu">
+    <button type="button" data-menu-button>HELP</button>
+    <div class="desktopMenuPopup" style="min-width:320px">
+      <div class="helpSearchWrap">
+        <input id="commandSearchInput" type="search" placeholder="Search commands…" autocomplete="off">
+        <div id="commandResults" class="commandResults"></div>
+      </div>
+      <div class="desktopMenuSeparator"></div>
+      <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
+      <button class="desktopMenuItem" type="button" data-command="contact"><span>Contact</span></button>
+      <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
+    </div>
+  </div>
+</nav>
+
+<header class="desktopQuickBar">
+  <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
+  <h1>MSUBBER v1.0 RC2</h1>
+  <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
+  <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
+  <label class="file">Import Subtitles<input id="textFile" type="file" accept=".txt,.srt,.vtt,.ass,.ssa,.sbv,text/plain,text/vtt,application/x-subrip,application/octet-stream"></label>
+  <label class="file">Open Project<input id="projectFile" type="file" accept=".msub,.mimisub,application/json"></label>
+  <label class="file">Import font<input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2,font/*"></label>
+  <button id="saveProjectBtn" class="secondary">Save Project</button>
+  <button id="headerUndoBtn" class="secondary" type="button">Undo</button>
+  <button id="headerRedoBtn" class="secondary" type="button">Redo</button>
+  <button id="parseBtn" class="secondary">Turn transcript into captions</button>
+  <button id="exportBtn">Export ASS</button>
+</header>
+
+<main>
+  <div class="editorColumn leftColumn">
+    <section class="eventsPanel">
+      <h2 class="panelTitle">SUBTITLE EVENTS</h2>
+      <div id="readOnlyBanner" class="readOnlyBanner">Rendered ASS inspection mode — editing is disabled.</div>
+      <div class="toolbar">
+        <button id="sortBtn" class="secondary">Sort by time</button>
+      </div>
+      <div id="eventList"></div>
+    </section>
+  </div>
+
+  <div class="editorColumn centerColumn">
+    <section class="centerPlayerPanel">
+      <div class="playerTitleRow">
+        <h2 class="panelTitle">VIDEO PLAYER</h2>
+        <button id="playerSizeBtn" class="secondary" type="button">Player: Compact</button>
+      </div>
+      <div id="mediaStage">
+        <video id="video" controls></video>
+        <audio id="audio" controls></audio>
+        <div id="mediaEmpty">Load a video or audio file.</div>
+        <div id="overlayStack"><div id="overlayTop" class="previewStack previewStackTop"></div><div id="overlayBottom" class="previewStack previewStackBottom"></div></div>
+      </div>
+    </section>
+
+    <nav id="mobileTabBar" class="mobileTabBar" aria-label="Editor panels">
+      <button id="mobileTimelineTab" class="mobileTab active" type="button">Timeline</button>
+      <button id="mobileOptionsTab" class="mobileTab" type="button">Transcript &amp; options</button>
+    </nav>
+
+    <section class="centerTimelinePanel">
+      <h2 class="panelTitle">TIMELINE AND CONTROLS</h2>
+
+      <div class="transport">
+        <button id="playPauseBtn" class="secondary">Play</button>
+        <input id="scrubBar" type="range" min="0" max="1" step="0.01" value="0">
+        <div id="transportTime" class="transportTime">0:00.00 / 0:00.00</div>
+      </div>
+
+      <div class="toolbar">
+        <button id="addBtn">Add caption at playhead</button>
+        <button id="splitBtn" class="secondary">Split selected here</button>
+        <button id="deleteBtn" class="danger">Delete selected</button>
+        <button id="undoBtn" class="secondary">Undo</button>
+        <button id="redoBtn" class="secondary">Redo</button>
+        <label>Zoom <input id="zoom" type="range" min="1" max="40" step="0.25" value="1"></label>
+        <button id="followBtn" class="secondary">Follow playhead: On</button>
+      </div>
+
+      <div id="combinedTimeline">
+        <canvas id="wave"></canvas>
+<div id="playhead"><div id="playheadHit"></div></div>
+        <div id="captionLane"></div><div id="timelineSelectionBox" class="timelineSelectionBox"></div>
+      </div>
+
+      <div class="small">
+        Press Play to preview the character reveal and rolling animation.
+        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
+      </div>
+    </section>
+  </div>
+
+  <div class="editorColumn rightColumn customizationTranscriptScroll">
+    <h2 class="panelTitle">CUSTOMIZATION AND TRANSCRIPT</h2>
+
+    <section>
+      <strong>Subtitle style</strong>
+      <div class="settings">
+        <label>Mode</label>
+        <select id="styleMode">
+          <option value="standard">Standard</option>
+          <option value="karaoke">Karaoke</option>
+          <option value="broadcast" selected>TV Roll</option>
+        </select>
+      </div>
+      <div class="small" id="styleHelp"></div>
+    </section>
+
+    <section>
+      <strong>Transcript source</strong>
+      <textarea id="transcript" placeholder="Load or paste the transcript here, then press “Turn transcript into captions.”"></textarea>
+      <div class="small">
+        Parsing creates editable caption copies. The source transcript stays untouched.
+      </div>
+    </section>
+
+    <section>
+      <strong>Customization</strong>
+      <div class="settings">
+        <div class="settingRow mode-karaoke"><label>Karaoke timing step ms</label><input id="charMs" type="number" value="10" min="1" max="200"></div>
+        <div class="settingRow mode-all"><label>Preferred characters</label><input id="preferred" type="number" value="42" min="20" max="50"></div>
+        <div class="settingRow mode-all"><label>Hard maximum</label><input id="hardMax" type="number" value="50" min="25" max="80"></div>
+        <div class="settingRow mode-tvroll"><label>Inactivity clear</label><input id="clearSeconds" type="number" value="3.5" min=".5" max="20" step=".1"></div>
+        <div class="settingRow mode-all"><label>Font</label><input id="fontName" value="DIN 2014"></div>
+        <div class="settingRow mode-all"><label>Font size</label><input id="fontSize" type="number" value="54" min="10" max="120"></div>
+        <label>Customize</label>
+        <select id="customizationTarget">
+          <option value="default">Style default</option>
+          <option value="selected">Selected caption</option>
+        </select>
+        <label>Caption position</label>
+        <select id="captionPosition">
+          <option value="bottom">Bottom</option>
+          <option value="top">Top</option>
+        </select>
+        <label>Text alignment</label>
+        <select id="textAlignment">
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+        <label>Text color</label><input id="textColor" type="color" value="#ffffff">
+        <label>Outline color</label><input id="outlineColor" type="color" value="#000000">
+        <label>Shadow color</label><input id="shadowColor" type="color" value="#000000">
+        <div id="karaokeSettings" class="karaokeSettings">
+          <label>Karaoke inactive color</label><input id="karaokeInactiveColor" type="color" value="#555555">
+          <label>Karaoke highlight color</label><input id="karaokeHighlightColor" type="color" value="#ffffff">
+          <label>Karaoke timing</label>
+          <select id="karaokeTimingMode">
+            <option value="character">Per character</option>
+            <option value="word" selected>Per word (automatic)</option>
+            <option value="manual-word">Per word (manual sync)</option>
+          </select>
+          <label>Manual word timing</label>
+          <div class="karaokeManualTools">
+            <button id="karaokeStartSync" class="secondary" type="button">Start timing selected</button>
+            <button id="karaokeTapWord" class="secondary" type="button" disabled>Tap next word</button>
+            <button id="karaokeClearTiming" class="secondary" type="button">Clear timing</button>
+          </div>
+          <label>Word timing status</label>
+          <div id="karaokeTimingStatus" class="small">Select a caption and choose Manual word timing.</div>
+        </div>
+        <span></span><button id="resetCaptionStyle" class="secondary" type="button">Reset selected caption style</button>
+        <span></span><div id="customizationStatus" class="small"></div>
+        <label>Theme</label>
+        <select id="themeMode">
+          <option value="system">System</option>
+          <option value="dark" selected>Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <div class="settings" style="margin-top:10px">
+        <label>Export format</label>
+        <select id="exportFormat"><option value="ass">ASS</option></select>
+      </div>
+    </div>
+
+      <div class="small">Video burning is not included in this browser build.</div>
+      <div id="status" class="status" aria-live="polite">Load a video/audio file and subtitles to begin.</div>
+      <details id="importDetails">
+        <summary>Import details</summary>
+        <pre id="importLog" style="white-space:pre-wrap;word-break:break-word;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px;max-height:180px;overflow:auto;color:var(--muted);font-size:12px">No import attempted yet.</pre>
+      </details>
+    </section>
+  </div>
+</main>
+
+<div id="tvrollModalBackdrop" class="tvrollModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="tvrollModalTitle">
+  <div class="tvrollModal">
+    <h2 id="tvrollModalTitle">TV Roll ASS detected</h2>
+    <p>This file contains the separate movement segments used by the final animation.</p>
+    <div class="tvrollChoices">
+      <button id="recoverTvRollBtn" class="tvrollChoice" type="button">
+        <strong>Recover editable captions</strong>
+        <span>Merge the movement segments back into one editable caption per source event.</span>
+      </button>
+      <button id="openRenderedBtn" class="tvrollChoice" type="button">
+        <strong>Open rendered ASS as read-only</strong>
+        <span>Inspect every exported segment exactly as it appears in the ASS file.</span>
+      </button>
+    </div>
+    <div class="tvrollModalFooter">
+      <button id="cancelTvRollBtn" class="secondary" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="mobileDrawerBackdrop" class="mobileDrawerBackdrop" aria-hidden="true">
+  <aside class="mobileDrawer" aria-label="Mobile menu">
+    <div class="mobileDrawerHeader">
+      <strong>Menu</strong>
+      <button id="mobileDrawerClose" class="secondary" type="button" aria-label="Close menu">✕</button>
+    </div>
+    <div class="mobileDrawerList">
+      <button id="mobileOpenProject" class="mobileDrawerItem" type="button">Open project…</button>
+      <button id="mobileImportMedia" class="mobileDrawerItem" type="button">Import media…</button>
+      <button id="mobileImportSubtitles" class="mobileDrawerItem" type="button">Import subtitles…</button>
+      <button id="mobileExport" class="mobileDrawerItem" type="button">Export…</button>
+      <button id="mobileSettings" class="mobileDrawerItem" type="button">Settings…</button>
+    </div>
+  </aside>
+</div>
+
+<div id="mobileMediaChoice" class="mobileChoiceBackdrop" aria-hidden="true">
+  <div class="mobileChoiceSheet">
+    <h2>Import media</h2>
+    <div class="mobileChoiceList">
+      <button id="mobileChooseVideo" type="button">Video…</button>
+      <button id="mobileChooseAudio" type="button">Audio…</button>
+      <button class="secondary mobileChoiceCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="mobileExportChoice" class="mobileChoiceBackdrop" aria-hidden="true">
+  <div class="mobileChoiceSheet">
+    <h2>Export</h2>
+    <div class="mobileChoiceList">
+      <button id="mobileSaveProject" type="button">Project (.msub)</button>
+      <button id="mobileExportSubtitles" type="button">Subtitle ASS files</button>
+      <button class="secondary mobileChoiceCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="preferencesBackdrop" class="preferencesBackdrop" role="dialog" aria-modal="true" aria-labelledby="preferencesTitle">
+  <div class="preferencesDialog">
+    <h2 id="preferencesTitle">Preferences</h2>
+    <div class="preferencesGrid">
+      <label for="preferencesTheme">Theme</label>
+      <select id="preferencesTheme">
+        <option value="system">System</option>
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+
+      <label for="preferencesFollow">Follow Playhead</label>
+      <select id="preferencesFollow">
+        <option value="off">Off</option>
+        <option value="edge">Edge-to-edge</option>
+        <option value="smooth">Smooth</option>
+      </select>
+    </div>
+    <div class="preferencesFooter">
+      <button id="preferencesCancel" class="secondary" type="button">Cancel</button>
+      <button id="preferencesApply" type="button">Apply</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="findBackdrop" class="findBackdrop" role="dialog" aria-modal="true" aria-labelledby="findTitle">
+  <div class="findDialog">
+    <h2 id="findTitle">Find</h2>
+    <div class="findGrid">
+      <label for="findText">Find</label>
+      <input id="findText" type="text" autocomplete="off">
+      <label class="findReplaceOnly" for="replaceText">Replace with</label>
+      <input id="replaceText" class="findReplaceOnly" type="text" autocomplete="off">
+    </div>
+    <div class="findOptions">
+      <label><input id="findCaseSensitive" type="checkbox"> Case sensitive</label>
+      <label><input id="findWholeWord" type="checkbox"> Whole words</label>
+      <label><input id="findWrap" type="checkbox" checked> Wrap around</label>
+    </div>
+    <div id="findStatus" class="findStatus" aria-live="polite"></div>
+    <div class="findFooter">
+      <button id="findPreviousBtn" class="secondary" type="button">Find Previous</button>
+      <button id="findNextBtn" class="secondary" type="button">Find Next</button>
+      <button id="replaceCurrentBtn" class="findReplaceOnly secondary" type="button">Replace</button>
+      <button id="replaceAllBtn" class="findReplaceOnly secondary" type="button">Replace All</button>
+      <button id="findCloseBtn" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="eventContextMenu" class="eventContextMenu" role="menu">
+  <button type="button" data-event-command="duplicateHere"><span>Duplicate Here</span><span class="shortcut">Ctrl+D</span></button>
+  <button type="button" data-event-command="duplicateEnd"><span>Duplicate to End</span><span class="shortcut">Ctrl+Shift+D</span></button>
+  <div class="separator"></div>
+  <button type="button" data-event-command="delete"><span>Delete</span><span class="shortcut">Del</span></button>
+</div>
+
+
+<div id="markdownHelpBackdrop" class="appModalBackdrop"><div class="appModal">
+  <div class="appModalHeader"><h2>Markdown Guide</h2><button id="markdownHelpX" class="secondary" type="button">✕</button></div>
+  <div class="appModalContent">
+    <div><strong>Bold</strong><div class="markdownExample">**This is bold**</div></div>
+    <div><strong>Italic</strong><div class="markdownExample">*This is italic*
+_This is also italic_</div></div>
+    <div><strong>Literal Markdown</strong><div class="markdownExample">\*This is not italic\*</div></div>
+    <div class="small">Formatting is preserved in the preview and supported exports. WebVTT carries bold/italic; ASS carries richer styling.</div>
+  </div>
+  <div class="appModalFooter"><button id="markdownHelpClose" type="button">Close</button></div>
+</div></div>
+
+<div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
+  <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
+  <div class="appModalContent">
+    <div><strong>MSUBBER v1.0 RC2</strong></div>
+    <div>Subtitle editor</div>
+  </div>
+  <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
+</div></div>
+
+<div id="saveProjectBackdrop" class="saveProjectBackdrop" role="dialog" aria-modal="true" aria-labelledby="saveProjectTitle">
+  <div class="saveProjectDialog">
+    <h2 id="saveProjectTitle">Save Project</h2>
+
+    <div class="saveProjectGrid">
+      <label for="saveProjectName">Project name</label>
+      <input id="saveProjectName" type="text" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div id="saveProjectFilename" class="saveProjectFilename">File: project.msub</div>
+
+    <div class="saveProjectFooter">
+      <button id="saveProjectCancel" class="secondary" type="button">Cancel</button>
+      <button id="saveProjectConfirm" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="exportDialogBackdrop" class="exportDialogBackdrop" role="dialog" aria-modal="true" aria-labelledby="exportDialogTitle">
+  <div class="exportDialog">
+    <h2 id="exportDialogTitle">Export Subtitles</h2>
+
+    <div class="exportDialogGrid">
+      <label for="exportFileName">File name</label>
+      <input id="exportFileName" type="text" autocomplete="off" spellcheck="false">
+
+      <label for="exportFileType">File type</label>
+      <select id="exportFileType">
+        <option value="vtt">WebVTT (.vtt) — Recommended for positioned subtitles</option>
+        <option value="ass">Advanced SubStation Alpha (.ass)</option>
+        <option value="srt">SubRip (.srt)</option>
+      </select>
+    </div>
+
+    <div id="exportFormatDetails" class="exportFormatDetails small"></div>
+
+    <div class="exportDialogFooter">
+      <button id="exportDialogCancel" class="secondary" type="button">Cancel</button>
+      <button id="exportDialogConfirm" type="button">Export</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="debugBackdrop" class="rcBackdrop">
+  <div class="rcDialog">
+    <h2>Debug Log</h2>
+    <div id="debugLog">No debug messages yet.</div>
+    <div class="rcFooter">
+      <button id="debugClear" class="secondary" type="button">Clear</button>
+      <button id="debugCopy" class="secondary" type="button">Copy</button>
+      <button id="debugClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="contactBackdrop" class="rcBackdrop">
+  <div class="rcDialog">
+    <h2>Contact</h2>
+    <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
+    <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
+    <div class="rcFooter">
+      <button id="contactTodo" class="secondary" type="button">TO-DO</button>
+      <button id="contactClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="todoBackdrop" class="rcBackdrop">
+  <div class="rcDialog">
+    <h2>TO-DO</h2>
+    <ol>
+      <li>Add support for typing in effects</li>
+      <li>Add colour theming for UI</li>
+      <li>Add Playhead Nudging (Back and forth frame-by-frame with , and .; forward and back one second with ← and →)</li>
+      <li>Fullscreen preview rendering</li>
+      <li>Proper layouts for Mobile and Foldables</li>
+      <li>Add animations to the menus for mobile</li>
+      <li>Per-speaker colour*</li>
+      <li>Add Video URL to Import Media</li>
+      <li>Save media to project file</li>
+      <li>Autosave (Customize frequency in Preferences)</li>
+      <li>Apps?</li>
+    </ol>
+    <p class="small">* I already have an idea on how this will work</p>
+    <div class="rcFooter"><button id="todoClose" type="button">Close</button></div>
+  </div>
+</div>
+<script>
+const video=document.getElementById('video'), audio=document.getElementById('audio');
+const videoFile=document.getElementById('videoFile'), audioFile=document.getElementById('audioFile'), textFile=document.getElementById('textFile'), projectFile=document.getElementById('projectFile'), fontFile=document.getElementById('fontFile');
+const saveProjectBtn=document.getElementById('saveProjectBtn');
+const importLog=document.getElementById('importLog'), importDetails=document.getElementById('importDetails');
+const tvrollModalBackdrop=document.getElementById('tvrollModalBackdrop');
+const recoverTvRollBtn=document.getElementById('recoverTvRollBtn');
+const openRenderedBtn=document.getElementById('openRenderedBtn');
+const cancelTvRollBtn=document.getElementById('cancelTvRollBtn');
+const readOnlyBanner=document.getElementById('readOnlyBanner');
+const mobileMenuButton=document.getElementById('mobileMenuButton');
+const mobileDrawerBackdrop=document.getElementById('mobileDrawerBackdrop');
+const mobileDrawerClose=document.getElementById('mobileDrawerClose');
+const mobileTimelineTab=document.getElementById('mobileTimelineTab');
+const mobileOptionsTab=document.getElementById('mobileOptionsTab');
+const mobileMediaChoice=document.getElementById('mobileMediaChoice');
+const mobileExportChoice=document.getElementById('mobileExportChoice');
+const commandSearchInput=document.getElementById('commandSearchInput');
+const commandResults=document.getElementById('commandResults');
+const playerSizeBtn=document.getElementById('playerSizeBtn');
+const themeMode=document.getElementById('themeMode');
+const preferencesBackdrop=document.getElementById('preferencesBackdrop');
+const preferencesTheme=document.getElementById('preferencesTheme');
+const preferencesFollow=document.getElementById('preferencesFollow');
+const preferencesCancel=document.getElementById('preferencesCancel');
+const preferencesApply=document.getElementById('preferencesApply');
+const findBackdrop=document.getElementById('findBackdrop');
+const findTitle=document.getElementById('findTitle');
+const findText=document.getElementById('findText');
+const replaceText=document.getElementById('replaceText');
+const findCaseSensitive=document.getElementById('findCaseSensitive');
+const findWholeWord=document.getElementById('findWholeWord');
+const findWrap=document.getElementById('findWrap');
+const findStatus=document.getElementById('findStatus');
+const findPreviousBtn=document.getElementById('findPreviousBtn');
+const findNextBtn=document.getElementById('findNextBtn');
+const replaceCurrentBtn=document.getElementById('replaceCurrentBtn');
+const replaceAllBtn=document.getElementById('replaceAllBtn');
+const findCloseBtn=document.getElementById('findCloseBtn');
+const eventContextMenu=document.getElementById('eventContextMenu');
+const markdownHelpBackdrop=document.getElementById('markdownHelpBackdrop');
+const markdownHelpX=document.getElementById('markdownHelpX');
+const markdownHelpClose=document.getElementById('markdownHelpClose');
+const aboutBackdrop=document.getElementById('aboutBackdrop');
+const aboutX=document.getElementById('aboutX');
+const aboutClose=document.getElementById('aboutClose');
+const saveProjectBackdrop=document.getElementById('saveProjectBackdrop');
+const saveProjectName=document.getElementById('saveProjectName');
+const saveProjectFilename=document.getElementById('saveProjectFilename');
+const saveProjectCancel=document.getElementById('saveProjectCancel');
+const saveProjectConfirm=document.getElementById('saveProjectConfirm');
+const exportDialogBackdrop=document.getElementById('exportDialogBackdrop');
+const exportFileName=document.getElementById('exportFileName');
+const exportFileType=document.getElementById('exportFileType');
+const exportFormatDetails=document.getElementById('exportFormatDetails');
+const exportDialogCancel=document.getElementById('exportDialogCancel');
+const exportDialogConfirm=document.getElementById('exportDialogConfirm');
+const textAlignment=document.getElementById('textAlignment');
+const textColor=document.getElementById('textColor');
+const outlineColor=document.getElementById('outlineColor');
+const shadowColor=document.getElementById('shadowColor');
+const customizationTarget=document.getElementById('customizationTarget');
+const captionPosition=document.getElementById('captionPosition');
+const resetCaptionStyle=document.getElementById('resetCaptionStyle');
+const customizationStatus=document.getElementById('customizationStatus');
+const overlayTop=document.getElementById('overlayTop');
+const overlayBottom=document.getElementById('overlayBottom');
+const karaokeSettings=document.getElementById('karaokeSettings');
+const karaokeInactiveColor=document.getElementById('karaokeInactiveColor');
+const karaokeHighlightColor=document.getElementById('karaokeHighlightColor');
+const karaokeTimingMode=document.getElementById('karaokeTimingMode');
+const karaokeStartSync=document.getElementById('karaokeStartSync');
+const karaokeTapWord=document.getElementById('karaokeTapWord');
+const karaokeClearTiming=document.getElementById('karaokeClearTiming');
+const karaokeTimingStatus=document.getElementById('karaokeTimingStatus');
+const transcript=document.getElementById('transcript'), wave=document.getElementById('wave');
+const combinedTimeline=document.getElementById('combinedTimeline'), captionLane=document.getElementById('captionLane');
+const timelineSelectionBox=document.getElementById('timelineSelectionBox');
+const playhead=document.getElementById('playhead'), playheadHit=document.getElementById('playheadHit');
+const eventList=document.getElementById('eventList'), overlayStack=document.getElementById('overlayStack');
+const zoomEl=document.getElementById('zoom'), statusEl=document.getElementById('status'), mediaEmpty=document.getElementById('mediaEmpty'), styleMode=document.getElementById('styleMode'), exportFormat=document.getElementById('exportFormat'), styleHelp=document.getElementById('styleHelp');
+const playPauseBtn=document.getElementById('playPauseBtn'), scrubBar=document.getElementById('scrubBar'), transportTime=document.getElementById('transportTime');
+const undoBtn=document.getElementById('undoBtn'), redoBtn=document.getElementById('redoBtn');
+
+let media=video, peaks=[], events=[], selected=-1, follow=true, followMode='edge', viewStart=0, drag=null, playheadDrag=false, timelinePan=null, audioContext=null;
+let undoStack=[], redoStack=[], restoringState=false, textEditSnapshot=null;
+let previewRaf=0, lastPreviewKey='', lastPreviewCount=0;
+let lastSmoothTimelineFrame=0, lastTransportFrame=0;
+let readOnlyRenderedMode=false, pendingTvRollImport=null;
+let newlyAddedEventIndex=-1;
+let eventListManualUntil=0;
+let multiSelected=new Set();
+let mobileMultiSelectMode=false;
+let selectionBoxDrag=null;
+let pendingTouchEventDrag=null;
+let lastAutoFollowEventIndex=-1;
+let loadedMediaName='', loadedMediaKind='', loadedFontFileName='';
+let currentProjectName='';
+let syncingCustomization=false;
+let styleDefaults={
+  standard:{alignment:'center',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'},
+  karaoke:{alignment:'center',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'},
+  broadcast:{alignment:'left',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'}
+};
+let karaokeDefaults={inactiveColor:'#555555',highlightColor:'#ffffff',timingMode:'word'};
+let karaokeSyncSession=null;
+const LANE_COUNT=3, LANE_HEIGHT=40, LANE_TOP=8, SNAP_PIXELS=6;
+
+function setActiveMedia(which){
+  try{media.pause()}catch{}
+  media=which;
+  video.style.display=which===video?'block':'none';
+  audio.style.display=which===audio?'block':'none';
+  mediaEmpty.style.display='none';
+}
+
+function cloneEvents(){return events.map(e=>({...e}))}
+function captureState(){return {events:cloneEvents(),selected,viewStart}}
+function sameState(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function pushHistory(){
+  if(restoringState)return;
+  const state=captureState(),last=undoStack[undoStack.length-1];
+  if(!last||!sameState(last,state))undoStack.push(state);
+  if(undoStack.length>100)undoStack.shift();
+  redoStack=[];
+  updateUndoButtons();
+}
+function restoreState(state){
+  restoringState=true;
+  events=state.events.map(e=>({...e}));
+  selected=Math.min(state.selected,events.length-1);
+  viewStart=state.viewStart||0;
+  assignLanes();renderAll();
+  restoringState=false;
+  updateUndoButtons();
+}
+function undo(){
+  if(!undoStack.length)return;
+  redoStack.push(captureState());
+  restoreState(undoStack.pop());
+}
+function redo(){
+  if(!redoStack.length)return;
+  undoStack.push(captureState());
+  restoreState(redoStack.pop());
+}
+function updateUndoButtons(){
+  undoBtn.disabled=!undoStack.length;
+  redoBtn.disabled=!redoStack.length;
+}
+
+function selectedIndexes(){
+  if(multiSelected.size)return [...multiSelected].sort((a,b)=>a-b);
+  return selected>=0?[selected]:[];
+}
+
+function clearMultiSelection(){
+  multiSelected.clear();
+  mobileMultiSelectMode=false;
+  document.body.classList.remove('multiSelectMode');
+}
+
+function selectOnly(index,{seek=false}={}){
+  clearMultiSelection();
+  selected=index;
+  lastAutoFollowEventIndex=-1;
+  if(seek && events[index])media.currentTime=events[index].start;
+  highlightSelection();
+  updatePreview();
+}
+
+function toggleMultiSelection(index){
+  if(index<0||index>=events.length)return;
+
+  if(!multiSelected.size && selected>=0){
+    multiSelected.add(selected);
+  }
+
+  if(multiSelected.has(index)){
+    multiSelected.delete(index);
+  }else{
+    multiSelected.add(index);
+  }
+
+  if(multiSelected.size){
+    selected=index;
+  }else{
+    selected=-1;
+  }
+
+  highlightSelection();
+  updatePreview();
+}
+
+function enterMobileMultiSelect(index){
+  mobileMultiSelectMode=true;
+  document.body.classList.add('multiSelectMode');
+
+  if(!multiSelected.size && selected>=0){
+    multiSelected.add(selected);
+  }
+  if(index>=0)multiSelected.add(index);
+
+  selected=index>=0?index:selected;
+  highlightSelection();
+  updatePreview();
+  setStatus(`${multiSelected.size} caption${multiSelected.size===1?'':'s'} selected.`);
+}
+
+function selectionBoxRect(){
+  if(!selectionBoxDrag)return null;
+  const x1=Math.min(selectionBoxDrag.startX,selectionBoxDrag.currentX);
+  const x2=Math.max(selectionBoxDrag.startX,selectionBoxDrag.currentX);
+  const y1=Math.min(selectionBoxDrag.startY,selectionBoxDrag.currentY);
+  const y2=Math.max(selectionBoxDrag.startY,selectionBoxDrag.currentY);
+  return {x1,x2,y1,y2};
+}
+
+function updateSelectionBoxVisual(){
+  const box=selectionBoxRect();
+  if(!box)return;
+
+  const timelineRect=combinedTimeline.getBoundingClientRect();
+  timelineSelectionBox.style.left=(box.x1-timelineRect.left)+'px';
+  timelineSelectionBox.style.top=(box.y1-timelineRect.top)+'px';
+  timelineSelectionBox.style.width=Math.max(1,box.x2-box.x1)+'px';
+  timelineSelectionBox.style.height=Math.max(1,box.y2-box.y1)+'px';
+
+  const hits=[];
+  captionLane.querySelectorAll('.eventBlock').forEach(block=>{
+    const r=block.getBoundingClientRect();
+    const intersects=!(
+      r.right<box.x1 || r.left>box.x2 ||
+      r.bottom<box.y1 || r.top>box.y2
+    );
+    if(intersects)hits.push(Number(block.dataset.i));
+  });
+
+  multiSelected=new Set(hits);
+  if(hits.length)selected=hits[hits.length-1];
+  highlightSelection();
+}
+
+function beginSelectionBox(ev,{mobile=false}={}){
+  const r=combinedTimeline.getBoundingClientRect();
+  selectionBoxDrag={
+    pointerId:ev.pointerId,
+    startX:Math.max(r.left,Math.min(r.right,ev.clientX)),
+    startY:Math.max(r.top,Math.min(r.bottom,ev.clientY)),
+    currentX:ev.clientX,
+    currentY:ev.clientY,
+    mobile
+  };
+  multiSelected.clear();
+  if(mobile){
+    mobileMultiSelectMode=true;
+    document.body.classList.add('multiSelectMode');
+  }
+  timelineSelectionBox.classList.add('active');
+  try{combinedTimeline.setPointerCapture(ev.pointerId)}catch(_){}
+  updateSelectionBoxVisual();
+}
+
+function moveSelectionBox(ev){
+  if(!selectionBoxDrag||selectionBoxDrag.pointerId!==ev.pointerId)return;
+  ev.preventDefault();
+  const r=combinedTimeline.getBoundingClientRect();
+  selectionBoxDrag.currentX=Math.max(r.left,Math.min(r.right,ev.clientX));
+  selectionBoxDrag.currentY=Math.max(r.top,Math.min(r.bottom,ev.clientY));
+  updateSelectionBoxVisual();
+}
+
+function endSelectionBox(ev){
+  if(!selectionBoxDrag||selectionBoxDrag.pointerId!==ev.pointerId)return;
+  ev.preventDefault();
+  try{combinedTimeline.releasePointerCapture(ev.pointerId)}catch(_){}
+  selectionBoxDrag=null;
+  timelineSelectionBox.classList.remove('active');
+  if(multiSelected.size){
+    setStatus(`${multiSelected.size} caption${multiSelected.size===1?'':'s'} selected.`);
+  }
+}
+
+function deleteSelected(){
+  const indexes=selectedIndexes();
+  if(!indexes.length)return;
+
+  pushHistory();
+
+  for(const index of [...indexes].sort((a,b)=>b-a)){
+    events.splice(index,1);
+  }
+
+  clearMultiSelection();
+  assignLanes();
+  selected=Math.min(indexes[0],events.length-1);
+  renderAll();
+}
+function isTypingTarget(el){
+  return el && (el.tagName==='TEXTAREA'||el.tagName==='INPUT'||el.isContentEditable);
+}
+function neighborBounds(index,lane){
+  const e=events[index];
+  let left=0,right=Infinity;
+  for(let i=0;i<events.length;i++){
+    if(i===index||(events[i].lane??0)!==lane)continue;
+    const o=events[i];
+    if(o.end<=e.start)left=Math.max(left,o.end);
+    if(o.start>=e.end)right=Math.min(right,o.start);
+  }
+  return {left,right};
+}
+function snapTargets(index,lane){
+  const out=[media.currentTime||0];
+  for(let i=0;i<events.length;i++){
+    if(i===index)continue;
+    out.push(events[i].start,events[i].end);
+  }
+  return out;
+}
+function snapValue(value,targets,threshold){
+  let best=value,bestDist=threshold+1;
+  for(const t of targets){
+    const d=Math.abs(value-t);
+    if(d<=threshold&&d<bestDist){best=t;bestDist=d}
+  }
+  return best;
+}
+
+function fmt(t){t=Math.max(0,Number(t)||0);const m=Math.floor(t/60),s=t-m*60;return `${m}:${s.toFixed(2).padStart(5,'0')}`}
+function parseTime(v){const p=String(v).split(':').map(Number);if(p.length===2)return p[0]*60+p[1];if(p.length===3)return p[0]*3600+p[1]*60+p[2];return Number(v)||0}
+function assTime(t){let cs=Math.round(Math.max(0,t)*100),h=Math.floor(cs/360000);cs%=360000;let m=Math.floor(cs/6000);cs%=6000;let s=Math.floor(cs/100),c=cs%100;return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(c).padStart(2,'0')}`}
+function stripComments(s){return s.replace(/\/\*[\s\S]*?\*\//g,'')}
+function oneLineCaption(s){
+  return String(s??'')
+    .replace(/\r/g,'')
+    .replace(/\s*\n+\s*/g,' ')
+    .replace(/[ \t]+/g,' ')
+    .trim();
+}
+function visibleText(s){return s.replace(/\\([*_\\])/g,'$1').replace(/\*\*|\*|_/g,'')}
+function upperOutsideBrackets(s){let out='',inside=false;for(const ch of s){if(ch==='[')inside=true;out+=inside?ch:ch.toUpperCase();if(ch===']')inside=false}return out}
+function sentenceCase(s){let out='',cap=true;for(const ch of s){if(/[A-Za-z]/.test(ch)){out+=cap?ch.toUpperCase():ch.toLowerCase();cap=false}else{out+=ch;if(/[.!?]/.test(ch))cap=true}}return out}
+function transformCase(s){
+  const input=String(s??'');
+
+  // A standalone action or sound description keeps exactly the casing typed.
+  if(/^\s*\[[^\]]+\]\s*$/.test(input)){
+    return input;
+  }
+
+  const speakerMatch=input.match(/^(>>\s*)([^:]+):\s*(.*)$/);
+  if(speakerMatch){
+    const prefix=speakerMatch[1];
+    const originalSpeaker=speakerMatch[2].trim();
+    let body=speakerMatch[3];
+
+    // Whispering is the only mode that uppercases the speaker name and
+    // changes the spoken text to sentence case.
+    if(/^\[Whispering\]/i.test(body)){
+      body=body.replace(
+        /^\[Whispering\]\s*(.*)$/i,
+        (_,rest)=>`[Whispering] ${sentenceCase(rest)}`
+      );
+      return `${prefix}${originalSpeaker.toUpperCase()}: ${body}`;
+    }
+
+    // Normal dialogue preserves the speaker name as typed, keeps bracketed
+    // directions/actions as typed, and uppercases only the spoken dialogue.
+    body=body.replace(/\[[^\]]*\]|[^\[]+/g,part=>
+      part.startsWith('[')?part:part.toUpperCase()
+    );
+    return `${prefix}${originalSpeaker}: ${body}`;
+  }
+
+  // Non-speaker dialogue is uppercased, while any embedded bracketed action
+  // keeps its original casing.
+  return input.replace(/\[[^\]]*\]|[^\[]+/g,part=>
+    part.startsWith('[')?part:part.toUpperCase()
+  );
+}
+function escapeASSLiteral(text){
+  return String(text??'')
+    .replace(/\\/g,'＼')
+    .replace(/{/g,'｛')
+    .replace(/}/g,'｝');
+}
+
+function parseMarkdownToASS(input){
+  let output='';
+  for(const run of previewMarkdownRuns(String(input??''))){
+    let open='';
+    let close='';
+    if(run.bold){open+='\\b1';close='\\b0'+close}
+    if(run.italic){open+='\\i1';close='\\i0'+close}
+    if(open)output+=`{${open}}`;
+    output+=escapeASSLiteral(run.text);
+    if(close)output+=`{${close}}`;
+  }
+  return output;
+}
+
+
+function inlineColorMarkdownToASSKaraoke(input,charCs,defaultColor){
+  let output='{\\2a&HFF&\\1a&H00&}';
+  for(const colorRun of inlineColorRuns(input,defaultColor)){
+    const ass=hexToAssColor(cssColorToHex(colorRun.color,defaultColor),'00').replace(/^&H/,'');
+    output+=`{\\c&H${ass}&}`;
+    for(const run of previewMarkdownRuns(colorRun.text)){
+      let open='',close='';
+      if(run.bold){open+='\\b1';close='\\b0'+close}
+      if(run.italic){open+='\\i1';close='\\i0'+close}
+      if(open)output+=`{${open}}`;
+      for(const char of escapeASSLiteral(run.text)){
+        output+=`{\\k${charCs}}${char}`;
+      }
+      if(close)output+=`{${close}}`;
+    }
+    output+='{\\c}';
+  }
+  return output;
+}
+function markdownToASSKaraoke(input,charCs){
+  let output='{\\2a&HFF&\\1a&H00&}';
+
+  for(const run of previewMarkdownRuns(String(input??''))){
+    let open='';
+    let close='';
+    if(run.bold){open+='\\b1';close='\\b0'+close}
+    if(run.italic){open+='\\i1';close='\\i0'+close}
+
+    if(open)output+=`{${open}}`;
+
+    for(const char of escapeASSLiteral(run.text)){
+      output+=`{\\k${charCs}}${char}`;
+    }
+
+    if(close)output+=`{${close}}`;
+  }
+
+  return output;
+}
+
+function transcriptBlocks(){return stripComments(transcript.value).replace(/\r/g,'').split(/\n\s*\n/).map(oneLineCaption).filter(Boolean)}
+function setStatus(s){statusEl.textContent=s}
+
+function setImportLog(lines,open=false){
+  const content=Array.isArray(lines)?lines.join('\n'):String(lines);
+  importLog.textContent=content;
+  if(open)importDetails.open=true;
+}
+
+function extensionOf(name){
+  const dot=String(name).lastIndexOf('.');
+  return dot>=0?name.slice(dot+1).toLowerCase():'';
+}
+
+function normalizeNewlines(raw){
+  return String(raw??'').replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+}
+
+function validateParsedEvents(parsed,formatName){
+  if(!Array.isArray(parsed))throw new Error(`${formatName} importer did not return an event list.`);
+  const valid=[];
+  const warnings=[];
+
+  parsed.forEach((event,index)=>{
+    const start=Number(event.start);
+    const end=Number(event.end);
+    const caption=oneLineCaption(event.text);
+
+    if(!Number.isFinite(start)||!Number.isFinite(end)){
+      warnings.push(`Skipped cue ${index+1}: invalid timestamp.`);
+      return;
+    }
+    if(end<=start){
+      warnings.push(`Skipped cue ${index+1}: end time is not after start time.`);
+      return;
+    }
+    if(!caption){
+      warnings.push(`Skipped cue ${index+1}: empty caption.`);
+      return;
+    }
+
+    valid.push({start:Math.max(0,start),end,text:caption});
+  });
+
+  if(!valid.length){
+    throw new Error(`No valid ${formatName} subtitle cues were found.`);
+  }
+  return {events:valid,warnings};
+}
+function overlaps(a,b){return a.start < b.end && a.end > b.start}
+function laneAvailable(index,lane,start=events[index].start,end=events[index].end){
+  return !events.some((other,j)=>j!==index && (other.lane??0)===lane && start < other.end && end > other.start);
+}
+function firstAvailableLane(index,start=events[index].start,end=events[index].end){
+  for(let lane=0;lane<LANE_COUNT;lane++)if(laneAvailable(index,lane,start,end))return lane;
+  return Math.max(0,Math.min(LANE_COUNT-1,events[index]?.lane??0));
+}
+function assignLanes(){
+  const order=events.map((e,i)=>({e,i})).sort((a,b)=>a.e.start-b.e.start||a.e.end-b.e.end);
+  for(const {e,i} of order){
+    if(!Number.isInteger(e.lane)||e.lane<0||e.lane>=LANE_COUNT||!laneAvailable(i,e.lane,e.start,e.end))e.lane=firstAvailableLane(i,e.start,e.end);
+  }
+}
+
+function parseTranscript(){
+  const blocks=transcriptBlocks(),dur=media.duration||blocks.length*2.5,step=Math.max(1.25,dur/Math.max(blocks.length,1));
+  events=blocks.map((text,i)=>({start:i*step,end:Math.min(dur,i*step+Math.max(1.1,step*.9)),text,lane:i%LANE_COUNT}));assignLanes();undoStack=[];redoStack=[];updateUndoButtons();
+  selected=events.length?0:-1;renderAll();setStatus(`Created ${events.length} editable captions. Drag them into place.`);
+}
+async function decodePeaks(file){
+  setStatus('Building waveform…');const ab=await file.arrayBuffer();audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+  try{const buf=await audioContext.decodeAudioData(ab.slice(0)),data=buf.getChannelData(0),count=4000,size=Math.max(1,Math.floor(data.length/count));peaks=[];
+    for(let i=0;i<count;i++){let max=0,a=i*size,b=Math.min(data.length,a+size);for(let j=a;j<b;j++)max=Math.max(max,Math.abs(data[j]));peaks.push(max)}
+    setStatus(`Loaded ${file.name} (${fmt(buf.duration)}).`);
+  }catch{peaks=[];setStatus(`Loaded ${file.name}; waveform decoding was unavailable.`)}
+  renderAll();
+}
+videoFile.addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const f=input.files&&input.files[0];
+  if(!f)return;
+
+  try{
+    loadedMediaName=f.name;
+    loadedMediaKind='video';
+    setActiveMedia(video);
+    video.src=URL.createObjectURL(f);
+    video.load();
+    setStatus(`Loaded video: ${f.name}`);
+  }catch(err){
+    setStatus(`Could not load video: ${err.message}`);
+  }finally{
+    input.value='';
+  }
+});
+audioFile.addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const f=input.files&&input.files[0];
+  if(!f)return;
+
+  try{
+    loadedMediaName=f.name;
+    loadedMediaKind='audio';
+    setActiveMedia(audio);
+    audio.src=URL.createObjectURL(f);
+    audio.load();
+    setStatus(`Loaded audio: ${f.name}`);
+  }catch(err){
+    setStatus(`Could not load audio: ${err.message}`);
+  }finally{
+    input.value='';
+  }
+});
+
+fontFile.addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const f=input.files&&input.files[0];
+  if(!f)return;
+
+  try{
+    loadedFontFileName=f.name;
+    const family=`MimiImported_${Date.now()}`;
+    const face=new FontFace(family,await f.arrayBuffer());
+    await face.load();
+    document.fonts.add(face);
+    document.getElementById('fontName').value=family;
+    updatePreview();
+    setStatus(`Imported font for preview: ${f.name}`);
+  }catch(err){
+    setStatus(`Could not import font: ${err.message}`);
+  }finally{
+    input.value='';
+  }
+});
+
+function parseClock(value){
+  const raw=String(value??'').trim().replace(',','.');
+  if(!raw)return NaN;
+
+  const pieces=raw.split(':');
+  if(pieces.some(part=>part.trim()===''||Number.isNaN(Number(part))))return NaN;
+
+  if(pieces.length===3){
+    return Number(pieces[0])*3600+Number(pieces[1])*60+Number(pieces[2]);
+  }
+  if(pieces.length===2){
+    return Number(pieces[0])*60+Number(pieces[1]);
+  }
+  if(pieces.length===1){
+    return Number(pieces[0]);
+  }
+  return NaN;
+}
+
+function importSRT(raw){
+  const text=normalizeNewlines(raw).trim();
+  if(!text)return [];
+
+  const out=[];
+  const blocks=text.split(/\n{2,}/);
+
+  for(const block of blocks){
+    const lines=block.split('\n');
+    const timingIndex=lines.findIndex(line=>/-->/u.test(line));
+    if(timingIndex<0)continue;
+
+    const match=lines[timingIndex].match(
+      /^\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3}|\d{1,2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3}|\d{1,2}:\d{2}[,.]\d{1,3})/
+    );
+    if(!match)continue;
+
+    out.push({
+      start:parseClock(match[1]),
+      end:parseClock(match[2]),
+      text:oneLineCaption(lines.slice(timingIndex+1).join('\n'))
+    });
+  }
+  return out;
+}
+
+function importVTT(raw){
+  let text=normalizeNewlines(raw);
+  text=text.replace(/^WEBVTT[^\n]*\n+/i,'');
+
+  const out=[];
+  const blocks=text.trim().split(/\n{2,}/);
+
+  for(const block of blocks){
+    const lines=block.split('\n').filter(line=>!/^NOTE(?:\s|$)/i.test(line));
+    const timingIndex=lines.findIndex(line=>/-->/u.test(line));
+    if(timingIndex<0)continue;
+
+    const match=lines[timingIndex].match(
+      /^\s*((?:\d{1,2}:)?\d{2}:\d{2}\.\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}\.\d{1,3})/
+    );
+    if(!match)continue;
+
+    out.push({
+      start:parseClock(match[1]),
+      end:parseClock(match[2]),
+      text:oneLineCaption(
+        lines.slice(timingIndex+1).join('\n')
+          .replace(/<[^>]+>/g,'')
+          .replace(/&nbsp;/gi,' ')
+          .replace(/&amp;/gi,'&')
+          .replace(/&lt;/gi,'<')
+          .replace(/&gt;/gi,'>')
+      )
+    });
+  }
+  return out;
+}
+
+function importSBV(raw){
+  const text=normalizeNewlines(raw).trim();
+  if(!text)return [];
+
+  const out=[];
+  for(const block of text.split(/\n{2,}/)){
+    const lines=block.split('\n');
+    const timing=lines[0].match(/^\s*([^,]+)\s*,\s*([^,]+)\s*$/);
+    if(!timing)continue;
+
+    out.push({
+      start:parseClock(timing[1]),
+      end:parseClock(timing[2]),
+      text:oneLineCaption(lines.slice(1).join('\n'))
+    });
+  }
+  return out;
+}
+
+function splitASSDialogue(body){
+  const fields=[];
+  let current='';
+  let commas=0;
+
+  for(const ch of body){
+    if(ch===','&&commas<9){
+      fields.push(current);
+      current='';
+      commas++;
+    }else{
+      current+=ch;
+    }
+  }
+  fields.push(current);
+  return fields;
+}
+
+function importASS(raw){
+  const text=normalizeNewlines(raw);
+  const normal=[];
+  const generated=new Map();
+  let previousGeneratedText=null;
+  let legacyCounter=0;
+
+  for(const line of text.split('\n')){
+    if(!/^\s*Dialogue:/i.test(line))continue;
+
+    const p=splitASSDialogue(line.replace(/^\s*Dialogue:\s*/i,''));
+    if(p.length<10)continue;
+
+    const start=parseClock(p[1]);
+    const end=parseClock(p[2]);
+    const effect=String(p[8]||'').trim();
+    const cleaned=oneLineCaption(
+      p[9]
+        .replace(/\\N/gi,' ')
+        .replace(/\{[^}]*\}/g,'')
+    );
+
+    const tagged=effect.match(/^MIMI_ROLL_ROW:(\d+):(\d+)$/);
+    if(tagged){
+      const id=tagged[1];
+      if(!generated.has(id)){
+        generated.set(id,{
+          start,
+          end:Number(tagged[2])/1000,
+          text:cleaned,
+          order:Number(id)
+        });
+      }
+      continue;
+    }
+
+    if(effect==='MIMI_ROLL_ROW'){
+      if(cleaned!==previousGeneratedText){
+        const id=`legacy-${legacyCounter++}`;
+        generated.set(id,{start,end,text:cleaned,order:1000000+legacyCounter});
+        previousGeneratedText=cleaned;
+      }
+      continue;
+    }
+
+    previousGeneratedText=null;
+    normal.push({start,end,text:cleaned,order:normal.length});
+  }
+
+  return normal.concat([...generated.values()])
+    .sort((a,b)=>a.start-b.start||a.order-b.order)
+    .map(({start,end,text})=>({start,end,text}));
+}
+
+const subtitleImporters={
+  srt:{name:'SRT',parse:importSRT},
+  vtt:{name:'WebVTT',parse:importVTT},
+  sbv:{name:'SBV',parse:importSBV},
+  ass:{name:'ASS',parse:importASS},
+  ssa:{name:'SSA',parse:importASS}
+};
+
+function detectSubtitleFormat(fileName,raw){
+  const ext=extensionOf(fileName);
+  if(subtitleImporters[ext])return ext;
+
+  const text=normalizeNewlines(raw).trimStart();
+  if(/^WEBVTT\b/i.test(text))return 'vtt';
+  if(/^\s*\[Script Info\]/mi.test(text)||/^\s*Dialogue:/mi.test(text))return 'ass';
+  if(/^\s*\d+\s*\n\s*\d{1,2}:\d{2}:\d{2}[,.]\d+\s*-->/m.test(text))return 'srt';
+  if(/^\s*\d+(?::\d+){1,2}\.\d+\s*,\s*\d+(?::\d+){1,2}\.\d+/m.test(text))return 'sbv';
+  return ext||'txt';
+}
+
+function setRenderedReadOnlyMode(enabled){
+  readOnlyRenderedMode=Boolean(enabled);
+  eventList.classList.toggle('readOnly',readOnlyRenderedMode);
+  readOnlyBanner.classList.toggle('visible',readOnlyRenderedMode);
+
+  for(const id of ['addBtn','splitBtn','deleteBtn','undoBtn','redoBtn','sortBtn','parseBtn','saveProjectBtn']){
+    const element=document.getElementById(id);
+    if(element)element.disabled=readOnlyRenderedMode;
+  }
+}
+
+function parseRenderedASS(raw){
+  const rendered=[];
+  for(const line of normalizeNewlines(raw).split('\n')){
+    if(!/^\s*Dialogue:/i.test(line))continue;
+
+    const fields=splitASSDialogue(line.replace(/^\s*Dialogue:\s*/i,''));
+    if(fields.length<10)continue;
+
+    const start=parseClock(fields[1]);
+    const end=parseClock(fields[2]);
+    const caption=oneLineCaption(
+      fields[9]
+        .replace(/\\N/gi,' ')
+        .replace(/\{[^}]*\}/g,'')
+    );
+
+    if(Number.isFinite(start)&&Number.isFinite(end)&&end>start&&caption){
+      rendered.push({start,end,text:caption});
+    }
+  }
+  return rendered;
+}
+
+function showTvRollImportDialog(file,raw,log){
+  pendingTvRollImport={file,raw,log};
+
+  if(!tvrollModalBackdrop){
+    setImportLog([...log,'Dialog failed to initialize. Falling back to editable recovery.'],true);
+    setStatus('TV Roll dialog was unavailable; recovering editable captions automatically.');
+    loadImportedCaptionEvents(importASS(raw),file.name,log,'TV Roll recovery');
+    pendingTvRollImport=null;
+    return;
+  }
+
+  tvrollModalBackdrop.classList.add('open');
+}
+
+function closeTvRollImportDialog(){
+  if(tvrollModalBackdrop)tvrollModalBackdrop.classList.remove('open');
+  pendingTvRollImport=null;
+}
+
+function loadImportedCaptionEvents(imported,fileName,log,formatName){
+  const result=validateParsedEvents(imported,formatName);
+
+  events=result.events.map((event,index)=>({...event,lane:index%LANE_COUNT}));
+  selected=events.length?0:-1;
+  undoStack=[];
+  redoStack=[];
+  assignLanes();
+  updateUndoButtons();
+  renderAll();
+
+  log.push(`Valid cues: ${result.events.length}`);
+  result.warnings.slice(0,20).forEach(warning=>log.push(`Warning: ${warning}`));
+  if(result.warnings.length>20)log.push(`…and ${result.warnings.length-20} more warnings.`);
+  log.push('Assigned timeline lanes.');
+  log.push('Import completed successfully.');
+  setImportLog(log);
+  setStatus(`Imported ${events.length} captions from ${fileName}.`);
+}
+
+if(recoverTvRollBtn)recoverTvRollBtn.addEventListener('click',()=>{
+  if(!pendingTvRollImport)return;
+  const {file,raw,log}=pendingTvRollImport;
+
+  try{
+    setRenderedReadOnlyMode(false);
+    log.push('Choice: Recover editable captions.');
+    loadImportedCaptionEvents(importASS(raw),file.name,log,'TV Roll recovery');
+  }catch(error){
+    setImportLog([...log,`Recovery failed: ${error.message}`],true);
+    setStatus(`Could not recover ${file.name}: ${error.message}`);
+  }finally{
+    closeTvRollImportDialog();
+  }
+});
+
+if(openRenderedBtn)openRenderedBtn.addEventListener('click',()=>{
+  if(!pendingTvRollImport)return;
+  const {file,raw,log}=pendingTvRollImport;
+
+  try{
+    log.push('Choice: Open rendered ASS as read-only.');
+    loadImportedCaptionEvents(parseRenderedASS(raw),file.name,log,'Rendered ASS');
+    setRenderedReadOnlyMode(true);
+    setStatus(`Opened ${file.name} in rendered read-only mode.`);
+  }catch(error){
+    setImportLog([...log,`Read-only import failed: ${error.message}`],true);
+    setStatus(`Could not open ${file.name}: ${error.message}`);
+  }finally{
+    closeTvRollImportDialog();
+  }
+});
+
+if(cancelTvRollBtn)cancelTvRollBtn.addEventListener('click',()=>{
+  if(pendingTvRollImport){
+    setImportLog([...pendingTvRollImport.log,'Import cancelled.']);
+    setStatus('TV Roll ASS import cancelled.');
+  }
+  closeTvRollImportDialog();
+});
+
+if(tvrollModalBackdrop)tvrollModalBackdrop.addEventListener('click',event=>{
+  if(event.target===tvrollModalBackdrop)cancelTvRollBtn.click();
+});
+
+function isGeneratedBroadcastASS(raw){
+  return /(?:^|,)MIMI_ROLL_ROW(?::\d+:\d+)?(?:,|$)/m.test(raw);
+}
+
+
+function applyTheme(mode){
+  const normalized=['light','dark','system'].includes(mode)?mode:'system';
+  document.documentElement.dataset.theme=normalized;
+  themeMode.value=normalized;
+  drawWave();
+}
+
+themeMode.addEventListener('change',()=>{
+  applyTheme(themeMode.value);
+});
+
+const systemThemeQuery=matchMedia('(prefers-color-scheme: light)');
+systemThemeQuery.addEventListener?.('change',()=>{
+  if(themeMode.value==='system')drawWave();
+});
+
+
+function cleanCaptionStyle(style){
+  if(!style||typeof style!=='object')return null;
+  return {
+    alignment:['left','center','right'].includes(style.alignment)?style.alignment:'center',
+    position:['top','bottom'].includes(style.position)?style.position:'bottom',
+    textColor:normalizeHexColor(style.textColor,'#ffffff'),
+    outlineColor:normalizeHexColor(style.outlineColor,'#000000'),
+    shadowColor:normalizeHexColor(style.shadowColor,'#000000')
+  };
+}
+function currentModeKey(){return styleMode.value==='broadcast'?'broadcast':styleMode.value==='karaoke'?'karaoke':'standard'}
+function resolvedCaptionStyle(event){
+  const base=styleDefaults[currentModeKey()];
+  const override=cleanCaptionStyle(event?.style);
+  return override?{...base,...override}:{...base};
+}
+function controlsStyleValue(){
+  return {
+    alignment:textAlignment.value,
+    position:captionPosition.value,
+    textColor:normalizeHexColor(textColor.value,'#ffffff'),
+    outlineColor:normalizeHexColor(outlineColor.value,'#000000'),
+    shadowColor:normalizeHexColor(shadowColor.value,'#000000')
+  };
+}
+function syncCustomizationControls(){
+  syncingCustomization=true;
+  const selectedMode=customizationTarget.value==='selected';
+  const valid=selected>=0&&selected<events.length;
+  const style=selectedMode&&valid?resolvedCaptionStyle(events[selected]):styleDefaults[currentModeKey()];
+  textAlignment.value=style.alignment;
+  captionPosition.value=style.position;
+  textColor.value=style.textColor;
+  outlineColor.value=style.outlineColor;
+  shadowColor.value=style.shadowColor;
+  [textAlignment,captionPosition,textColor,outlineColor,shadowColor].forEach(control=>control.disabled=selectedMode&&!valid);
+  resetCaptionStyle.disabled=!selectedMode||!valid||!events[selected]?.style;
+  customizationStatus.textContent=selectedMode
+    ?(valid?`Editing Event ${selected+1}${events[selected].style?' override.':' using the style default.'}`:'Select a caption to customize it.')
+    :`Editing the ${styleMode.value==='broadcast'?'TV Roll':styleMode.value==='karaoke'?'Karaoke':'Standard'} default.`;
+  karaokeSettings.classList.toggle('visible',styleMode.value==='karaoke');
+  karaokeInactiveColor.value=karaokeDefaults.inactiveColor;
+  karaokeHighlightColor.value=karaokeDefaults.highlightColor;
+  karaokeTimingMode.value=karaokeDefaults.timingMode;
+  updateModeAwareCustomization();
+  renderKaraokeTimingStatus();
+  syncingCustomization=false;
+}
+function applyCustomizationControls(){
+  if(syncingCustomization)return;
+  const value=controlsStyleValue();
+  if(customizationTarget.value==='selected'){
+    if(selected<0||selected>=events.length)return;
+    pushHistory();
+    events[selected].style=value;
+  }else{
+    styleDefaults[currentModeKey()]={...value};
+  }
+  resetCaptionStyle.disabled=customizationTarget.value!=='selected'||selected<0||!events[selected]?.style;
+  updatePreview();
+}
+
+
+function sanitizeProjectName(value){
+  let name=String(value??'').trim();
+
+  // If the user typed the extension themselves, avoid doubling it.
+  name=name.replace(/\.msub$/i,'');
+
+  // Remove characters Windows/macOS/browser downloads commonly reject.
+  name=name.replace(/[<>:"/\\|?*\x00-\x1F]/g,' ').replace(/\s+/g,' ').trim();
+
+  return name||'Untitled Project';
+}
+
+function projectFilenameFromName(name){
+  return `${sanitizeProjectName(name)}.msub`;
+}
+
+function updateSaveProjectFilenamePreview(){
+  saveProjectFilename.textContent=`File: ${projectFilenameFromName(saveProjectName.value)}`;
+}
+
+function openSaveProjectDialog(){
+  const fallback=currentProjectName || 'Untitled Project';
+  saveProjectName.value=fallback;
+  updateSaveProjectFilenamePreview();
+
+  saveProjectBackdrop.classList.add('open');
+
+  requestAnimationFrame(()=>{
+    saveProjectName.focus();
+    saveProjectName.select();
+  });
+}
+
+function closeSaveProjectDialog(){
+  saveProjectBackdrop.classList.remove('open');
+}
+
+function performProjectSave(){
+  currentProjectName=sanitizeProjectName(saveProjectName.value);
+
+  const project=buildProject();
+  project.name=currentProjectName;
+
+  downloadBlob(
+    projectFilenameFromName(currentProjectName),
+    JSON.stringify(project,null,2),
+    'application/json'
+  );
+
+  closeSaveProjectDialog();
+  setStatus(`Saved ${projectFilenameFromName(currentProjectName)} with ${events.length} editable captions.`);
+}
+
+saveProjectName.addEventListener('input',updateSaveProjectFilenamePreview);
+saveProjectCancel.addEventListener('click',closeSaveProjectDialog);
+saveProjectConfirm.addEventListener('click',performProjectSave);
+
+saveProjectBackdrop.addEventListener('click',event=>{
+  if(event.target===saveProjectBackdrop)closeSaveProjectDialog();
+});
+
+saveProjectName.addEventListener('keydown',event=>{
+  if(event.key==='Enter'){
+    event.preventDefault();
+    performProjectSave();
+  }
+});
+
+function projectSettings(){
+  return {
+    styleMode:styleMode.value,
+    charMs:Number(document.getElementById('charMs').value)||10,
+    preferred:Number(document.getElementById('preferred').value)||42,
+    hardMax:Number(document.getElementById('hardMax').value)||50,
+    clearSeconds:Number(document.getElementById('clearSeconds').value)||3.5,
+    fontName:document.getElementById('fontName').value||'DIN 2014',
+    fontSize:Number(document.getElementById('fontSize').value)||54,
+    styleDefaults:{
+      standard:{...styleDefaults.standard},
+      karaoke:{...styleDefaults.karaoke},
+      broadcast:{...styleDefaults.broadcast}
+    },
+    karaokeDefaults:{...karaokeDefaults},
+    themeMode:themeMode.value,
+    zoom:Number(zoomEl.value)||1,
+    follow,
+    followMode
+  };
+}
+
+function buildProject(){
+  return {
+    format:'MSUB',
+    version:1,
+    generator:'MSUBBER',
+    savedAt:new Date().toISOString(),
+    media:{
+      name:loadedMediaName||'',
+      kind:loadedMediaKind||'',
+      duration:Number.isFinite(media.duration)?media.duration:null
+    },
+    font:{
+      fileName:loadedFontFileName||'',
+      previewFamily:document.getElementById('fontName').value||''
+    },
+    transcript:transcript.value,
+    events:events.map(e=>({
+      start:Number(e.start),
+      end:Number(e.end),
+      text:String(e.text??''),
+      lane:Number.isInteger(e.lane)?e.lane:0,
+      style:e.style?cleanCaptionStyle(e.style):null,
+      wordTimings:Array.isArray(e.wordTimings)?e.wordTimings.map(t=>Number(t)||0):null
+    })),
+    selected,
+    viewStart,
+    settings:projectSettings()
+  };
+}
+
+function downloadBlob(name,data,type='application/json'){
+  const blob=new Blob([data],{type:`${type};charset=utf-8`});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),0);
+}
+
+function saveProject(){
+  openSaveProjectDialog();
+}
+
+function applyProject(project,fileName='project.msub'){
+  setRenderedReadOnlyMode(false);
+  currentProjectName=sanitizeProjectName(project?.name || fileName || 'Untitled Project');
+  if(!project || !['MSUB','mimisub'].includes(project.format) || !Array.isArray(project.events)){
+    throw new Error('This is not a valid Mimi Subtitle project.');
+  }
+
+  const s=project.settings||{};
+  transcript.value=String(project.transcript??'');
+  events=project.events.map((e,i)=>({
+    start:Math.max(0,Number(e.start)||0),
+    end:Math.max((Number(e.start)||0)+0.05,Number(e.end)||0),
+    text:oneLineCaption(e.text),
+    lane:Math.max(0,Math.min(LANE_COUNT-1,Number.isInteger(e.lane)?e.lane:(i%LANE_COUNT))),
+    style:cleanCaptionStyle(e.style),
+    wordTimings:Array.isArray(e.wordTimings)?e.wordTimings.map(t=>Number(t)||0):null
+  }));
+
+  selected=Math.max(-1,Math.min(Number(project.selected)??-1,events.length-1));
+  viewStart=Math.max(0,Number(project.viewStart)||0);
+
+  if(['standard','karaoke','broadcast'].includes(s.styleMode))styleMode.value=s.styleMode;
+  if(Number.isFinite(Number(s.charMs)))document.getElementById('charMs').value=s.charMs;
+  if(Number.isFinite(Number(s.preferred)))document.getElementById('preferred').value=s.preferred;
+  if(Number.isFinite(Number(s.hardMax)))document.getElementById('hardMax').value=s.hardMax;
+  if(Number.isFinite(Number(s.clearSeconds)))document.getElementById('clearSeconds').value=s.clearSeconds;
+  if(s.fontName)document.getElementById('fontName').value=s.fontName;
+  if(Number.isFinite(Number(s.fontSize)))document.getElementById('fontSize').value=s.fontSize;
+  if(s.styleDefaults){
+    styleDefaults.standard=cleanCaptionStyle(s.styleDefaults.standard)||styleDefaults.standard;
+    styleDefaults.karaoke=cleanCaptionStyle(s.styleDefaults.karaoke)||styleDefaults.karaoke;
+    styleDefaults.broadcast=cleanCaptionStyle(s.styleDefaults.broadcast)||styleDefaults.broadcast;
+  }else{
+    const legacy={
+      alignment:['left','center','right'].includes(s.textAlignment)?s.textAlignment:(s.styleMode==='broadcast'?'left':'center'),
+      position:'bottom',
+      textColor:normalizeHexColor(s.textColor,'#ffffff'),
+      outlineColor:normalizeHexColor(s.outlineColor,'#000000'),
+      shadowColor:normalizeHexColor(s.shadowColor,'#000000')
+    };
+    styleDefaults[s.styleMode==='broadcast'?'broadcast':'standard']=legacy;
+  }
+  if(s.karaokeDefaults){
+    karaokeDefaults={
+      inactiveColor:normalizeHexColor(s.karaokeDefaults.inactiveColor,'#555555'),
+      highlightColor:normalizeHexColor(s.karaokeDefaults.highlightColor,'#ffffff'),
+      timingMode:['character','word','manual-word'].includes(s.karaokeDefaults.timingMode)?s.karaokeDefaults.timingMode:'word'
+    };
+  }
+  applyTheme(s.themeMode||'dark');
+  if(Number.isFinite(Number(s.zoom)))zoomEl.value=Math.max(Number(zoomEl.min),Math.min(Number(zoomEl.max),Number(s.zoom)));
+  followMode=['off','edge','smooth'].includes(s.followMode)
+    ? s.followMode
+    : (s.follow===false?'off':'edge');
+  setFollowMode(followMode);
+
+  loadedMediaName=String(project.media?.name||'');
+  loadedMediaKind=String(project.media?.kind||'');
+  loadedFontFileName=String(project.font?.fileName||'');
+
+  undoStack=[];
+  redoStack=[];
+  assignLanes();
+  renderAll();
+  updateStyle();
+  updateUndoButtons();
+
+  const reminders=[];
+  if(loadedMediaName)reminders.push(`reselect media “${loadedMediaName}”`);
+  if(loadedFontFileName)reminders.push(`re-import font “${loadedFontFileName}”`);
+
+  setStatus(
+    `Loaded ${fileName}: ${events.length} editable captions.`+
+    (reminders.length?` Please ${reminders.join(' and ')}.`:'')
+  );
+}
+
+saveProjectBtn.addEventListener('click',openSaveProjectDialog);
+
+projectFile.addEventListener('change',async()=>{
+  const f=projectFile.files[0];
+  if(!f)return;
+  try{
+    const project=JSON.parse(await f.text());
+    applyProject(project,f.name);
+  }catch(err){
+    setStatus(`Could not load project: ${err.message}`);
+  }finally{
+    projectFile.value='';
+  }
+});
+
+
+async function handleSubtitleImport(file){
+  const log=[
+    `File: ${file.name}`,
+    `Reported type: ${file.type||'(none)'}`,
+    `Size: ${file.size.toLocaleString()} bytes`,
+    'Reading file…'
+  ];
+  setImportLog(log);
+  setStatus(`Reading ${file.name}…`);
+
+  const raw=await file.text();
+  log.push(`Read: ${raw.length.toLocaleString()} characters`);
+
+  const format=detectSubtitleFormat(file.name,raw);
+  log.push(`Detected format: ${format.toUpperCase()}`);
+
+  if(format==='txt'){
+    transcript.value=normalizeNewlines(raw);
+    log.push('Loaded as transcript source.');
+    log.push('Use “Turn transcript into captions” to create editable events.');
+    setImportLog(log);
+    setStatus(`Loaded transcript: ${file.name}. Press “Turn transcript into captions.”`);
+    return;
+  }
+
+  if((format==='ass'||format==='ssa')&&isGeneratedBroadcastASS(raw)){
+    log.push('Result: rendered TV Roll ASS detected.');
+    log.push('Waiting for an import mode selection.');
+    setImportLog(log,true);
+    setStatus(`TV Roll ASS detected: ${file.name}`);
+    showTvRollImportDialog(file,raw,log);
+    return;
+  }
+
+  setRenderedReadOnlyMode(false);
+
+  const importer=subtitleImporters[format];
+  if(!importer){
+    throw new Error(`Unsupported subtitle format “.${format}”.`);
+  }
+
+  log.push(`Parser: ${importer.name}`);
+  const result=validateParsedEvents(importer.parse(raw),importer.name);
+  log.push(`Valid cues: ${result.events.length}`);
+  result.warnings.slice(0,20).forEach(warning=>log.push(`Warning: ${warning}`));
+  if(result.warnings.length>20){
+    log.push(`…and ${result.warnings.length-20} more warnings.`);
+  }
+
+  events=result.events.map((event,index)=>({...event,lane:index%LANE_COUNT}));
+  selected=events.length?0:-1;
+  undoStack=[];
+  redoStack=[];
+  assignLanes();
+  updateUndoButtons();
+  renderAll();
+
+  log.push('Assigned timeline lanes.');
+  log.push('Import completed successfully.');
+  setImportLog(log);
+  setStatus(`Imported ${events.length} editable captions from ${file.name}.`);
+}
+
+textFile.addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const file=input.files&&input.files[0];
+
+  if(!file){
+    setStatus('No subtitle file was selected.');
+    return;
+  }
+
+  try{
+    await handleSubtitleImport(file);
+  }catch(err){
+    console.error('Subtitle import failed:',err);
+    setImportLog([
+      `File: ${file.name}`,
+      'Import failed.',
+      `${err.name||'Error'}: ${err.message||String(err)}`
+    ],true);
+    setStatus(`Could not import ${file.name}: ${err.message||String(err)}`);
+  }finally{
+    input.value='';
+  }
+});
+
+function getView(){
+  const dur=media.duration||1,z=Number(zoomEl.value)||1,span=dur/z;
+  viewStart=Math.max(0,Math.min(viewStart,Math.max(0,dur-span)));
+  return {dur,span,start:viewStart,end:viewStart+span};
+}
+function timeFromClientX(clientX){
+  const r=combinedTimeline.getBoundingClientRect(),v=getView();
+  return Math.max(v.start,Math.min(v.end,v.start+((clientX-r.left)/r.width)*v.span));
+}
+function chooseRulerStep(span,width){
+  const desiredMajorPixels=92;
+  const rawStep=(span/Math.max(1,width))*desiredMajorPixels;
+  const steps=[.05,.1,.2,.25,.5,1,2,5,10,15,30,60,120,300,600];
+  return steps.find(step=>step>=rawStep) || steps[steps.length-1];
+}
+
+function rulerLabel(seconds,majorStep){
+  if(majorStep<1){
+    return seconds.toFixed(majorStep<.1?2:1);
+  }
+  if(seconds<60){
+    return String(Math.round(seconds));
+  }
+  const whole=Math.round(seconds);
+  const minutes=Math.floor(whole/60);
+  const remaining=whole%60;
+  return `${minutes}:${String(remaining).padStart(2,'0')}`;
+}
+
+function drawWave(){
+  const rect=combinedTimeline.getBoundingClientRect();
+  const dpr=devicePixelRatio||1;
+  wave.width=Math.max(1,Math.round(rect.width*dpr));
+  wave.height=Math.max(1,Math.round(rect.height*dpr));
+
+  const ctx=wave.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  const v=getView();
+  const styles=getComputedStyle(document.documentElement);
+  const rulerBackground=styles.getPropertyValue('--timeline-ruler').trim()||'#17131b';
+  const rulerLine=styles.getPropertyValue('--timeline-line').trim()||'#4d4257';
+  const rulerText=styles.getPropertyValue('--muted').trim()||'#c9bdcf';
+
+  const rulerHeight=38;
+  ctx.fillStyle=rulerBackground;
+  ctx.fillRect(0,0,rect.width,rulerHeight);
+
+  ctx.strokeStyle=rulerLine;
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(0,rulerHeight-.5);
+  ctx.lineTo(rect.width,rulerHeight-.5);
+  ctx.stroke();
+
+  const majorStep=chooseRulerStep(v.span,rect.width);
+  const minorDivisions=majorStep>=1?10:5;
+  const minorStep=majorStep/minorDivisions;
+  const firstMinor=Math.floor(v.start/minorStep)*minorStep;
+  const epsilon=minorStep/100;
+
+  ctx.font='11px Arial';
+  ctx.textBaseline='top';
+
+  for(let time=firstMinor;time<=v.end+epsilon;time+=minorStep){
+    if(time<v.start-epsilon)continue;
+
+    const x=((time-v.start)/v.span)*rect.width;
+    const minorIndex=Math.round(time/minorStep);
+    const isMajor=minorIndex%minorDivisions===0;
+    const isMedium=!isMajor && minorDivisions===10 && minorIndex%5===0;
+
+    const tickTop=isMajor?18:isMedium?25:30;
+    ctx.strokeStyle=rulerLine;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(x)+.5,tickTop);
+    ctx.lineTo(Math.round(x)+.5,rulerHeight);
+    ctx.stroke();
+
+    if(isMajor){
+      ctx.fillStyle=rulerText;
+      const label=rulerLabel(Math.max(0,time),majorStep);
+      ctx.fillText(label,Math.min(rect.width-34,Math.max(2,x+3)),3);
+    }
+  }
+}
+function drawTimeline(){
+  captionLane.innerHTML='';const rect=combinedTimeline.getBoundingClientRect(),v=getView();
+  for(let lane=1;lane<LANE_COUNT;lane++){const line=document.createElement('div');line.style.cssText=`position:absolute;left:0;right:0;top:${lane*LANE_HEIGHT}px;border-top:1px solid #2f2936;pointer-events:none`;captionLane.appendChild(line)}
+  events.forEach((e,i)=>{
+    if(e.end<v.start||e.start>v.end)return;
+    const left=((Math.max(e.start,v.start)-v.start)/v.span)*rect.width,right=((Math.min(e.end,v.end)-v.start)/v.span)*rect.width;
+    const b=document.createElement('div');b.className='eventBlock'+(i===selected?' selected':'')+(multiSelected.has(i)?' multiSelected':'')+(i===newlyAddedEventIndex?' justAdded':'');
+    b.style.left=left+'px';b.style.width=Math.max(14,right-left)+'px';b.style.top=(LANE_TOP+(e.lane??0)*LANE_HEIGHT)+'px';b.dataset.i=i;
+    b.innerHTML='<span class="handle left"></span><span class="label"></span><span class="handle right"></span>';
+    b.querySelector('.label').textContent=visibleText(e.text).replace(/\n/g,' / ');
+    b.addEventListener('pointerdown',startEventDrag);
+    b.addEventListener('click',ev=>{
+      ev.stopPropagation();
+      if(mobileMultiSelectMode){
+        toggleMultiSelection(i);
+      }else{
+        selectOnly(i);
+      }
+    });
+    captionLane.appendChild(b);
+  });
+}
+function highlightSelection(){
+  captionLane.querySelectorAll('.eventBlock').forEach(el=>{
+    const i=Number(el.dataset.i);
+    el.classList.toggle('selected',i===selected);
+    el.classList.toggle('multiSelected',multiSelected.has(i));
+  });
+  eventList.querySelectorAll('.eventRow').forEach((el,i)=>{
+    el.classList.toggle('selected',i===selected);
+    el.classList.toggle('multiSelected',multiSelected.has(i));
+  });
+  syncCustomizationControls();
+
+  if(selected>=0){
+    lastAutoFollowEventIndex=selected;
+    scrollEventIntoViewAdaptive(selected,{behavior:'smooth'});
+  }
+}
+function beginEventDrag(ev,block,i){
+  const v=getView(),rect=combinedTimeline.getBoundingClientRect();
+
+  selectOnly(i);
+  pushHistory();
+
+  const target=ev.target.classList.contains('left')
+    ?'left'
+    :ev.target.classList.contains('right')
+      ?'right'
+      :'move';
+
+  drag={
+    block,i,target,x:ev.clientX,y:ev.clientY,
+    start:events[i].start,end:events[i].end,
+    startLane:events[i].lane??0,candidateLane:events[i].lane??0,
+    secPerPx:v.span/rect.width,pointerId:ev.pointerId,validLane:true
+  };
+
+  block.setPointerCapture(ev.pointerId);
+  block.addEventListener('pointermove',moveEventDrag);
+  block.addEventListener('pointerup',endEventDrag,{once:true});
+  block.addEventListener('pointercancel',endEventDrag,{once:true});
+}
+
+function startEventDrag(ev){
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  const block=ev.currentTarget;
+  const i=Number(block.dataset.i);
+
+  if(ev.pointerType==='touch'){
+    const startX=ev.clientX,startY=ev.clientY;
+    let longPressed=false;
+
+    const timer=setTimeout(()=>{
+      longPressed=true;
+      pendingTouchEventDrag=null;
+      enterMobileMultiSelect(i);
+      try{block.releasePointerCapture(ev.pointerId)}catch(_){}
+    },450);
+
+    pendingTouchEventDrag={
+      pointerId:ev.pointerId,
+      block,i,startX,startY,timer
+    };
+
+    try{block.setPointerCapture(ev.pointerId)}catch(_){}
+
+    const move=moveEv=>{
+      if(!pendingTouchEventDrag||pendingTouchEventDrag.pointerId!==moveEv.pointerId)return;
+      const distance=Math.hypot(moveEv.clientX-startX,moveEv.clientY-startY);
+
+      if(distance>8 && !longPressed){
+        clearTimeout(timer);
+        pendingTouchEventDrag=null;
+        block.removeEventListener('pointermove',move);
+        block.removeEventListener('pointerup',up);
+        block.removeEventListener('pointercancel',up);
+        beginEventDrag(moveEv,block,i);
+        moveEventDrag(moveEv);
+      }
+    };
+
+    const up=upEv=>{
+      clearTimeout(timer);
+      block.removeEventListener('pointermove',move);
+      block.removeEventListener('pointerup',up);
+      block.removeEventListener('pointercancel',up);
+
+      if(pendingTouchEventDrag?.pointerId===upEv.pointerId){
+        pendingTouchEventDrag=null;
+        try{block.releasePointerCapture(upEv.pointerId)}catch(_){}
+
+        if(mobileMultiSelectMode){
+          toggleMultiSelection(i);
+        }else{
+          selectOnly(i);
+        }
+      }
+    };
+
+    block.addEventListener('pointermove',move);
+    block.addEventListener('pointerup',up);
+    block.addEventListener('pointercancel',up);
+    return;
+  }
+
+  beginEventDrag(ev,block,i);
+}
+function moveEventDrag(ev){
+  if(!drag)return;
+
+  const dx=(ev.clientX-drag.x)*drag.secPerPx;
+  const e=events[drag.i];
+  const threshold=SNAP_PIXELS*drag.secPerPx;
+  let lane=drag.startLane;
+
+  if(drag.target==='move'){
+    const dy=ev.clientY-drag.y;
+    lane=Math.max(0,Math.min(LANE_COUNT-1,drag.startLane+Math.round(dy/LANE_HEIGHT)));
+
+    const len=drag.end-drag.start;
+    let start=Math.max(0,drag.start+dx);
+    let end=start+len;
+    const targets=snapTargets(drag.i,lane);
+
+    let bestOffset=0;
+    let bestDistance=threshold+1;
+
+    for(const target of targets){
+      const startDistance=Math.abs(start-target);
+      if(startDistance<=threshold&&startDistance<bestDistance){
+        bestDistance=startDistance;
+        bestOffset=target-start;
+      }
+
+      const endDistance=Math.abs(end-target);
+      if(endDistance<=threshold&&endDistance<bestDistance){
+        bestDistance=endDistance;
+        bestOffset=target-end;
+      }
+    }
+
+    start=Math.max(0,start+bestOffset);
+    end=start+len;
+
+    // Prevent overlaps in the chosen lane by stopping flush against
+    // the nearest blocking caption.
+    const blockers=events
+      .filter((o,j)=>j!==drag.i&&(o.lane??0)===lane)
+      .sort((a,b)=>a.start-b.start);
+
+    for(const other of blockers){
+      if(start<other.end&&end>other.start){
+        const putBefore=Math.abs(end-other.start);
+        const putAfter=Math.abs(other.end-start);
+
+        if(putBefore<=putAfter){
+          end=other.start;
+          start=Math.max(0,end-len);
+        }else{
+          start=other.end;
+          end=start+len;
+        }
+      }
+    }
+
+    e.start=start;
+    e.end=end;
+    drag.candidateLane=lane;
+    drag.validLane=laneAvailable(drag.i,lane,e.start,e.end);
+    drag.block.style.top=(LANE_TOP+lane*LANE_HEIGHT)+'px';
+    drag.block.style.background=drag.validLane?'var(--accent)':'var(--danger)';
+  }else if(drag.target==='left'){
+    lane=e.lane??0;
+    const targets=snapTargets(drag.i,lane);
+    let start=snapValue(
+      Math.max(0,Math.min(drag.end-.05,drag.start+dx)),
+      targets,
+      threshold
+    );
+
+    const previousEnds=events
+      .filter((o,j)=>j!==drag.i&&(o.lane??0)===lane&&o.end<=e.end)
+      .map(o=>o.end);
+
+    if(previousEnds.length)start=Math.max(start,Math.max(...previousEnds));
+    e.start=Math.min(start,e.end-.05);
+  }else{
+    lane=e.lane??0;
+    const targets=snapTargets(drag.i,lane);
+    let end=snapValue(
+      Math.max(drag.start+.05,drag.end+dx),
+      targets,
+      threshold
+    );
+
+    const nextStarts=events
+      .filter((o,j)=>j!==drag.i&&(o.lane??0)===lane&&o.start>=e.start)
+      .map(o=>o.start);
+
+    if(nextStarts.length)end=Math.min(end,Math.min(...nextStarts));
+    e.end=Math.max(e.start+.05,end);
+  }
+
+  const rect=combinedTimeline.getBoundingClientRect();
+  const v=getView();
+  drag.block.style.left=
+    ((Math.max(e.start,v.start)-v.start)/v.span*rect.width)+'px';
+  drag.block.style.width=
+    Math.max(
+      14,
+      ((Math.min(e.end,v.end)-Math.max(e.start,v.start))/v.span*rect.width)
+    )+'px';
+
+  updatePreview();
+}
+function endEventDrag(ev){
+  const block=drag?.block;
+  if(drag && drag.target==='move'){
+    if(drag.validLane)events[drag.i].lane=drag.candidateLane;
+    else events[drag.i].lane=drag.startLane;
+  }
+  if(block){block.removeEventListener('pointermove',moveEventDrag);try{block.releasePointerCapture(drag.pointerId)}catch{}}
+  if(drag&&drag.target==='move'){
+    const moved=events[drag.i];
+    for(let i=0;i<events.length;i++){
+      if(i===drag.i)continue;
+      const other=events[i];
+      if((other.lane??0)===(moved.lane??0)&&other.start<moved.start&&other.end>moved.start){
+        other.end=moved.start;
+      }
+    }
+  }
+  drag=null;assignLanes();renderList();drawTimeline();
+}
+function startPlayheadDrag(ev){
+  if(ev.button!==undefined && ev.button!==0)return;
+
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  playheadDrag={
+    pointerId:ev.pointerId,
+    startX:ev.clientX,
+    moved:false
+  };
+
+  playhead.classList.add('dragging');
+
+  try{
+    playheadHit.setPointerCapture(ev.pointerId);
+  }catch(_){}
+
+  // Seek immediately where the pointer was pressed.
+  media.currentTime=timeFromClientX(ev.clientX);
+  syncPlayhead();
+}
+
+function movePlayheadDrag(ev){
+  if(!playheadDrag || playheadDrag.pointerId!==ev.pointerId)return;
+
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  if(!playheadDrag.moved && Math.abs(ev.clientX-playheadDrag.startX)>=3){
+    playheadDrag.moved=true;
+    setFollowMode('off');
+  }
+
+  media.currentTime=timeFromClientX(ev.clientX);
+  syncPlayhead();
+}
+
+function endPlayheadDrag(ev){
+  if(!playheadDrag || playheadDrag.pointerId!==ev.pointerId)return;
+
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  try{
+    playheadHit.releasePointerCapture(ev.pointerId);
+  }catch(_){}
+
+  playheadDrag=false;
+  playhead.classList.remove('dragging');
+}
+
+playheadHit.addEventListener('pointerdown',startPlayheadDrag);
+playheadHit.addEventListener('pointermove',movePlayheadDrag);
+playheadHit.addEventListener('pointerup',endPlayheadDrag);
+playheadHit.addEventListener('pointercancel',endPlayheadDrag);
+playheadHit.addEventListener('lostpointercapture',()=>{
+  playheadDrag=false;
+  playhead.classList.remove('dragging');
+});
+function isEmptyTimelineTarget(target){
+  return target===combinedTimeline || target===wave || target===captionLane;
+}
+
+function startTimelinePan(ev){
+  if(!isEmptyTimelineTarget(ev.target))return;
+  if(ev.button!==undefined && ev.button!==0)return;
+
+  ev.preventDefault();
+
+  if(ev.shiftKey && ev.pointerType!=='touch'){
+    beginSelectionBox(ev);
+    return;
+  }
+
+  const view=getView();
+  timelinePan={
+    pointerId:ev.pointerId,
+    startX:ev.clientX,
+    latestX:ev.clientX,
+    startViewStart:viewStart,
+    span:view.span,
+    width:combinedTimeline.getBoundingClientRect().width,
+    moved:false,
+    frameId:0,
+    longPressTimer:0
+  };
+
+  if(ev.pointerType==='touch'){
+    timelinePan.longPressTimer=setTimeout(()=>{
+      if(!timelinePan||timelinePan.pointerId!==ev.pointerId||timelinePan.moved)return;
+      const saved={pointerId:ev.pointerId,clientX:timelinePan.startX,clientY:ev.clientY};
+      timelinePan=null;
+      combinedTimeline.classList.remove('panning');
+      beginSelectionBox(saved,{mobile:true});
+    },500);
+  }
+
+  combinedTimeline.classList.add('panning');
+
+  try{
+    combinedTimeline.setPointerCapture(ev.pointerId);
+  }catch(_){}
+}
+
+function updatePlayheadPositionOnly(){
+  const current=getView();
+  const pct=((media.currentTime-current.start)/current.span)*100;
+  playhead.style.left=Math.max(0,Math.min(100,pct))+'%';
+}
+
+function renderTimelinePanFrame(){
+  if(!timelinePan)return;
+  timelinePan.frameId=0;
+
+  const deltaX=timelinePan.latestX-timelinePan.startX;
+  const secondsDelta=-(deltaX/timelinePan.width)*timelinePan.span;
+  const maxStart=Math.max(0,(media.duration||0)-timelinePan.span);
+
+  viewStart=Math.max(
+    0,
+    Math.min(maxStart,timelinePan.startViewStart+secondsDelta)
+  );
+
+  // Only redraw the visual timeline. The media time, subtitle preview,
+  // event list, and transport controls do not need updating during a pan.
+  drawWave();
+  drawTimeline();
+  updatePlayheadPositionOnly();
+}
+
+function moveTimelinePan(ev){
+  if(!timelinePan || timelinePan.pointerId!==ev.pointerId)return;
+
+  ev.preventDefault();
+  timelinePan.latestX=ev.clientX;
+
+  const deltaX=timelinePan.latestX-timelinePan.startX;
+
+  if(!timelinePan.moved && Math.abs(deltaX)>=4){
+    timelinePan.moved=true;
+    if(timelinePan.longPressTimer){
+      clearTimeout(timelinePan.longPressTimer);
+      timelinePan.longPressTimer=0;
+    }
+    setFollowMode('off');
+  }
+
+  if(!timelinePan.moved)return;
+
+  if(!timelinePan.frameId){
+    timelinePan.frameId=requestAnimationFrame(renderTimelinePanFrame);
+  }
+}
+
+function endTimelinePan(ev){
+  if(!timelinePan || timelinePan.pointerId!==ev.pointerId)return;
+
+  ev.preventDefault();
+
+  const wasMoved=timelinePan.moved;
+  if(timelinePan.longPressTimer)clearTimeout(timelinePan.longPressTimer);
+  timelinePan.latestX=ev.clientX;
+
+  if(timelinePan.frameId){
+    cancelAnimationFrame(timelinePan.frameId);
+    timelinePan.frameId=0;
+  }
+
+  // Commit the final position before clearing the drag state.
+  if(wasMoved){
+    renderTimelinePanFrame();
+  }
+
+  try{
+    combinedTimeline.releasePointerCapture(ev.pointerId);
+  }catch(_){}
+
+  timelinePan=null;
+  combinedTimeline.classList.remove('panning');
+
+  if(!wasMoved){
+    media.currentTime=timeFromClientX(ev.clientX);
+    syncPlayhead();
+  }else{
+    // One final normal refresh after release.
+    drawWave();
+    drawTimeline();
+    updatePlayheadPositionOnly();
+  }
+}
+
+combinedTimeline.addEventListener('pointerdown',startTimelinePan);
+combinedTimeline.addEventListener('pointermove',moveSelectionBox);
+combinedTimeline.addEventListener('pointerup',endSelectionBox);
+combinedTimeline.addEventListener('pointercancel',endSelectionBox);
+combinedTimeline.addEventListener('pointermove',moveTimelinePan);
+combinedTimeline.addEventListener('pointerup',endTimelinePan);
+combinedTimeline.addEventListener('pointercancel',endTimelinePan);
+combinedTimeline.addEventListener('lostpointercapture',()=>{
+  if(timelinePan?.frameId)cancelAnimationFrame(timelinePan.frameId);
+  timelinePan=null;
+  combinedTimeline.classList.remove('panning');
+});
+
+
+function visibleCharacterCount(value){
+  return stripInlineColorSyntax(String(value??''))
+    .replace(/\\([*_\\])/g,'$1')
+    .replace(/\*\*(.*?)\*\*/g,'$1')
+    .replace(/\*(.*?)\*/g,'$1')
+    .replace(/_(.*?)_/g,'$1')
+    .length;
+}
+function updateEventCharacterCount(counter,value){
+  const count=visibleCharacterCount(value);
+  const preferred=Number(document.getElementById('preferred').value)||42;
+  const hardMax=Number(document.getElementById('hardMax').value)||50;
+  counter.textContent=count;
+  counter.classList.toggle('preferredWarning',count>preferred&&count<=hardMax);
+  counter.classList.toggle('hardWarning',count>hardMax);
+  counter.title=count>hardMax
+    ? `${count} characters — over the ${hardMax}-character maximum`
+    : count>preferred
+      ? `${count} characters — above the preferred ${preferred}`
+      : `${count} characters`;
+}
+
+
+
+function eventRowForIndex(index){
+  return eventList.querySelector(`.eventRow:nth-child(${index+1})`);
+}
+
+function scrollEventIntoViewAdaptive(index,{behavior='smooth'}={}){
+  const row=eventRowForIndex(index);
+  if(!row)return;
+
+  // Always scroll ONLY the Subtitle Events list. Never move the page.
+  const listRect=eventList.getBoundingClientRect();
+  const rowRect=row.getBoundingClientRect();
+
+  const rowTop=rowRect.top-listRect.top+eventList.scrollTop;
+  const rowBottom=rowTop+row.offsetHeight;
+  const visibleTop=eventList.scrollTop;
+  const visibleBottom=visibleTop+eventList.clientHeight;
+
+  // If already fully visible, leave the panel alone.
+  if(rowTop>=visibleTop && rowBottom<=visibleBottom)return;
+
+  // Center the event inside the Subtitle Events panel.
+  const target=Math.max(
+    0,
+    rowTop-(eventList.clientHeight-row.offsetHeight)/2
+  );
+
+  eventList.dataset.autoScrolling='1';
+  eventList.scrollTo({
+    top:target,
+    behavior
+  });
+
+  // Keep manual-scroll detection from treating our own scroll as user input.
+  window.setTimeout(()=>{
+    delete eventList.dataset.autoScrolling;
+  },behavior==='smooth'?450:0);
+}
+
+function activeEventIndexAtTime(time){
+  if(!events.length)return -1;
+
+  const active=[];
+  events.forEach((event,index)=>{
+    if(time>=event.start && time<event.end){
+      active.push({index,event});
+    }
+  });
+
+  if(!active.length)return -1;
+
+  // User selection always wins if the selected event is currently active.
+  if(active.some(item=>item.index===selected)){
+    return selected;
+  }
+
+  // Otherwise prefer the most recently-started active event.
+  active.sort((a,b)=>b.event.start-a.event.start||a.index-b.index);
+  return active[0].index;
+}
+
+function markEventListManualInteraction(duration=1600){
+  eventListManualUntil=performance.now()+duration;
+}
+
+function maybeAutoFollowEventList(){
+  if(performance.now()<eventListManualUntil)return;
+
+  const activeIndex=activeEventIndexAtTime(media.currentTime||0);
+  if(activeIndex<0){
+    lastAutoFollowEventIndex=-1;
+    return;
+  }
+
+  if(activeIndex===lastAutoFollowEventIndex)return;
+
+  lastAutoFollowEventIndex=activeIndex;
+
+  // Don't change the user's selected event just because playback crossed
+  // another caption. Only scroll the panel.
+  scrollEventIntoViewAdaptive(activeIndex,{behavior:'smooth'});
+}
+
+function scrollEventIntoView(index){
+  scrollEventIntoViewAdaptive(index,{behavior:'smooth'});
+}
+
+
+
+document.addEventListener('pointerdown',event=>{
+  const active=document.activeElement;
+  if(!active || !active.closest?.('#eventList'))return;
+  if(!active.matches('textarea,input'))return;
+  if(event.target===active || active.contains?.(event.target))return;
+  active.blur();
+},true);
+
+eventList.addEventListener('wheel',()=>markEventListManualInteraction(1800),{passive:true});
+eventList.addEventListener('touchstart',()=>markEventListManualInteraction(1800),{passive:true});
+eventList.addEventListener('pointerdown',()=>markEventListManualInteraction(1800));
+eventList.addEventListener('scroll',()=>{
+  if(!eventList.dataset.autoScrolling){
+    markEventListManualInteraction(1200);
+  }
+},{passive:true});
+eventList.addEventListener('focusin',event=>{
+  if(event.target.matches('textarea,input')){
+    markEventListManualInteraction(5000);
+  }
+});
+eventList.addEventListener('input',()=>markEventListManualInteraction(5000));
+
+
+function mergeCaptionWithPrevious(index){
+  if(index<=0 || index>=events.length)return false;
+
+  const current=events[index];
+  const previous=events[index-1];
+
+  pushHistory();
+
+  previous.text=oneLineCaption(
+    `${String(previous.text??'').trim()} ${String(current.text??'').trim()}`
+  );
+  previous.end=Math.max(previous.end,current.end);
+
+  events.splice(index,1);
+  selected=index-1;
+
+  assignLanes();
+  renderAll();
+  scrollEventIntoViewAdaptive(selected,{behavior:'smooth'});
+  setStatus(`Merged Event ${index+1} into Event ${index}.`);
+
+  requestAnimationFrame(()=>{
+    const textarea=eventList.querySelector(`[data-key="text-${selected}"]`);
+    if(!textarea)return;
+    textarea.focus();
+    const end=textarea.value.length;
+    textarea.setSelectionRange(end,end);
+  });
+
+  return true;
+}
+
+function renderList(){
+  const active=document.activeElement,activeKey=active?.dataset?.key,ss=active?.selectionStart,se=active?.selectionEnd;
+  eventList.innerHTML='';
+  events.forEach((e,i)=>{
+    const row=document.createElement('div');row.className='eventRow'+(i===selected?' selected':'')+(multiSelected.has(i)?' multiSelected':'')+(i===newlyAddedEventIndex?' justAdded':'');
+    row.innerHTML=`<div class="rowTop"><input class="timeInput start" data-key="start-${i}" value="${fmt(e.start)}"><input class="timeInput end" data-key="end-${i}" value="${fmt(e.end)}"><span class="small">Event ${i+1}</span><button class="secondary pick">Select</button></div><div class="eventTextWrap"><textarea data-key="text-${i}"></textarea><span class="eventCharCount"></span></div>`;
+    const ta=row.querySelector('textarea');
+    const charCount=row.querySelector('.eventCharCount');
+    ta.value=e.text;
+    updateEventCharacterCount(charCount,e.text);
+    row.querySelector('.start').onchange=ev=>{pushHistory();e.start=parseTime(ev.target.value);assignLanes();drawTimeline();updatePreview()};
+    row.querySelector('.end').onchange=ev=>{pushHistory();e.end=Math.max(e.start+.05,parseTime(ev.target.value));assignLanes();drawTimeline();updatePreview()};
+    ta.onfocus=()=>{selected=i;textEditSnapshot=captureState();highlightSelection();updatePreview()};
+    ta.oninput=ev=>{
+      // Keep ordinary and trailing spaces while the user is typing.
+      // Only pasted/entered line breaks are flattened immediately.
+      const caret=ev.target.selectionStart;
+      const before=ev.target.value;
+      const flattened=before.replace(/\r\n?|\n/g,' ');
+
+      e.text=flattened;
+      updateEventCharacterCount(charCount,flattened);
+
+      if(before!==flattened){
+        ev.target.value=flattened;
+        const next=Math.min(caret,flattened.length);
+        ev.target.setSelectionRange(next,next);
+      }
+
+      drawTimeline();
+      updatePreview();
+    };
+    ta.onkeydown=ev=>{
+      if(
+        ev.key==='Backspace' &&
+        ta.selectionStart===0 &&
+        ta.selectionEnd===0 &&
+        i>0 &&
+        String(events[i]?.text??'').trim().length>0
+      ){
+        ev.preventDefault();
+        textEditSnapshot=null;
+        mergeCaptionWithPrevious(i);
+        return;
+      }
+
+      // Captions are one line, so Enter becomes a normal space.
+      if(ev.key==='Enter'){
+        ev.preventDefault();
+        const start=ta.selectionStart;
+        const end=ta.selectionEnd;
+        ta.setRangeText(' ',start,end,'end');
+        ta.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+    };
+    ta.onblur=()=>{
+      // Clean duplicate/edge whitespace only after editing is finished.
+      const normalized=oneLineCaption(ta.value);
+      if(ta.value!==normalized)ta.value=normalized;
+      e.text=normalized;
+      updateEventCharacterCount(charCount,normalized);
+
+      if(textEditSnapshot&&!sameState(textEditSnapshot,captureState())){
+        undoStack.push(textEditSnapshot);
+        redoStack=[];
+        updateUndoButtons();
+      }
+      textEditSnapshot=null;
+      drawTimeline();
+      updatePreview();
+    };
+    ta.onclick=ev=>ev.stopPropagation();
+    row.querySelectorAll('input,button').forEach(el=>el.onclick=ev=>ev.stopPropagation());
+    row.querySelector('.pick').onclick=ev=>{
+      if(ev.shiftKey||ev.ctrlKey||ev.metaKey||mobileMultiSelectMode){
+        toggleMultiSelection(i);
+        media.currentTime=e.start;
+      }else{
+        selectOnly(i,{seek:true});
+        renderAll();
+      }
+    };
+    row.onclick=ev=>{
+      if(mobileMultiSelectMode){
+        toggleMultiSelection(i);
+      }else{
+        selectOnly(i);
+      }
+    };
+    row.addEventListener('pointerdown',event=>{
+      if(event.pointerType!=='touch')return;
+      if(event.target.closest('textarea,input,button'))return;
+
+      const timer=setTimeout(()=>enterMobileMultiSelect(i),450);
+      const clear=()=>{
+        clearTimeout(timer);
+        row.removeEventListener('pointerup',clear);
+        row.removeEventListener('pointercancel',clear);
+        row.removeEventListener('pointermove',moved);
+      };
+      const moved=moveEvent=>{
+        if(Math.hypot(moveEvent.movementX||0,moveEvent.movementY||0)>8)clear();
+      };
+      row.addEventListener('pointerup',clear);
+      row.addEventListener('pointercancel',clear);
+      row.addEventListener('pointermove',moved);
+    });
+    row.addEventListener('contextmenu',event=>openEventContextMenu(event,i));
+    eventList.appendChild(row);
+  });
+  if(activeKey){const r=eventList.querySelector(`[data-key="${activeKey}"]`);if(r){r.focus();if(typeof ss==='number'&&r.setSelectionRange)r.setSelectionRange(ss,se)}}
+}
+function currentHistory(t){
+  const sorted=events.filter(e=>e.start<=t).sort((a,b)=>a.start-b.start);
+  if(!sorted.length)return[];
+  if(styleMode.value==='standard'){
+    const current=[...sorted].reverse().find(e=>t<e.end);
+    return current?[current]:[];
+  }
+  const clear=Number(document.getElementById('clearSeconds').value)||3.5;
+  let hist=[];
+  for(const e of sorted){
+    if(hist.length&&e.start-hist[hist.length-1].start>=clear)hist=[];
+    hist.push(e);
+    if(hist.length>3)hist.shift();
+  }
+  const last=hist[hist.length-1];
+  if(last&&t>=Math.min(last.end,last.start+clear))return[];
+  return hist;
+}
+
+function previewMarkdownRuns(input){
+  const runs=[];
+  let buffer='';
+  let bold=false;
+  let italic=false;
+
+  function flush(){
+    if(!buffer)return;
+    runs.push({text:buffer,bold,italic});
+    buffer='';
+  }
+
+  for(let i=0;i<input.length;){
+    const ch=input[i];
+    const next=input[i+1];
+
+    // Escaped Markdown symbols display literally.
+    if(ch==='\\' && next && (next==='*' || next==='_' || next==='\\')){
+      buffer+=next;
+      i+=2;
+      continue;
+    }
+
+    if(ch==='*' && next==='*'){
+      flush();
+      bold=!bold;
+      i+=2;
+      continue;
+    }
+
+    if(ch==='*'){
+      flush();
+      italic=!italic;
+      i+=1;
+      continue;
+    }
+
+    if(ch==='_'){
+      flush();
+      italic=!italic;
+      i+=1;
+      continue;
+    }
+
+    buffer+=ch;
+    i+=1;
+  }
+
+  flush();
+  return runs;
+}
+
+function previewVisibleLength(runs){
+  return runs.reduce((sum,run)=>sum+run.text.length,0);
+}
+
+function appendPreviewMarkdown(container,input,visibleLimit=Infinity){
+  const runs=previewMarkdownRuns(input);
+  let remaining=visibleLimit;
+
+  for(const run of runs){
+    if(remaining<=0)break;
+
+    const shown=run.text.slice(0,remaining);
+    if(!shown)continue;
+
+    const span=document.createElement('span');
+    span.textContent=shown;
+    if(run.bold)span.style.fontWeight='700';
+    if(run.italic)span.style.fontStyle='italic';
+    container.appendChild(span);
+
+    remaining-=shown.length;
+  }
+
+  return previewVisibleLength(runs);
+}
+
+
+function normalizeHexColor(value,fallback='#ffffff'){
+  return /^#[0-9a-f]{6}$/i.test(String(value))?String(value).toLowerCase():fallback;
+}
+
+function hexToAssColor(hex,alpha='00'){
+  const normalized=normalizeHexColor(hex,'#ffffff').slice(1);
+  const red=normalized.slice(0,2);
+  const green=normalized.slice(2,4);
+  const blue=normalized.slice(4,6);
+  return `&H${alpha}${blue}${green}${red}`;
+}
+
+function previewTextShadow(outline,shadow){
+  return [
+    `-2px -2px 0 ${outline}`,
+    `0 -2px 0 ${outline}`,
+    `2px -2px 0 ${outline}`,
+    `-2px 0 0 ${outline}`,
+    `2px 0 0 ${outline}`,
+    `-2px 2px 0 ${outline}`,
+    `0 2px 0 ${outline}`,
+    `2px 2px 0 ${outline}`,
+    `3px 3px 1px ${shadow}`
+  ].join(',');
+}
+
+
+
+function karaokeWordsFromText(input){
+  return stripInlineColorSyntax(oneLineCaption(input)).match(/\S+\s*/g)||[];
+}
+function updateModeAwareCustomization(){
+  const mode=styleMode.value;
+  document.querySelectorAll('.mode-tvroll').forEach(el=>el.style.display=mode==='broadcast'?'contents':'none');
+  document.querySelectorAll('.mode-karaoke').forEach(el=>el.style.display=mode==='karaoke'?'contents':'none');
+  karaokeSettings.classList.toggle('visible',mode==='karaoke');
+}
+function renderKaraokeTimingStatus(){
+  if(styleMode.value!=='karaoke'){karaokeTimingStatus.textContent='';return}
+  if(selected<0||selected>=events.length){
+    karaokeTimingStatus.textContent='Select a caption to time its words.';
+    karaokeTapWord.disabled=true;
+    return;
+  }
+  const words=karaokeWordsFromText(events[selected].text);
+  const timings=Array.isArray(events[selected].wordTimings)?events[selected].wordTimings:[];
+  karaokeTimingStatus.textContent=`${Math.min(timings.length,words.length)}/${words.length} words timed${karaokeSyncSession?' — timing in progress':''}.`;
+  karaokeTapWord.disabled=!karaokeSyncSession;
+}
+function beginKaraokeWordSync(){
+  if(styleMode.value!=='karaoke'||karaokeTimingMode.value!=='manual-word'){
+    setStatus('Choose Karaoke > Per word (manual sync) first.');
+    return;
+  }
+  if(selected<0||selected>=events.length){
+    setStatus('Select a caption to time.');
+    return;
+  }
+  const event=events[selected];
+  const words=karaokeWordsFromText(event.text);
+  if(!words.length){
+    setStatus('Selected caption has no words to time.');
+    return;
+  }
+  pushHistory();
+  event.wordTimings=[];
+  karaokeSyncSession={eventIndex:selected,nextWord:0};
+  media.currentTime=event.start;
+  if(media.paused)media.play();
+  renderKaraokeTimingStatus();
+  setStatus('Timing started. Press Space or Tap next word as each word is spoken.');
+}
+function tapNextKaraokeWord(){
+  if(!karaokeSyncSession)return;
+  const event=events[karaokeSyncSession.eventIndex];
+  if(!event){
+    karaokeSyncSession=null;
+    renderKaraokeTimingStatus();
+    return;
+  }
+  const words=karaokeWordsFromText(event.text);
+  const relative=Math.max(0,(media.currentTime||0)-event.start);
+  if(!Array.isArray(event.wordTimings))event.wordTimings=[];
+  event.wordTimings.push(relative);
+  karaokeSyncSession.nextWord++;
+  if(karaokeSyncSession.nextWord>=words.length){
+    karaokeSyncSession=null;
+    renderKaraokeTimingStatus();
+    renderAll();
+    setStatus('Manual karaoke timing complete.');
+    return;
+  }
+  renderKaraokeTimingStatus();
+  updatePreview();
+}
+function clearKaraokeWordTiming(){
+  if(selected<0||selected>=events.length)return;
+  pushHistory();
+  events[selected].wordTimings=null;
+  karaokeSyncSession=null;
+  renderKaraokeTimingStatus();
+  renderAll();
+  setStatus('Karaoke word timing cleared.');
+}
+function manualKaraokeProgressCount(event,now){
+  const words=karaokeWordsFromText(event.text);
+  const timings=Array.isArray(event.wordTimings)?event.wordTimings:[];
+  const relative=Math.max(0,now-event.start);
+  let completed=0;
+  for(let i=0;i<Math.min(words.length,timings.length);i++){
+    if(relative>=timings[i])completed=i+1;
+  }
+  return words.slice(0,completed).join('').length;
+}
+function cssColorToHex(color,fallback='#ffffff'){
+  const value=String(color??'').trim();
+  if(/^#[0-9a-f]{6}$/i.test(value))return value.toLowerCase();
+  const rgb=value.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+  if(rgb){
+    const vals=[rgb[1],rgb[2],rgb[3]].map(v=>Math.max(0,Math.min(255,Number(v))));
+    return '#'+vals.map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  const named={red:'#ff0000',green:'#008000',blue:'#0000ff',yellow:'#ffff00',cyan:'#00ffff',aqua:'#00ffff',magenta:'#ff00ff',fuchsia:'#ff00ff',white:'#ffffff',black:'#000000',gray:'#808080',grey:'#808080',orange:'#ffa500',purple:'#800080',pink:'#ffc0cb',lime:'#00ff00'};
+  return named[value.toLowerCase()]||fallback;
+}
+function inlineColorRuns(input,defaultColor){
+  const source=String(input??'');
+  const runs=[];
+  let cursor=0,match;
+  const regex=/\[([^\]]+)\]\{([^}]+)\}/g;
+  while((match=regex.exec(source))){
+    if(match.index>cursor)runs.push({text:source.slice(cursor,match.index),color:defaultColor});
+    runs.push({text:match[1],color:cssColorToHex(match[2],defaultColor)});
+    cursor=regex.lastIndex;
+  }
+  if(cursor<source.length)runs.push({text:source.slice(cursor),color:defaultColor});
+  return runs;
+}
+function stripInlineColorSyntax(input){
+  return inlineColorRuns(input,'#ffffff').map(run=>run.text).join('');
+}
+function karaokeProgressCount(input,elapsedMs,event=null,now=0){
+  const plain=stripInlineColorSyntax(input);
+  if(karaokeDefaults.timingMode==='manual-word'&&event){
+    return manualKaraokeProgressCount(event,now);
+  }
+  if(karaokeDefaults.timingMode==='word'){
+    const words=plain.match(/\S+\s*/g)||[];
+    const perWord=Math.max(40,(Number(document.getElementById('charMs').value)||10)*5);
+    return words.slice(0,Math.max(0,Math.min(words.length,Math.floor(elapsedMs/perWord)))).join('').length;
+  }
+  const charMs=Math.max(1,Number(document.getElementById('charMs').value)||10);
+  return Math.max(0,Math.min(plain.length,Math.floor(elapsedMs/charMs)));
+}
+function inlineColorMarkdownToASS(input,defaultColor){
+  let output='';
+  for(const run of inlineColorRuns(input,defaultColor)){
+    const ass=hexToAssColor(run.color,'00').replace(/^&H/,'');
+    output+=`{\\c&H${ass}&}${parseMarkdownToASS(run.text)}{\\c}`;
+  }
+  return output;
+}
+
+function appendStyledPreviewText(container,input,limit=Infinity,defaultColor=null){
+  const source=String(input??'');
+  const colorRuns=inlineColorRuns(source,defaultColor||'');
+  let remaining=Number.isFinite(limit)?Math.max(0,limit):Infinity;
+  for(const colorRun of colorRuns){
+    if(remaining<=0)break;
+    for(const run of previewMarkdownRuns(colorRun.text)){
+      if(remaining<=0)break;
+      const visible=run.text.slice(0,remaining);
+      if(!visible)continue;
+      const span=document.createElement('span');
+      span.textContent=visible;
+      if(run.bold)span.style.fontWeight='700';
+      if(run.italic)span.style.fontStyle='italic';
+      if(colorRun.color)span.style.color=colorRun.color;
+      container.appendChild(span);
+      remaining-=visible.length;
+    }
+  }
+}
+function updatePreview(){
+  const now=media.currentTime||0;
+  const history=currentHistory(now);
+  const broadcast=styleMode.value==='broadcast';
+  const karaoke=styleMode.value==='karaoke';
+  overlayStack.style.fontFamily=`"${document.getElementById('fontName').value}",Arial,sans-serif`;
+  overlayTop.innerHTML='';
+  overlayBottom.innerHTML='';
+  const key=history.map(e=>`${e.start}:${e.text}:${JSON.stringify(e.style||{})}`).join('|');
+  const changed=key!==lastPreviewKey;
+  const charMs=Math.max(1,Number(document.getElementById('charMs').value)||10);
+  const newest=history[history.length-1];
+
+  function appendEvent(event,container){
+    const style=resolvedCaptionStyle(event);
+
+    if(karaoke){
+      const wrapper=document.createElement('div');
+      wrapper.className='previewLine karaokePreviewLine';
+      wrapper.style.textAlign=style.alignment;
+      wrapper.style.alignSelf=style.alignment==='left'?'flex-start':style.alignment==='right'?'flex-end':'center';
+      wrapper.style.maxWidth='100%';
+      wrapper.style.textShadow=previewTextShadow(style.outlineColor,style.shadowColor);
+
+      const raw=oneLineCaption(event.text);
+      const base=document.createElement('div');
+      base.className='karaokeBase';
+      base.style.color=karaokeDefaults.inactiveColor;
+      base.textContent=stripInlineColorSyntax(raw);
+
+      const active=document.createElement('div');
+      active.className='karaokeActive';
+      const remainingTotal=karaokeProgressCount(raw,Math.max(0,(now-event.start)*1000),event,now);
+      let remaining=remainingTotal;
+      for(const run of inlineColorRuns(raw,karaokeDefaults.highlightColor)){
+        if(remaining<=0)break;
+        const span=document.createElement('span');
+        const visible=run.text.slice(0,remaining);
+        span.textContent=visible;
+        span.style.color=run.color;
+        active.appendChild(span);
+        remaining-=visible.length;
+      }
+
+      wrapper.appendChild(base);
+      wrapper.appendChild(active);
+      container.appendChild(wrapper);
+      return;
+    }
+
+    const div=document.createElement('div');
+    div.className='previewLine';
+    div.style.textAlign=style.alignment;
+    div.style.alignSelf=style.alignment==='left'?'flex-start':style.alignment==='right'?'flex-end':'center';
+    div.style.maxWidth='100%';
+    div.style.color=style.textColor;
+    div.style.textShadow=previewTextShadow(style.outlineColor,style.shadowColor);
+
+    const raw=oneLineCaption(event.text);
+    const transformed=broadcast?transformCase(raw):raw;
+
+    // TV Roll is now a static rolling-history style:
+    // no typewriter reveal and no sliding/entering animation.
+    appendStyledPreviewText(div,transformed,Infinity,style.textColor);
+    container.appendChild(div);
+  }
+
+  // Top-position captions use a strict two-line history.
+  // Because the top stack grows downward, keep the two newest top captions
+  // and reverse them so the newest remains closest to the top edge.
+  const topHistory=history
+    .filter(e=>resolvedCaptionStyle(e).position==='top')
+    .slice(-2);
+
+  // Bottom-position captions keep the normal three-line rolling history.
+  const bottomHistory=history
+    .filter(e=>resolvedCaptionStyle(e).position!=='top')
+    .slice(-3);
+
+  // Top captions stay in normal reading order:
+  // older on Line 1, newer on Line 2.
+  topHistory.forEach(e=>appendEvent(e,overlayTop));
+  bottomHistory.forEach(e=>appendEvent(e,overlayBottom));
+  lastPreviewKey=key;
+  lastPreviewCount=history.length;
+}
+function syncPlayhead(){
+  const currentTime=media.currentTime||0;
+  const current=getView();
+
+  if(followMode==='smooth' && !playheadDrag && !timelinePan){
+    const maxStart=Math.max(0,(media.duration||0)-current.span);
+    const targetStart=Math.max(
+      0,
+      Math.min(maxStart,currentTime-current.span/2)
+    );
+
+    if(Math.abs(targetStart-viewStart)>.0005){
+      viewStart=targetStart;
+      drawWave();
+      drawTimeline();
+    }
+  }
+
+  const updated=getView();
+  const pct=((currentTime-updated.start)/updated.span)*100;
+  playhead.style.left=Math.max(0,Math.min(100,pct))+'%';
+
+  updatePreview();
+  updateTransport();
+}
+
+function updatePlaybackMotion(timestamp){
+  if(media.paused || !Number.isFinite(media.duration)){
+    return;
+  }
+
+  const view=getView();
+  const currentTime=media.currentTime||0;
+
+  if(followMode==='smooth' && !playheadDrag && !timelinePan){
+    const maxStart=Math.max(0,media.duration-view.span);
+
+    // Ideal centered position, clamped so the timeline never goes before 0
+    // or beyond the end of the media.
+    const targetStart=Math.max(
+      0,
+      Math.min(maxStart,currentTime-view.span/2)
+    );
+
+    // The playhead is centered only while the timeline can actually center it.
+    // Near the beginning/end it moves naturally within the visible window.
+    const targetPct=((currentTime-targetStart)/view.span)*100;
+    playhead.style.left=Math.max(0,Math.min(100,targetPct))+'%';
+
+    if(
+      timestamp-lastSmoothTimelineFrame>=33 &&
+      Math.abs(targetStart-viewStart)>.0005
+    ){
+      viewStart=targetStart;
+      drawWave();
+      drawTimeline();
+
+      const updatedView=getView();
+      const updatedPct=((currentTime-updatedView.start)/updatedView.span)*100;
+      playhead.style.left=Math.max(0,Math.min(100,updatedPct))+'%';
+
+      lastSmoothTimelineFrame=timestamp;
+    }
+  }else{
+    if(
+      followMode==='edge' &&
+      !playheadDrag &&
+      !timelinePan &&
+      currentTime>view.end-.05
+    ){
+      viewStart=Math.min(
+        Math.max(0,media.duration-view.span),
+        Math.max(0,currentTime-view.span*.15)
+      );
+      drawWave();
+      drawTimeline();
+    }
+
+    const current=getView();
+    const pct=((currentTime-current.start)/current.span)*100;
+    playhead.style.left=Math.max(0,Math.min(100,pct))+'%';
+  }
+
+  if(timestamp-lastTransportFrame>=80){
+    updateTransport();
+    lastTransportFrame=timestamp;
+  }
+}
+
+
+
+const commandCatalog=[
+  {id:'newProject',title:'New Project',path:'FILE / NEW PROJECT',aliases:'clear reset blank'},
+  {id:'openProject',title:'Open Project…',path:'FILE / OPEN PROJECT',aliases:'msub load'},
+  {id:'saveProject',title:'Save Project',path:'FILE / SAVE PROJECT',aliases:'msub write'},
+  {id:'importVideo',title:'Import Video…',path:'FILE / IMPORT VIDEO',aliases:'media movie mp4'},
+  {id:'importAudio',title:'Import Audio…',path:'FILE / IMPORT AUDIO',aliases:'media sound'},
+  {id:'importSubtitles',title:'Import Subtitles…',path:'FILE / IMPORT SUBTITLES',aliases:'srt vtt ass captions'},
+  {id:'importFont',title:'Import Font…',path:'FILE / IMPORT FONT',aliases:'ttf otf typeface'},
+  {id:'exportAss',title:'Export TV Roll ASS…',path:'FILE / EXPORT',aliases:'render subtitles'},
+  {id:'undo',title:'Undo',path:'EDIT / UNDO',aliases:'back'},
+  {id:'redo',title:'Redo',path:'EDIT / REDO',aliases:'forward'},
+  {id:'duplicateHere',title:'Duplicate Here',path:'EDIT / DUPLICATE HERE',aliases:'copy clone ctrl d'},
+  {id:'duplicateEnd',title:'Duplicate to End',path:'EDIT / DUPLICATE TO END',aliases:'append clone ctrl shift d'},
+  {id:'find',title:'Find…',path:'EDIT / FIND',aliases:'search captions ctrl f'},
+  {id:'findReplace',title:'Find and Replace…',path:'EDIT / FIND AND REPLACE',aliases:'replace text ctrl h'},
+  {id:'addCaption',title:'Add Caption at Playhead',path:'EDIT / ADD CAPTION',aliases:'new subtitle'},
+  {id:'splitCaption',title:'Split Selected Here',path:'EDIT / SPLIT CAPTION',aliases:'cut subtitle'},
+  {id:'deleteCaption',title:'Delete Selected',path:'EDIT / DELETE CAPTION',aliases:'remove'},
+  {id:'sortCaptions',title:'Sort by Time',path:'EDIT / SORT CAPTIONS',aliases:'order'},
+  {id:'zoomIn',title:'Zoom In',path:'VIEW / ZOOM',aliases:'timeline closer'},
+  {id:'zoomOut',title:'Zoom Out',path:'VIEW / ZOOM',aliases:'timeline farther'},
+  {id:'zoomReset',title:'Reset Zoom',path:'VIEW / ZOOM',aliases:'100 percent'},
+  {id:'followOff',title:'Follow Playhead: Off',path:'VIEW / FOLLOW PLAYHEAD',aliases:'stop tracking'},
+  {id:'followEdge',title:'Follow Playhead: Edge-to-edge',path:'VIEW / FOLLOW PLAYHEAD',aliases:'jump tracking'},
+  {id:'followSmooth',title:'Follow Playhead: Smooth',path:'VIEW / FOLLOW PLAYHEAD',aliases:'center continuous'},
+  {id:'parseTranscript',title:'Turn Transcript into Captions',path:'TOOLS / TRANSCRIPT',aliases:'parse convert'},
+  {id:'preferences',title:'Preferences…',path:'EDIT / PREFERENCES',aliases:'pref settings options theme light dark system'},
+  {id:'markdownHelp',title:'Markdown Guide',path:'HELP / MARKDOWN GUIDE',aliases:'bold italic escape'},
+  {id:'about',title:'About MSUBBER',path:'HELP / ABOUT',aliases:'version'}
+];
+
+function closeDesktopMenus(){
+  document.querySelectorAll('.desktopMenu.open').forEach(menu=>menu.classList.remove('open'));
+}
+
+function setFollowMode(mode){
+  followMode=['off','edge','smooth'].includes(mode)?mode:'edge';
+  lastSmoothTimelineFrame=0;
+  lastTransportFrame=0;
+  follow=followMode!=='off';
+
+  const label=followMode==='edge'
+    ? 'Edge-to-edge'
+    : followMode==='smooth'
+      ? 'Smooth'
+      : 'Off';
+  document.getElementById('followBtn').textContent=`Follow playhead: ${label}`;
+
+  document.querySelectorAll('[data-follow-mode]').forEach(item=>{
+    item.classList.toggle('active',item.dataset.followMode===followMode);
+  });
+}
+
+
+function openPreferences(){
+  preferencesTheme.value=themeMode.value;
+  preferencesFollow.value=followMode;
+  preferencesBackdrop.classList.add('open');
+}
+function closePreferences(){
+  preferencesBackdrop.classList.remove('open');
+}
+preferencesCancel.addEventListener('click',closePreferences);
+preferencesApply.addEventListener('click',()=>{
+  applyTheme(preferencesTheme.value);
+  setFollowMode(preferencesFollow.value);
+  closePreferences();
+  setStatus('Preferences applied.');
+});
+preferencesBackdrop.addEventListener('click',event=>{
+  if(event.target===preferencesBackdrop)closePreferences();
+});
+
+
+let findMode='find';
+let findMatchIndex=-1;
+let findMatches=[];
+
+function escapeRegExp(value){
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+}
+function buildFindRegex(global=false){
+  const query=findText.value;
+  if(!query)return null;
+  let pattern=escapeRegExp(query);
+  if(findWholeWord.checked)pattern=`\\b${pattern}\\b`;
+  let flags=findCaseSensitive.checked?'':'i';
+  if(global)flags+='g';
+  return new RegExp(pattern,flags);
+}
+function collectFindMatches(){
+  const regex=buildFindRegex(true);
+  findMatches=[];
+  if(!regex)return findMatches;
+  events.forEach((event,eventIndex)=>{
+    const source=String(event.text??'');
+    regex.lastIndex=0;
+    let match;
+    while((match=regex.exec(source))){
+      findMatches.push({eventIndex,start:match.index,end:match.index+match[0].length,text:match[0]});
+      if(match[0].length===0)regex.lastIndex++;
+    }
+  });
+  return findMatches;
+}
+function revealFindMatch(match){
+  if(!match)return;
+  selected=match.eventIndex;
+  renderAll();
+  scrollEventIntoView(selected);
+  requestAnimationFrame(()=>{
+    const textarea=eventList.querySelector(`[data-key="text-${selected}"]`);
+    if(!textarea)return;
+    textarea.focus();
+    textarea.setSelectionRange(match.start,match.end);
+  });
+}
+function updateFindStatus(){
+  if(!findText.value){findStatus.textContent='Enter text to search subtitle events.';return;}
+  if(!findMatches.length){findStatus.textContent='No matches found.';return;}
+  findStatus.textContent=`Match ${findMatchIndex+1} of ${findMatches.length}`;
+}
+function findDirection(direction){
+  collectFindMatches();
+  if(!findMatches.length){findMatchIndex=-1;updateFindStatus();return;}
+  if(findMatchIndex<0){
+    const selectedMatch=findMatches.findIndex(match=>match.eventIndex===selected);
+    findMatchIndex=selectedMatch>=0?selectedMatch:(direction>0?0:findMatches.length-1);
+  }else{
+    const next=findMatchIndex+direction;
+    if(next<0||next>=findMatches.length){
+      if(!findWrap.checked){
+        findStatus.textContent=direction>0?'Reached the final match.':'Reached the first match.';
+        return;
+      }
+      findMatchIndex=direction>0?0:findMatches.length-1;
+    }else findMatchIndex=next;
+  }
+  revealFindMatch(findMatches[findMatchIndex]);
+  updateFindStatus();
+}
+function replaceCurrentMatch(){
+  collectFindMatches();
+  if(!findMatches.length){updateFindStatus();return;}
+  if(findMatchIndex<0||findMatchIndex>=findMatches.length)findMatchIndex=0;
+  const match=findMatches[findMatchIndex];
+  const event=events[match.eventIndex];
+  if(!event)return;
+  pushHistory();
+  event.text=event.text.slice(0,match.start)+replaceText.value+event.text.slice(match.end);
+  selected=match.eventIndex;
+  renderAll();
+  scrollEventIntoView(selected);
+  findMatchIndex=-1;
+  findDirection(1);
+}
+function replaceAllMatches(){
+  const regex=buildFindRegex(true);
+  if(!regex){updateFindStatus();return;}
+  const snapshot=captureState();
+  let replacements=0;
+  events.forEach(event=>{
+    regex.lastIndex=0;
+    event.text=String(event.text??'').replace(regex,()=>{
+      replacements++;
+      return replaceText.value;
+    });
+  });
+  if(!replacements){findStatus.textContent='No matches found.';return;}
+  undoStack.push(snapshot);
+  redoStack=[];
+  updateUndoButtons();
+  renderAll();
+  findMatchIndex=-1;
+  collectFindMatches();
+  findStatus.textContent=`Replaced ${replacements} match${replacements===1?'':'es'}.`;
+}
+function openFindDialog(mode='find'){
+  findMode=mode;
+  findBackdrop.classList.toggle('replaceMode',mode==='replace');
+  findTitle.textContent=mode==='replace'?'Find and Replace':'Find';
+  findStatus.textContent='';
+  const active=document.activeElement;
+  if(active instanceof HTMLTextAreaElement && active.closest('.eventRow')){
+    const selectedText=active.value.slice(active.selectionStart,active.selectionEnd);
+    if(selectedText)findText.value=selectedText;
+  }
+  findBackdrop.classList.add('open');
+  requestAnimationFrame(()=>{findText.focus();findText.select();});
+}
+function closeFindDialog(){findBackdrop.classList.remove('open')}
+
+findNextBtn.addEventListener('click',()=>findDirection(1));
+findPreviousBtn.addEventListener('click',()=>findDirection(-1));
+replaceCurrentBtn.addEventListener('click',replaceCurrentMatch);
+replaceAllBtn.addEventListener('click',replaceAllMatches);
+findCloseBtn.addEventListener('click',closeFindDialog);
+findBackdrop.addEventListener('click',event=>{if(event.target===findBackdrop)closeFindDialog()});
+findText.addEventListener('input',()=>{findMatchIndex=-1;collectFindMatches();updateFindStatus()});
+findText.addEventListener('keydown',event=>{
+  if(event.key==='Enter'){event.preventDefault();findDirection(event.shiftKey?-1:1)}
+});
+replaceText.addEventListener('keydown',event=>{
+  if(event.key==='Enter'&&findMode==='replace'){event.preventDefault();replaceCurrentMatch()}
+});
+
+
+function cloneEvent(event){
+  return {
+    start:Number(event.start),
+    end:Number(event.end),
+    text:String(event.text??''),
+    lane:Number.isInteger(event.lane)?event.lane:0,
+    style:event.style?cleanCaptionStyle(event.style):null
+  };
+}
+
+function revealDuplicatedEvent(index,{revealTimeline=false}={}){
+  selected=index;
+  newlyAddedEventIndex=index;
+  assignLanes();
+  renderAll();
+  scrollEventIntoViewAdaptive(index,{behavior:'smooth'});
+
+  if(revealTimeline && events[index]){
+    const view=getView();
+    const event=events[index];
+
+    if(event.start<view.start || event.start>view.end){
+      const maxStart=Math.max(0,(media.duration||event.end)-view.span);
+      viewStart=Math.max(0,Math.min(maxStart,event.start-view.span*.15));
+      drawWave();
+      drawTimeline();
+      updatePlayheadPositionOnly();
+    }
+  }
+}
+
+function duplicateHere(){
+  if(selected<0 || selected>=events.length){
+    setStatus('Select a caption to duplicate.');
+    return;
+  }
+
+  pushHistory();
+
+  const originalIndex=selected;
+  const copy=cloneEvent(events[originalIndex]);
+
+  // Insert directly after the selected event in the event list.
+  events.splice(originalIndex+1,0,copy);
+
+  revealDuplicatedEvent(originalIndex+1);
+  setStatus(`Duplicated Event ${originalIndex+1} here.`);
+}
+
+function duplicateToEnd(){
+  if(selected<0 || selected>=events.length){
+    setStatus('Select a caption to duplicate.');
+    return;
+  }
+
+  if(!events.length)return;
+
+  pushHistory();
+
+  const source=events[selected];
+  const copy=cloneEvent(source);
+  const duration=Math.max(.01,source.end-source.start);
+  const latestEnd=Math.max(...events.map(event=>Number(event.end)||0));
+
+  copy.start=latestEnd;
+  copy.end=latestEnd+duration;
+
+  events.push(copy);
+
+  // Sort chronologically so the new appended event really becomes the final
+  // item in both the event list and timeline order.
+  events.sort((a,b)=>a.start-b.start||a.end-b.end);
+
+  const newIndex=events.indexOf(copy);
+  revealDuplicatedEvent(newIndex,{revealTimeline:true});
+  setStatus(`Duplicated caption to ${fmt(copy.start)}.`);
+}
+
+function closeEventContextMenu(){
+  eventContextMenu.classList.remove('open');
+}
+
+function openEventContextMenu(event,index){
+  event.preventDefault();
+  event.stopPropagation();
+
+  selected=index;
+  lastAutoFollowEventIndex=-1;
+  highlightSelection();
+
+  eventContextMenu.style.left='0px';
+  eventContextMenu.style.top='0px';
+  eventContextMenu.classList.add('open');
+
+  const rect=eventContextMenu.getBoundingClientRect();
+  const left=Math.min(event.clientX,window.innerWidth-rect.width-8);
+  const top=Math.min(event.clientY,window.innerHeight-rect.height-8);
+
+  eventContextMenu.style.left=`${Math.max(8,left)}px`;
+  eventContextMenu.style.top=`${Math.max(8,top)}px`;
+}
+
+eventContextMenu.addEventListener('click',event=>{
+  const button=event.target.closest('[data-event-command]');
+  if(!button)return;
+
+  const command=button.dataset.eventCommand;
+  closeEventContextMenu();
+
+  if(command==='duplicateHere')duplicateHere();
+  else if(command==='duplicateEnd')duplicateToEnd();
+  else if(command==='delete')deleteSelected();
+});
+
+document.addEventListener('pointerdown',event=>{
+  if(!event.target.closest('#eventContextMenu'))closeEventContextMenu();
+});
+
+document.addEventListener('scroll',closeEventContextMenu,true);
+window.addEventListener('resize',closeEventContextMenu);
+
+
+function openAppModal(backdrop){backdrop.classList.add('open');requestAnimationFrame(()=>backdrop.querySelector('button')?.focus())}
+function closeAppModal(backdrop){backdrop.classList.remove('open')}
+function closeAnyAppModal(){
+  if(todoBackdrop.classList.contains('open')){closeTodoDialog();return true;}
+  if(contactBackdrop.classList.contains('open')){closeContactDialog();return true;}
+  if(debugBackdrop.classList.contains('open')){closeDebugDialog();return true;}
+  if(exportDialogBackdrop.classList.contains('open')){
+    closeExportDialog();
+    return true;
+  }
+  if(saveProjectBackdrop.classList.contains('open')){
+    closeSaveProjectDialog();
+    return true;
+  }
+  if(markdownHelpBackdrop.classList.contains('open')){closeAppModal(markdownHelpBackdrop);return true}
+  if(aboutBackdrop.classList.contains('open')){closeAppModal(aboutBackdrop);return true}
+  return false
+}
+[markdownHelpX,markdownHelpClose].forEach(b=>b.addEventListener('click',()=>closeAppModal(markdownHelpBackdrop)));
+[aboutX,aboutClose].forEach(b=>b.addEventListener('click',()=>closeAppModal(aboutBackdrop)));
+markdownHelpBackdrop.addEventListener('click',e=>{if(e.target===markdownHelpBackdrop)closeAppModal(markdownHelpBackdrop)});
+aboutBackdrop.addEventListener('click',e=>{if(e.target===aboutBackdrop)closeAppModal(aboutBackdrop)});
+
+
+const debugBackdrop=document.getElementById('debugBackdrop');
+const debugLog=document.getElementById('debugLog');
+const debugClear=document.getElementById('debugClear');
+const debugCopy=document.getElementById('debugCopy');
+const debugClose=document.getElementById('debugClose');
+const contactBackdrop=document.getElementById('contactBackdrop');
+const contactTodo=document.getElementById('contactTodo');
+const contactClose=document.getElementById('contactClose');
+const todoBackdrop=document.getElementById('todoBackdrop');
+const todoClose=document.getElementById('todoClose');
+
+let debugMessages=[];
+function renderDebugLog(){
+  debugLog.textContent=debugMessages.length?debugMessages.join('\n'):'No debug messages yet.';
+  debugLog.scrollTop=debugLog.scrollHeight;
+}
+function addDebugMessage(message){
+  const clean=String(message??'').trim();
+  if(!clean)return;
+  const line=`[${new Date().toLocaleTimeString()}] ${clean}`;
+  if(debugMessages[debugMessages.length-1]!==line)debugMessages.push(line);
+  if(debugMessages.length>500)debugMessages.shift();
+  renderDebugLog();
+}
+function openDebugDialog(){debugBackdrop.classList.add('open');renderDebugLog()}
+function closeDebugDialog(){debugBackdrop.classList.remove('open')}
+function openContactDialog(){contactBackdrop.classList.add('open')}
+function closeContactDialog(){contactBackdrop.classList.remove('open')}
+function openTodoDialog(){todoBackdrop.classList.add('open')}
+function closeTodoDialog(){todoBackdrop.classList.remove('open')}
+
+debugClear.addEventListener('click',()=>{debugMessages=[];renderDebugLog()});
+debugCopy.addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(debugMessages.join('\n'))}catch{}
+});
+debugClose.addEventListener('click',closeDebugDialog);
+contactClose.addEventListener('click',closeContactDialog);
+todoClose.addEventListener('click',closeTodoDialog);
+contactTodo.addEventListener('click',()=>{closeContactDialog();openTodoDialog()});
+debugBackdrop.addEventListener('click',e=>{if(e.target===debugBackdrop)closeDebugDialog()});
+contactBackdrop.addEventListener('click',e=>{if(e.target===contactBackdrop)closeContactDialog()});
+todoBackdrop.addEventListener('click',e=>{if(e.target===todoBackdrop)closeTodoDialog()});
+
+/*
+  Safely mirror the existing status/debug text into the Debug Log.
+  This deliberately does NOT replace or wrap setStatus(), avoiding any
+  changes to MSUBBER's startup path.
+*/
+if(typeof statusEl!=='undefined' && statusEl){
+  addDebugMessage(statusEl.textContent);
+  new MutationObserver(()=>{
+    addDebugMessage(statusEl.textContent);
+  }).observe(statusEl,{childList:true,subtree:true,characterData:true});
+}
+
+function executeCommand(id){
+  const click=idValue=>{
+    const element=document.getElementById(idValue);
+    if(element)element.click();
+  };
+
+  switch(id){
+    case 'newProject':
+      if(events.length && !confirm('Start a new project and clear the current captions?'))return;
+      events=[];selected=-1;clearMultiSelection();transcript.value='';undoStack=[];redoStack=[];currentProjectName='';
+      setRenderedReadOnlyMode(false);renderAll();setStatus('New project created.');
+      break;
+    case 'openProject': projectFile.click(); break;
+    case 'saveProject': saveProjectBtn.click(); break;
+    case 'importVideo': videoFile.click(); break;
+    case 'importAudio': audioFile.click(); break;
+    case 'importSubtitles': textFile.click(); break;
+    case 'importFont': fontFile.click(); break;
+    case 'exportAss': click('exportBtn'); break;
+    case 'undo': undo(); break;
+    case 'redo': redo(); break;
+    case 'duplicateHere': duplicateHere(); break;
+    case 'duplicateEnd': duplicateToEnd(); break;
+    case 'find': openFindDialog('find'); break;
+    case 'findReplace': openFindDialog('replace'); break;
+    case 'addCaption': click('addBtn'); break;
+    case 'splitCaption': click('splitBtn'); break;
+    case 'deleteCaption': deleteSelected(); break;
+    case 'sortCaptions': click('sortBtn'); break;
+    case 'zoomIn':
+      zoomEl.value=Math.min(Number(zoomEl.max),Number(zoomEl.value)+.25);
+      zoomEl.dispatchEvent(new Event('input',{bubbles:true}));
+      break;
+    case 'zoomOut':
+      zoomEl.value=Math.max(Number(zoomEl.min),Number(zoomEl.value)-.25);
+      zoomEl.dispatchEvent(new Event('input',{bubbles:true}));
+      break;
+    case 'zoomReset':
+      zoomEl.value=1;zoomEl.dispatchEvent(new Event('input',{bubbles:true}));
+      break;
+    case 'followOff': setFollowMode('off'); break;
+    case 'followEdge': setFollowMode('edge'); break;
+    case 'followSmooth': setFollowMode('smooth'); break;
+    case 'resetLayout':
+      viewStart=0;zoomEl.value=1;setFollowMode('edge');renderAll();
+      break;
+    case 'parseTranscript': click('parseBtn'); break;
+    case 'preferences':
+      openPreferences();
+      break;
+    case 'debug':
+      openDebugDialog();
+      break;
+    case 'contact':
+      openContactDialog();
+      break;
+    case 'markdownHelp': openAppModal(markdownHelpBackdrop); break;
+    case 'about': openAppModal(aboutBackdrop); break;
+  }
+  closeDesktopMenus();
+}
+
+function renderCommandResults(query=''){
+  const normalized=query.trim().toLowerCase();
+  const matches=commandCatalog.filter(command=>{
+    const haystack=`${command.title} ${command.path} ${command.aliases}`.toLowerCase();
+    return !normalized || haystack.includes(normalized);
+  }).slice(0,12);
+
+  commandResults.innerHTML='';
+  for(const command of matches){
+    const button=document.createElement('button');
+    button.className='commandResult';
+    button.type='button';
+    button.innerHTML=`<strong></strong><small></small>`;
+    button.querySelector('strong').textContent=command.title;
+    button.querySelector('small').textContent=command.path;
+    button.addEventListener('click',()=>executeCommand(command.id));
+    commandResults.appendChild(button);
+  }
+}
+
+document.querySelectorAll('[data-menu-button]').forEach(button=>{
+  button.addEventListener('click',event=>{
+    event.stopPropagation();
+    const menu=button.closest('.desktopMenu');
+    const shouldOpen=!menu.classList.contains('open');
+    closeDesktopMenus();
+    if(shouldOpen){
+      menu.classList.add('open');
+      if(button.textContent.trim()==='HELP'){
+        renderCommandResults('');
+        requestAnimationFrame(()=>commandSearchInput.focus());
+      }
+    }
+  });
+});
+
+document.querySelectorAll('[data-command]').forEach(button=>{
+  button.addEventListener('click',()=>executeCommand(button.dataset.command));
+});
+document.querySelectorAll('[data-follow-mode]').forEach(button=>{
+  button.addEventListener('click',()=>setFollowMode(button.dataset.followMode));
+});
+document.addEventListener('click',event=>{
+  if(!event.target.closest('.desktopMenu'))closeDesktopMenus();
+});
+commandSearchInput.addEventListener('input',()=>renderCommandResults(commandSearchInput.value));
+commandSearchInput.addEventListener('keydown',event=>{
+  if(event.key==='Enter'){
+    const first=commandResults.querySelector('.commandResult');
+    if(first){event.preventDefault();first.click();}
+  }
+});
+
+document.getElementById('headerUndoBtn').addEventListener('click',undo);
+document.getElementById('headerRedoBtn').addEventListener('click',redo);
+
+document.addEventListener('keydown',event=>{
+  if(event.code==='Space'&&karaokeSyncSession){
+    event.preventDefault();
+    tapNextKaraokeWord();
+    return;
+  }
+  if(event.key==='Escape'&&closeAnyAppModal()){event.preventDefault();return;}
+  if(event.key==='Escape'&&mobileMultiSelectMode){
+    clearMultiSelection();
+    highlightSelection();
+    updatePreview();
+    setStatus('Multi-selection cleared.');
+    return;
+  }
+  const active=document.activeElement;
+  const typing=active && (
+    active.tagName==='TEXTAREA' ||
+    active.tagName==='INPUT' ||
+    active.tagName==='SELECT' ||
+    active.isContentEditable
+  );
+
+  if((event.ctrlKey||event.metaKey)&&!event.altKey&&event.key.toLowerCase()==='d'&&!typing){
+    event.preventDefault();
+    if(event.shiftKey)duplicateToEnd();
+    else duplicateHere();
+    return;
+  }
+  if((event.ctrlKey||event.metaKey)&&!event.altKey&&event.key.toLowerCase()==='f'){
+    event.preventDefault();openFindDialog('find');return;
+  }
+  if((event.ctrlKey||event.metaKey)&&!event.altKey&&event.key.toLowerCase()==='h'){
+    event.preventDefault();openFindDialog('replace');return;
+  }
+  if(event.key==='Escape'&&findBackdrop.classList.contains('open')){
+    event.preventDefault();closeFindDialog();return;
+  }
+  if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==='p'){
+    event.preventDefault();
+    closeDesktopMenus();
+    const help=[...document.querySelectorAll('.desktopMenu')].find(menu=>
+      menu.querySelector('[data-menu-button]')?.textContent.trim()==='HELP'
+    );
+    if(help){
+      help.classList.add('open');
+      renderCommandResults('');
+      requestAnimationFrame(()=>commandSearchInput.focus());
+    }
+  }
+  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='o'){
+    event.preventDefault();executeCommand('openProject');
+  }
+  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='n'){
+    event.preventDefault();executeCommand('newProject');
+  }
+  if((event.ctrlKey||event.metaKey)&&event.key==='+'){
+    event.preventDefault();executeCommand('zoomIn');
+  }
+  if((event.ctrlKey||event.metaKey)&&event.key==='-'){
+    event.preventDefault();executeCommand('zoomOut');
+  }
+});
+
+setFollowMode('edge');
+renderCommandResults('');
+
+
+function setPlayerSize(mode){
+  const main=document.querySelector('main');
+  const large=mode==='large';
+  main.classList.toggle('playerLarge',large);
+  playerSizeBtn.textContent=`Player: ${large?'Large':'Compact'}`;
+  playerSizeBtn.dataset.mode=large?'large':'compact';
+}
+
+playerSizeBtn.addEventListener('click',()=>{
+  setPlayerSize(playerSizeBtn.dataset.mode==='large'?'compact':'large');
+});
+
+setPlayerSize('compact');
+
+function setMobilePanel(panel){
+  const main=document.querySelector('main');
+  const options=panel==='options';
+  main.classList.toggle('mobileOptionsMode',options);
+  main.classList.toggle('mobileTimelineMode',!options);
+  mobileTimelineTab.classList.toggle('active',!options);
+  mobileOptionsTab.classList.toggle('active',options);
+
+  const panels=options
+    ? [document.querySelector('.rightColumn')]
+    : [document.querySelector('.centerTimelinePanel'),document.querySelector('.leftColumn')];
+
+  panels.filter(Boolean).forEach(element=>{
+    element.style.animation='none';
+    void element.offsetWidth;
+    element.style.animation='';
+  });
+}
+
+function openMobileDrawer(){
+  mobileDrawerBackdrop.classList.add('open');
+  mobileDrawerBackdrop.setAttribute('aria-hidden','false');
+}
+function closeMobileDrawer(){
+  mobileDrawerBackdrop.classList.remove('open');
+  mobileDrawerBackdrop.setAttribute('aria-hidden','true');
+}
+function openMobileChoice(element){
+  element.classList.add('open');
+  element.setAttribute('aria-hidden','false');
+}
+function closeMobileChoice(element){
+  element.classList.remove('open');
+  element.setAttribute('aria-hidden','true');
+}
+
+mobileMenuButton.addEventListener('click',openMobileDrawer);
+mobileDrawerClose.addEventListener('click',closeMobileDrawer);
+mobileDrawerBackdrop.addEventListener('click',event=>{
+  if(event.target===mobileDrawerBackdrop)closeMobileDrawer();
+});
+mobileTimelineTab.addEventListener('click',()=>setMobilePanel('timeline'));
+mobileOptionsTab.addEventListener('click',()=>setMobilePanel('options'));
+
+document.getElementById('mobileOpenProject').addEventListener('click',()=>{
+  closeMobileDrawer();
+  projectFile.click();
+});
+document.getElementById('mobileImportMedia').addEventListener('click',()=>{
+  closeMobileDrawer();
+  openMobileChoice(mobileMediaChoice);
+});
+document.getElementById('mobileImportSubtitles').addEventListener('click',()=>{
+  closeMobileDrawer();
+  textFile.click();
+});
+document.getElementById('mobileExport').addEventListener('click',()=>{
+  closeMobileDrawer();
+  openMobileChoice(mobileExportChoice);
+});
+document.getElementById('mobileSettings').addEventListener('click',()=>{
+  closeMobileDrawer();
+  setMobilePanel('options');
+});
+
+document.getElementById('mobileChooseVideo').addEventListener('click',()=>{
+  closeMobileChoice(mobileMediaChoice);
+  videoFile.click();
+});
+document.getElementById('mobileChooseAudio').addEventListener('click',()=>{
+  closeMobileChoice(mobileMediaChoice);
+  audioFile.click();
+});
+document.getElementById('mobileSaveProject').addEventListener('click',()=>{
+  closeMobileChoice(mobileExportChoice);
+  saveProjectBtn.click();
+});
+document.getElementById('mobileExportSubtitles').addEventListener('click',()=>{
+  closeMobileChoice(mobileExportChoice);
+  document.getElementById('exportBtn').click();
+});
+
+document.querySelectorAll('.mobileChoiceCancel').forEach(button=>{
+  button.addEventListener('click',event=>{
+    closeMobileChoice(event.currentTarget.closest('.mobileChoiceBackdrop'));
+  });
+});
+[mobileMediaChoice,mobileExportChoice].forEach(backdrop=>{
+  backdrop.addEventListener('click',event=>{
+    if(event.target===backdrop)closeMobileChoice(backdrop);
+  });
+});
+
+if(matchMedia('(max-width:1250px)').matches)setMobilePanel('timeline');
+
+function runImporterSelfTests(){
+  const cases=[
+    {
+      name:'SRT',
+      parse:importSRT,
+      source:'1\n00:00:01,000 --> 00:00:02,500\nHello world.\n'
+    },
+    {
+      name:'VTT',
+      parse:importVTT,
+      source:'WEBVTT\n\n00:01.000 --> 00:02.500\nHello world.\n'
+    },
+    {
+      name:'SBV',
+      parse:importSBV,
+      source:'0:00:01.000,0:00:02.500\nHello world.\n'
+    },
+    {
+      name:'ASS',
+      parse:importASS,
+      source:'[Events]\nDialogue: 0,0:00:01.00,0:00:02.50,Default,,0,0,0,,Hello world.\n'
+    }
+  ];
+
+  const failures=[];
+  for(const test of cases){
+    try{
+      const parsed=test.parse(test.source);
+      if(parsed.length!==1||parsed[0].text!=='Hello world.'){
+        failures.push(`${test.name}: unexpected result`);
+      }
+    }catch(err){
+      failures.push(`${test.name}: ${err.message}`);
+    }
+  }
+
+  if(failures.length){
+    console.error('Importer self-test failures:',failures);
+    setImportLog(['Internal importer self-test failed.',...failures],true);
+    setStatus('Subtitle import self-test failed. Open Import details.');
+  }
+}
+
+function renderAll(){
+  drawWave();drawTimeline();renderList();syncPlayhead();updateUndoButtons();
+  if(newlyAddedEventIndex>=0){
+    const current=newlyAddedEventIndex;
+    setTimeout(()=>{if(newlyAddedEventIndex===current)newlyAddedEventIndex=-1},260);
+  }
+}
+
+function onMediaTimeUpdate(){
+  if(this!==media)return;
+  if(media.paused){
+    syncPlayhead();
+  }
+}
+video.addEventListener('timeupdate',onMediaTimeUpdate);
+audio.addEventListener('timeupdate',onMediaTimeUpdate);
+zoomEl.oninput=()=>{const center=media.currentTime||0,v=getView();viewStart=Math.max(0,center-v.span/2);drawWave();drawTimeline();syncPlayhead()};
+document.getElementById('followBtn').onclick=()=>{
+  const next=followMode==='edge'?'smooth':followMode==='smooth'?'off':'edge';
+  setFollowMode(next);
+};
+document.getElementById('parseBtn').onclick=parseTranscript;
+document.getElementById('addBtn').onclick=()=>{
+  pushHistory();
+  const t=media.currentTime||0;
+  // A newly added subtitle cuts off every subtitle currently spanning the playhead.
+  for(const e of events){
+    if(e.start<t&&e.end>t)e.end=t;
+  }
+  events.push({start:t,end:t+2,text:'>> Speaker: NEW CAPTION',lane:0});
+  selected=events.length-1;
+  newlyAddedEventIndex=selected;
+  events[selected].lane=firstAvailableLane(selected);
+  assignLanes();
+  renderAll();
+  scrollEventIntoView(selected);
+};
+document.getElementById('deleteBtn').onclick=deleteSelected;
+document.getElementById('sortBtn').onclick=()=>{pushHistory();events.sort((a,b)=>a.start-b.start);assignLanes();selected=-1;clearMultiSelection();renderAll()};
+document.getElementById('splitBtn').onclick=()=>{if(selected<0)return;const e=events[selected],t=media.currentTime;if(t<=e.start||t>=e.end)return;pushHistory();events.splice(selected+1,0,{start:t,end:e.end,text:e.text,lane:e.lane??0});e.end=t;assignLanes();renderAll()};
+
+
+function previewAnimationLoop(timestamp=0){
+  updatePlaybackMotion(timestamp);
+  updatePreview();
+
+  if(!media.paused){
+    maybeAutoFollowEventList();
+  }
+
+  previewRaf=requestAnimationFrame(previewAnimationLoop);
+}
+
+function updateTransport(){
+  const dur=Number.isFinite(media.duration)?media.duration:0;
+  scrubBar.max=Math.max(0.01,dur);
+  if(!scrubBar.matches(':active'))scrubBar.value=Math.min(dur,media.currentTime||0);
+  transportTime.textContent=`${fmt(media.currentTime||0)} / ${fmt(dur)}`;
+  playPauseBtn.textContent=media.paused?'Play':'Pause';
+}
+playPauseBtn.onclick=()=>{if(media.paused)media.play();else media.pause();updateTransport();updatePreview()};
+scrubBar.oninput=()=>{media.currentTime=Number(scrubBar.value)||0;syncPlayhead();updateTransport()};
+video.addEventListener('loadedmetadata',updateTransport);
+audio.addEventListener('loadedmetadata',updateTransport);
+video.addEventListener('play',updateTransport);video.addEventListener('pause',updateTransport);
+audio.addEventListener('play',updateTransport);audio.addEventListener('pause',updateTransport);
+undoBtn.onclick=undo;redoBtn.onclick=redo;
+document.addEventListener('keydown',ev=>{
+  const typing=isTypingTarget(document.activeElement);
+  if((ev.key==='Delete'||ev.key==='Backspace')&&!typing&&selected>=0&&!readOnlyRenderedMode){
+    ev.preventDefault();deleteSelected();return;
+  }
+  if((ev.ctrlKey||ev.metaKey)&&!ev.altKey){
+    const k=ev.key.toLowerCase();
+    if(k==='s'){
+      ev.preventDefault();
+      saveProject();
+      return;
+    }
+    if(k==='z'&&!ev.shiftKey&&!typing&&!readOnlyRenderedMode){ev.preventDefault();undo();return}
+    if((k==='y'||(k==='z'&&ev.shiftKey))&&!typing&&!readOnlyRenderedMode){ev.preventDefault();redo();return}
+  }
+  if(ev.code==='Space'&&!typing){
+    ev.preventDefault();if(media.paused)media.play();else media.pause();updateTransport();
+  }
+});
+
+
+function updateStyle(){
+  const standard=styleMode.value==='standard';
+  const karaoke=styleMode.value==='karaoke';
+
+  styleHelp.textContent=standard
+    ? 'The regular subtitles you’d see on videos with custom subtitles.'
+    : karaoke
+      ? 'Highlights words as they’re being spoken, allowing you to sync subtitles directly with the audio.'
+      : 'Emulates the “>> Speaker: TEXT” style seen on TV shows or the news.';
+
+  exportFormat.innerHTML=
+    '<option value="ass">ASS</option>'+
+    '<option value="vtt">WebVTT</option>'+
+    '<option value="srt">SRT</option>';
+
+  document.getElementById('charMs').disabled=!karaoke;
+  document.getElementById('clearSeconds').disabled=standard||karaoke;
+
+  updateModeAwareCustomization();
+  renderKaraokeTimingStatus();
+  updatePreview();
+}
+
+
+styleMode.addEventListener('change',()=>{updateStyle();syncCustomizationControls()});
+customizationTarget.addEventListener('change',syncCustomizationControls);
+karaokeStartSync.addEventListener('click',beginKaraokeWordSync);
+karaokeTapWord.addEventListener('click',tapNextKaraokeWord);
+karaokeClearTiming.addEventListener('click',clearKaraokeWordTiming);
+[karaokeInactiveColor,karaokeHighlightColor,karaokeTimingMode].forEach(control=>{
+  const update=()=>{
+    karaokeDefaults={
+      inactiveColor:normalizeHexColor(karaokeInactiveColor.value,'#555555'),
+      highlightColor:normalizeHexColor(karaokeHighlightColor.value,'#ffffff'),
+      timingMode:karaokeTimingMode.value
+    };
+    renderKaraokeTimingStatus();
+    updatePreview();
+  };
+  control.addEventListener('input',update);
+  control.addEventListener('change',update);
+});
+[textAlignment,captionPosition,textColor,outlineColor,shadowColor].forEach(control=>{
+  control.addEventListener('input',applyCustomizationControls);
+  control.addEventListener('change',applyCustomizationControls);
+});
+resetCaptionStyle.addEventListener('click',()=>{
+  if(selected<0||selected>=events.length)return;
+  pushHistory();
+  events[selected].style=null;
+  syncCustomizationControls();
+  updatePreview();
+});
+
+function exportSelected(){
+  openExportDialog();
+}
+
+document.getElementById('exportBtn').onclick=openExportDialog;
+
+
+
+function sanitizeExportBaseName(value){
+  let name=String(value??'').trim();
+  name=name.replace(/\.(ass|vtt|srt)$/i,'');
+  name=name.replace(/[<>:"/\\|?*\x00-\x1F]/g,' ').replace(/\s+/g,' ').trim();
+  return name||'MSUBBER_Subtitles';
+}
+function exportExtensionForType(type){
+  return type==='ass'?'.ass':type==='srt'?'.srt':'.vtt';
+}
+function updateExportDialogDetails(){
+  const type=exportFileType.value;
+  const name=sanitizeExportBaseName(exportFileName.value)+exportExtensionForType(type);
+
+  if(type==='vtt'){
+    exportFormatDetails.innerHTML=
+      `<strong>${name}</strong>`+
+      `The intermediate subtitle format that supports bold, italic, underline, and positioning. Recommended if your subtitles use positioning.`;
+  }else if(type==='ass'){
+    exportFormatDetails.innerHTML=
+      `<strong>${name}</strong>`+
+      `The most advanced subtitle format. Supports all of VTT’s formatting, plus allows you to change subtitle colours and use richer styling.`;
+  }else{
+    exportFormatDetails.innerHTML=
+      `<strong>${name}</strong>`+
+      `The standard subtitle format. This format does not support any type of formatting.`;
+  }
+}
+function openExportDialog(){
+  const base=currentProjectName || 'MSUBBER_Subtitles';
+  exportFileName.value=base;
+  exportFileType.value=styleMode.value==='broadcast'?'vtt':'vtt';
+  updateExportDialogDetails();
+  exportDialogBackdrop.classList.add('open');
+  requestAnimationFrame(()=>{
+    exportFileName.focus();
+    exportFileName.select();
+  });
+}
+function closeExportDialog(){
+  exportDialogBackdrop.classList.remove('open');
+}
+function performSubtitleExport(){
+  const base=sanitizeExportBaseName(exportFileName.value);
+  const type=exportFileType.value;
+  exportASStext({requested:type,baseName:base});
+  closeExportDialog();
+}
+exportFileName.addEventListener('input',updateExportDialogDetails);
+exportFileType.addEventListener('change',updateExportDialogDetails);
+exportDialogCancel.addEventListener('click',closeExportDialog);
+exportDialogConfirm.addEventListener('click',performSubtitleExport);
+exportDialogBackdrop.addEventListener('click',event=>{
+  if(event.target===exportDialogBackdrop)closeExportDialog();
+});
+exportFileName.addEventListener('keydown',event=>{
+  if(event.key==='Enter'){
+    event.preventDefault();
+    performSubtitleExport();
+  }
+});
+
+
+function markdownToVTT(input){
+  const source=String(input??'');
+  let out='';
+  let i=0;
+
+  function escaped(char){
+    return i>0 && source[i-1]==='\\';
+  }
+
+  while(i<source.length){
+    // Escaped Markdown symbols remain literal.
+    if(source[i]==='\\' && i+1<source.length && ['*','_','\\'].includes(source[i+1])){
+      out+=escapeVTTText(source[i+1]);
+      i+=2;
+      continue;
+    }
+
+    // Bold: **text**
+    if(source.startsWith('**',i)){
+      const end=source.indexOf('**',i+2);
+      if(end!==-1){
+        out+='<b>'+markdownToVTT(source.slice(i+2,end))+'</b>';
+        i=end+2;
+        continue;
+      }
+    }
+
+    // Italic: *text*
+    if(source[i]==='*'){
+      const end=source.indexOf('*',i+1);
+      if(end!==-1){
+        out+='<i>'+markdownToVTT(source.slice(i+1,end))+'</i>';
+        i=end+1;
+        continue;
+      }
+    }
+
+    // Italic: _text_
+    if(source[i]==='_'){
+      const end=source.indexOf('_',i+1);
+      if(end!==-1){
+        out+='<i>'+markdownToVTT(source.slice(i+1,end))+'</i>';
+        i=end+1;
+        continue;
+      }
+    }
+
+    out+=escapeVTTText(source[i]);
+    i++;
+  }
+
+  return out;
+}
+
+function eventTextForVTT(event){
+  const raw=oneLineCaption(event.text);
+  const transformed=styleMode.value==='broadcast'?transformCase(raw):raw;
+
+  // Keep VTT-supported Markdown styling while removing MSUBBER-only inline
+  // color syntax. YouTube/WebVTT does not reliably honor our custom color
+  // markup, so only the visible text is preserved for those sections.
+  const colorRuns=inlineColorRuns(transformed,'');
+  return colorRuns.map(run=>markdownToVTT(run.text)).join('');
+}
+function vttTime(seconds){
+  seconds=Math.max(0,Number(seconds)||0);
+  const h=Math.floor(seconds/3600);
+  const m=Math.floor((seconds%3600)/60);
+  const s=seconds%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${s.toFixed(3).padStart(6,'0')}`;
+}
+function srtTime(seconds){
+  return vttTime(seconds).replace('.',',');
+}
+function escapeVTTText(value){
+  return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function downloadTextFile(name,content,type='text/plain;charset=utf-8'){
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function exportASStext(options={}){
+  const font=document.getElementById('fontName').value||'Arial';
+  const size=Number(document.getElementById('fontSize').value)||54;
+  const clear=Number(document.getElementById('clearSeconds').value)||3.5;
+  const sorted=[...events].sort((a,b)=>a.start-b.start);
+  const requested=options.requested||exportFormat.value;
+  const baseName=sanitizeExportBaseName(options.baseName||currentProjectName||'MSUBBER_Subtitles');
+
+  function placement(style){
+    const horizontal=style.alignment==='left'?1:style.alignment==='right'?3:2;
+    return {
+      an:style.position==='top'?horizontal+6:horizontal,
+      x:style.alignment==='left'?70:style.alignment==='right'?1850:960
+    };
+  }
+
+  function colorTags(style){
+    const primary=hexToAssColor(style.textColor,'00').replace(/^&H/,'');
+    const outline=hexToAssColor(style.outlineColor,'00').replace(/^&H/,'');
+    const shadow=hexToAssColor(style.shadowColor,'80').replace(/^&H/,'');
+    return `\\c&H${primary}&\\3c&H${outline}&\\4c&H${shadow}&`;
+  }
+
+  function assDocument(lines){
+    return `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+WrapStyle: 2
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: MSUBBER Bottom,${font},${size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,1,2,70,70,54,1
+Style: MSUBBER Top,${font},${size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,1,8,70,70,54,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+${lines.join('\n')}
+`;
+  }
+
+  function downloadASS(filename,lines){
+    downloadTextFile(filename,assDocument(lines),'text/plain;charset=utf-8');
+  }
+
+  function plainEventText(event){
+    const raw=oneLineCaption(event.text);
+    const transformed=styleMode.value==='broadcast'?transformCase(raw):raw;
+    return stripInlineColorSyntax(transformed)
+      .replace(/\*\*(.*?)\*\*/g,'$1')
+      .replace(/\*(.*?)\*/g,'$1')
+      .replace(/_(.*?)_/g,'$1')
+      .replace(/\\([*_\\])/g,'$1');
+  }
+
+  function buildStandardASSLines(){
+    return sorted.map(event=>{
+      const style=resolvedCaptionStyle(event);
+      const pos=placement(style);
+      const txt=inlineColorMarkdownToASS(oneLineCaption(event.text),style.textColor);
+      return `Dialogue: 0,${assTime(event.start)},${assTime(event.end)},MSUBBER Bottom,,0,0,0,MSUBBER_STANDARD,{\\an${pos.an}${colorTags(style)}}${txt}`;
+    });
+  }
+
+  function buildKaraokeASSLines(){
+    const lines=[];
+    for(const event of sorted){
+      const style=resolvedCaptionStyle(event);
+      const pos=placement(style);
+      const raw=oneLineCaption(event.text);
+      const inactive=hexToAssColor(karaokeDefaults.inactiveColor,'00').replace(/^&H/,'');
+      const highlight=hexToAssColor(karaokeDefaults.highlightColor,'00').replace(/^&H/,'');
+      let body=`{\\c&H${inactive}&\\2c&H${highlight}&}`;
+
+      if(karaokeDefaults.timingMode==='manual-word'){
+        const words=karaokeWordsFromText(raw);
+        const timings=Array.isArray(event.wordTimings)?event.wordTimings:[];
+        let prev=0;
+        for(let i=0;i<words.length;i++){
+          const next=i<timings.length?timings[i]:(i===words.length-1?event.end-event.start:prev+.25);
+          const duration=Math.max(.01,next-prev);
+          body+=`{\\kf${Math.max(1,Math.round(duration*100))}}${escapeASSLiteral(words[i])}`;
+          prev=next;
+        }
+      }else if(karaokeDefaults.timingMode==='word'){
+        const words=stripInlineColorSyntax(raw).match(/\S+\s*/g)||[];
+        const cs=Math.max(1,Math.round(((Number(document.getElementById('charMs').value)||10)*5)/10));
+        for(const word of words)body+=`{\\kf${cs}}${escapeASSLiteral(word)}`;
+      }else{
+        const cs=Math.max(1,Math.round((Number(document.getElementById('charMs').value)||10)/10));
+        for(const run of inlineColorRuns(raw,karaokeDefaults.highlightColor)){
+          const runColor=hexToAssColor(run.color,'00').replace(/^&H/,'');
+          body+=`{\\2c&H${runColor}&}`;
+          for(const char of run.text)body+=`{\\kf${cs}}${escapeASSLiteral(char)}`;
+        }
+      }
+
+      lines.push(`Dialogue: 0,${assTime(event.start)},${assTime(event.end)},MSUBBER Bottom,,0,0,0,MSUBBER_KARAOKE,{\\an${pos.an}${colorTags(style)}}${body}`);
+    }
+    return lines;
+  }
+
+  function tvRollGroups(){
+    const groups=[];
+    let group=[];
+    for(const event of sorted){
+      if(group.length && event.start-group[group.length-1].start>=clear){
+        groups.push(group);
+        group=[];
+      }
+      group.push(event);
+    }
+    if(group.length)groups.push(group);
+    return groups;
+  }
+
+  function buildStaticTvRollASSLines(){
+    const lines=[];
+    const rowStep=Math.max(58,Math.round(size*1.12));
+
+    for(const group of tvRollGroups()){
+      const groupEnd=group[group.length-1].start+clear;
+
+      for(let stateIndex=0;stateIndex<group.length;stateIndex++){
+        const stateStart=group[stateIndex].start;
+        const stateEnd=stateIndex<group.length-1?group[stateIndex+1].start:groupEnd;
+        if(stateEnd<=stateStart)continue;
+
+        const soFar=group.slice(0,stateIndex+1);
+        const top=soFar.filter(e=>resolvedCaptionStyle(e).position==='top').slice(-2);
+        const bottom=soFar.filter(e=>resolvedCaptionStyle(e).position!=='top').slice(-3);
+
+        top.forEach((event,rowIndex)=>{
+          const style=resolvedCaptionStyle(event);
+          const pos=placement(style);
+          const y=62+rowIndex*rowStep;
+          const txt=inlineColorMarkdownToASS(transformCase(oneLineCaption(event.text)),style.textColor);
+          lines.push(`Dialogue: ${rowIndex},${assTime(stateStart)},${assTime(stateEnd)},MSUBBER Top,,0,0,0,MSUBBER_TVROLL,{\\an${pos.an}\\q2${colorTags(style)}\\pos(${pos.x},${y})}${txt}`);
+        });
+
+        bottom.forEach((event,rowIndex)=>{
+          const style=resolvedCaptionStyle(event);
+          const pos=placement(style);
+          const y=1018-(bottom.length-1-rowIndex)*rowStep;
+          const txt=inlineColorMarkdownToASS(transformCase(oneLineCaption(event.text)),style.textColor);
+          lines.push(`Dialogue: ${rowIndex},${assTime(stateStart)},${assTime(stateEnd)},MSUBBER Bottom,,0,0,0,MSUBBER_TVROLL,{\\an${pos.an}\\q2${colorTags(style)}\\pos(${pos.x},${y})}${txt}`);
+        });
+      }
+    }
+
+    return lines;
+  }
+
+  function buildStaticTvRollVTT(){
+    const cues=[];
+
+    for(const group of tvRollGroups()){
+      const groupEnd=group[group.length-1].start+clear;
+
+      for(let stateIndex=0;stateIndex<group.length;stateIndex++){
+        const stateStart=group[stateIndex].start;
+        const stateEnd=stateIndex<group.length-1?group[stateIndex+1].start:groupEnd;
+        const current=group[stateIndex];
+        const style=resolvedCaptionStyle(current);
+        const soFar=group.slice(0,stateIndex+1);
+        const selected=style.position==='top'
+          ?soFar.filter(e=>resolvedCaptionStyle(e).position==='top').slice(-2)
+          :soFar.filter(e=>resolvedCaptionStyle(e).position!=='top').slice(-3);
+
+        const body=selected.map(eventTextForVTT).filter(Boolean).join('\n');
+        if(!body)continue;
+
+        const align=style.alignment==='left'?'start':style.alignment==='right'?'end':'center';
+        const line=style.position==='top'?'5%':'92%';
+        const position=style.alignment==='left'?'5%':style.alignment==='right'?'95%':'50%';
+        cues.push(`${vttTime(stateStart)} --> ${vttTime(stateEnd)} line:${line} position:${position} align:${align}\n${body}`);
+      }
+    }
+
+    return `WEBVTT\n\nNOTE Static MSUBBER TV Roll history.\n\n${cues.join('\n\n')}\n`;
+  }
+
+  function buildPlainVTT(){
+    const cues=sorted.map(event=>
+      `${vttTime(event.start)} --> ${vttTime(event.end)}\n${eventTextForVTT(event)}`
+    );
+    return `WEBVTT\n\n${cues.join('\n\n')}\n`;
+  }
+
+  function buildPlainSRT(){
+    return sorted.map((event,index)=>
+      `${index+1}\n${srtTime(event.start)} --> ${srtTime(event.end)}\n${plainEventText(event)}`
+    ).join('\n\n')+'\n';
+  }
+
+  function exportASS(){
+    if(styleMode.value==='broadcast'){
+      downloadASS(`${baseName}.ass`,buildStaticTvRollASSLines());
+    }else if(styleMode.value==='karaoke'){
+      downloadASS(`${baseName}.ass`,buildKaraokeASSLines());
+    }else{
+      downloadASS(`${baseName}.ass`,buildStandardASSLines());
+    }
+  }
+
+  function exportVTT(){
+    const content=styleMode.value==='broadcast'?buildStaticTvRollVTT():buildPlainVTT();
+    downloadTextFile(
+      `${baseName}.vtt`,
+      content,
+      'text/vtt;charset=utf-8'
+    );
+  }
+
+  function exportSRT(){
+    downloadTextFile(`${baseName}.srt`,buildPlainSRT(),'application/x-subrip;charset=utf-8');
+  }
+
+  if(requested==='ass'){
+    exportASS();
+    setStatus('Exported ASS subtitles.');
+    return;
+  }
+  if(requested==='vtt'){
+    exportVTT();
+    setStatus('Exported WebVTT subtitles.');
+    return;
+  }
+  if(requested==='srt'){
+    exportSRT();
+    setStatus('Exported SRT subtitles.');
+    return;
+  }
+
+  // All subtitle files.
+  exportASS();
+  setTimeout(exportVTT,120);
+  setTimeout(exportSRT,240);
+  setStatus('Exported all subtitle files: ASS, WebVTT, and SRT.');
+}
+window.onresize=()=>{drawWave();drawTimeline();syncPlayhead()};
+
+function refreshAllEventCharacterCounts(){
+  eventList.querySelectorAll('.eventRow').forEach((row,index)=>{
+    const counter=row.querySelector('.eventCharCount');
+    if(counter&&events[index])updateEventCharacterCount(counter,events[index].text);
+  });
+}
+document.getElementById('preferred').addEventListener('input',refreshAllEventCharacterCounts);
+document.getElementById('hardMax').addEventListener('input',refreshAllEventCharacterCounts);
+
+applyTheme('dark');syncCustomizationControls();runImporterSelfTests();renderAll();updateStyle();updateTransport();updateUndoButtons();previewAnimationLoop();
+</script>
+
+</body>
+</html>
