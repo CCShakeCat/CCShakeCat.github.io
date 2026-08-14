@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC2.1</title>
+<title>MSUBBER v1.0 RC2.2</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1304,7 +1304,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC2.1</h1>
+  <h1>MSUBBER v1.0 RC2.2</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1613,7 +1613,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC2.1</strong></div>
+    <div><strong>MSUBBER v1.0 RC2.2</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -3965,19 +3965,43 @@ function renderList(){
 function currentHistory(t){
   const sorted=events.filter(e=>e.start<=t).sort((a,b)=>a.start-b.start);
   if(!sorted.length)return[];
+
   if(styleMode.value==='standard'){
     const current=[...sorted].reverse().find(e=>t<e.end);
     return current?[current]:[];
   }
+
   const clear=Number(document.getElementById('clearSeconds').value)||3.5;
   let hist=[];
+
   for(const e of sorted){
-    if(hist.length&&e.start-hist[hist.length-1].start>=clear)hist=[];
+    const previous=hist[hist.length-1];
+
+    if(previous){
+      const inactivityReset=e.start-previous.start>=clear;
+      const positionReset=
+        styleMode.value==='broadcast' &&
+        resolvedCaptionStyle(previous).position!==resolvedCaptionStyle(e).position;
+
+      // TV Roll: moving from Bottom -> Top or Top -> Bottom begins
+      // a completely fresh visible history stack.
+      if(inactivityReset||positionReset)hist=[];
+    }
+
     hist.push(e);
-    if(hist.length>3)hist.shift();
+
+    const position=resolvedCaptionStyle(e).position;
+    const maxHistory=
+      styleMode.value==='broadcast'
+        ? (position==='top'?2:3)
+        : 3;
+
+    while(hist.length>maxHistory)hist.shift();
   }
+
   const last=hist[hist.length-1];
   if(last&&t>=Math.min(last.end,last.start+clear))return[];
+
   return hist;
 }
 
@@ -4320,14 +4344,14 @@ function updatePreview(){
     container.appendChild(div);
   }
 
-  // Top-position captions use a strict two-line history.
+  // Top-position captions use a strict two-line history. Switching positions already resets history.
   // Because the top stack grows downward, keep the two newest top captions
   // and reverse them so the newest remains closest to the top edge.
   const topHistory=history
     .filter(e=>resolvedCaptionStyle(e).position==='top')
     .slice(-2);
 
-  // Bottom-position captions keep the normal three-line rolling history.
+  // Bottom-position captions keep the normal three-line rolling history. Switching positions already resets history.
   const bottomHistory=history
     .filter(e=>resolvedCaptionStyle(e).position!=='top')
     .slice(-3);
@@ -5599,13 +5623,25 @@ ${lines.join('\n')}
   function tvRollGroups(){
     const groups=[];
     let group=[];
+
     for(const event of sorted){
-      if(group.length && event.start-group[group.length-1].start>=clear){
-        groups.push(group);
-        group=[];
+      const previous=group[group.length-1];
+
+      if(previous){
+        const inactivityReset=event.start-previous.start>=clear;
+        const positionReset=
+          resolvedCaptionStyle(previous).position!==resolvedCaptionStyle(event).position;
+
+        // TV Roll position switches always begin a new history stack.
+        if(inactivityReset||positionReset){
+          groups.push(group);
+          group=[];
+        }
       }
+
       group.push(event);
     }
+
     if(group.length)groups.push(group);
     return groups;
   }
