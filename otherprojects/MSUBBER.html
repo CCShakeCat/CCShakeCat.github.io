@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC9</title>
+<title>MSUBBER v1.0 RC2.1</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1191,78 +1191,33 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 #status{display:none!important}
 
-.tutorialOverlay{position:fixed;inset:0;z-index:1700;display:none}
-.tutorialOverlay.open{display:block}
-.tutorialDim{display:none}
-.tutorialCard{position:fixed;z-index:1710;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
-.tutorialCard.centered{left:50%;top:50%;transform:translate(-50%,-50%)}
-.tutorialCard.top{left:50%;top:20px;transform:translateX(-50%)}
-.tutorialCard.bottom{left:50%;bottom:20px;transform:translateX(-50%)}
-.tutorialMessage{white-space:pre-wrap;line-height:1.45}
-.tutorialFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
-.tutorialSkip{background:#ffd84d!important;color:#161616!important;border-color:#d5ae00!important}
-.tutorialTarget{pointer-events:auto!important}
-.tutorialAllowed{pointer-events:auto!important}
-.tutorialLocked{pointer-events:none!important}
-@keyframes tutorialBreathe{
-  0%,100%{box-shadow:0 0 0 2px rgba(255,213,56,.65),0 0 10px rgba(255,213,56,.38)}
-  50%{box-shadow:0 0 0 4px rgba(255,213,56,1),0 0 28px rgba(255,213,56,.95)}
-}
-@media(prefers-reduced-motion:reduce){.tutorialTarget{animation:none}}
-
-body.tutorialMenuFocus #desktopMenuBar{z-index:1702!important}
-body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialLocked{opacity:.32}
-body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialTarget{opacity:1}
-body.tutorialMenuFocus .desktopMenuPopup{z-index:1703!important}
-body.tutorialMenuFocus .desktopMenuPopup .desktopMenuItem.tutorialLocked{opacity:.32}
-body.tutorialMenuFocus .desktopMenuPopup .desktopMenuItem.tutorialTarget{opacity:1}
-
-/* RC7: tutorial menu layering */
-body.tutorialMenuFocus #desktopMenuBar{
-  position:relative;
-  z-index:1702!important;
-}
-body.tutorialMenuFocus #desktopMenuBar .desktopMenuPopup{
-  z-index:1703!important;
-}
-body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialAllowed,
-body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
-  pointer-events:auto!important;
-}
-
-
-/* RC9: real tutorial spotlight.
-   The current target is never moved between stacking contexts. Instead a fixed
-   transparent window is drawn over it and the rest of the page is dimmed by
-   the spotlight's huge outer box-shadow. */
-.tutorialSpotlight{
+.captionFormatMenu{
   position:fixed;
-  z-index:1702;
+  z-index:1650;
   display:none;
-  pointer-events:none;
-  border:2px solid #ffd538;
-  border-radius:10px;
-  box-shadow:
-    0 0 0 9999px rgba(0,0,0,.68),
-    0 0 18px rgba(255,213,56,.95);
-  transition:left .12s ease,top .12s ease,width .12s ease,height .12s ease;
-  animation:tutorialSpotlightBreathe 1.35s ease-in-out infinite;
+  min-width:128px;
+  padding:5px;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.32)
 }
-.tutorialOverlay.open .tutorialSpotlight.visible{display:block}
-@keyframes tutorialSpotlightBreathe{
-  0%,100%{
-    border-color:rgba(255,213,56,.72);
-    box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 10px rgba(255,213,56,.45)
-  }
-  50%{
-    border-color:#ffd538;
-    box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 26px rgba(255,213,56,1)
-  }
+.captionFormatMenu.open{display:block}
+.captionFormatMenu button{
+  width:100%;
+  display:block;
+  text-align:left;
+  padding:7px 9px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  border-radius:5px
 }
-.tutorialCard{z-index:1710!important}
-@media(prefers-reduced-motion:reduce){
-  .tutorialSpotlight{animation:none;transition:none}
-}
+.captionFormatMenu button:hover{background:var(--field)}
+.captionFormatMenu .fmtBold{font-weight:700}
+.captionFormatMenu .fmtItalic{font-style:italic}
+.captionFormatMenu .fmtUnderline{text-decoration:underline}
 
 </style>
 </head>
@@ -1276,7 +1231,8 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
       <button class="desktopMenuItem" type="button" data-command="openProject"><span>Open Project…</span><span class="shortcut">Ctrl+O</span></button>
       <button class="desktopMenuItem" type="button" data-command="saveProject"><span>Save Project</span><span class="shortcut">Ctrl+S</span></button>
       <div class="desktopMenuSeparator"></div>
-      <button class="desktopMenuItem" type="button" data-command="importMedia"><span>Import Media…</span></button>
+      <button class="desktopMenuItem" type="button" data-command="importVideo"><span>Import Video…</span></button>
+      <button class="desktopMenuItem" type="button" data-command="importAudio"><span>Import Audio…</span></button>
       <button class="desktopMenuItem" type="button" data-command="importSubtitles"><span>Import Subtitles…</span></button>
       <button class="desktopMenuItem" type="button" data-command="importFont"><span>Import Font…</span></button>
       <div class="desktopMenuSeparator"></div>
@@ -1341,7 +1297,6 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
       <div class="desktopMenuSeparator"></div>
       <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
       <button class="desktopMenuItem" type="button" data-command="contact"><span>Contact</span></button>
-      <button class="desktopMenuItem" type="button" data-command="tutorial"><span>Tutorial</span></button>
       <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
     </div>
   </div>
@@ -1349,7 +1304,7 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC9</h1>
+  <h1>MSUBBER v1.0 RC2.1</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1648,8 +1603,9 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
     <div><strong>Bold</strong><div class="markdownExample">**This is bold**</div></div>
     <div><strong>Italic</strong><div class="markdownExample">*This is italic*
 _This is also italic_</div></div>
+    <div><strong>Underline</strong><div class="markdownExample">__This is underlined__</div></div>
     <div><strong>Literal Markdown</strong><div class="markdownExample">\*This is not italic\*</div></div>
-    <div class="small">Formatting is preserved in the preview and supported exports. WebVTT carries bold/italic; ASS carries richer styling.</div>
+    <div class="small">Formatting is preserved in the preview and supported exports. WebVTT carries bold/italic/underline; ASS carries richer styling.</div>
   </div>
   <div class="appModalFooter"><button id="markdownHelpClose" type="button">Close</button></div>
 </div></div>
@@ -1657,7 +1613,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC9</strong></div>
+    <div><strong>MSUBBER v1.0 RC2.1</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1753,16 +1709,10 @@ _This is also italic_</div></div>
   </div>
 </div>
 
-<div id="tutorialOverlay" class="tutorialOverlay">
-  <div id="tutorialDim" class="tutorialDim"></div>
-  <div id="tutorialSpotlight" class="tutorialSpotlight"></div>
-  <div id="tutorialCard" class="tutorialCard centered" role="dialog" aria-modal="true">
-    <div id="tutorialMessage" class="tutorialMessage"></div>
-    <div class="tutorialFooter">
-      <button id="tutorialSkip" class="tutorialSkip" type="button">SKIP TUTORIAL</button>
-      <button id="tutorialNext" type="button">NEXT &gt;</button>
-    </div>
-  </div>
+<div id="captionFormatMenu" class="captionFormatMenu" role="menu">
+  <button class="fmtBold" type="button" data-format-markdown="bold">Bold</button>
+  <button class="fmtItalic" type="button" data-format-markdown="italic">Italic</button>
+  <button class="fmtUnderline" type="button" data-format-markdown="underline">Underline</button>
 </div>
 <script>
 const video=document.getElementById('video'), audio=document.getElementById('audio');
@@ -1804,6 +1754,7 @@ const replaceCurrentBtn=document.getElementById('replaceCurrentBtn');
 const replaceAllBtn=document.getElementById('replaceAllBtn');
 const findCloseBtn=document.getElementById('findCloseBtn');
 const eventContextMenu=document.getElementById('eventContextMenu');
+const captionFormatMenu=document.getElementById('captionFormatMenu');
 const markdownHelpBackdrop=document.getElementById('markdownHelpBackdrop');
 const markdownHelpX=document.getElementById('markdownHelpX');
 const markdownHelpClose=document.getElementById('markdownHelpClose');
@@ -2159,6 +2110,7 @@ function parseMarkdownToASS(input){
     let close='';
     if(run.bold){open+='\\b1';close='\\b0'+close}
     if(run.italic){open+='\\i1';close='\\i0'+close}
+    if(run.underline){open+='\\u1';close='\\u0'+close}
     if(open)output+=`{${open}}`;
     output+=escapeASSLiteral(run.text);
     if(close)output+=`{${close}}`;
@@ -2176,6 +2128,7 @@ function inlineColorMarkdownToASSKaraoke(input,charCs,defaultColor){
       let open='',close='';
       if(run.bold){open+='\\b1';close='\\b0'+close}
       if(run.italic){open+='\\i1';close='\\i0'+close}
+    if(run.underline){open+='\\u1';close='\\u0'+close}
       if(open)output+=`{${open}}`;
       for(const char of escapeASSLiteral(run.text)){
         output+=`{\\k${charCs}}${char}`;
@@ -2194,6 +2147,7 @@ function markdownToASSKaraoke(input,charCs){
     let close='';
     if(run.bold){open+='\\b1';close='\\b0'+close}
     if(run.italic){open+='\\i1';close='\\i0'+close}
+    if(run.underline){open+='\\u1';close='\\u0'+close}
 
     if(open)output+=`{${open}}`;
 
@@ -2284,24 +2238,6 @@ async function decodePeaks(file){
   }catch{peaks=[];setStatus(`Loaded ${file.name}; waveform decoding was unavailable.`)}
   renderAll();
 }
-videoFile.addEventListener('change',async event=>{
-  const input=event.currentTarget;
-  const f=input.files&&input.files[0];
-  if(!f)return;
-
-  try{
-    loadedMediaName=f.name;
-    loadedMediaKind='video';
-    setActiveMedia(video);
-    video.src=URL.createObjectURL(f);
-    video.load();
-    setStatus(`Loaded video: ${f.name}`);
-  }catch(err){
-    setStatus(`Could not load video: ${err.message}`);
-  }finally{
-    input.value='';
-  }
-});
 
 mediaFile.addEventListener('change',async event=>{
   const input=event.currentTarget;
@@ -2331,6 +2267,24 @@ mediaFile.addEventListener('change',async event=>{
   }
 });
 
+videoFile.addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const f=input.files&&input.files[0];
+  if(!f)return;
+
+  try{
+    loadedMediaName=f.name;
+    loadedMediaKind='video';
+    setActiveMedia(video);
+    video.src=URL.createObjectURL(f);
+    video.load();
+    setStatus(`Loaded video: ${f.name}`);
+  }catch(err){
+    setStatus(`Could not load video: ${err.message}`);
+  }finally{
+    input.value='';
+  }
+});
 audioFile.addEventListener('change',async event=>{
   const input=event.currentTarget;
   const f=input.files&&input.files[0];
@@ -3794,6 +3748,81 @@ function mergeCaptionWithPrevious(index){
   return true;
 }
 
+
+let captionFormatTarget=null;
+
+function closeCaptionFormatMenu(){
+  captionFormatMenu.classList.remove('open');
+  captionFormatTarget=null;
+}
+
+function positionCaptionFormatMenu(textarea){
+  if(!textarea)return;
+  const rect=textarea.getBoundingClientRect();
+  const menuWidth=136;
+  const left=Math.max(8,Math.min(window.innerWidth-menuWidth-8,rect.left+12));
+  const top=Math.max(8,rect.top-112);
+  captionFormatMenu.style.left=`${left}px`;
+  captionFormatMenu.style.top=`${top}px`;
+}
+
+function openCaptionFormatMenu(textarea){
+  if(!textarea || !textarea.closest('.eventRow'))return;
+  captionFormatTarget=textarea;
+  positionCaptionFormatMenu(textarea);
+  captionFormatMenu.classList.add('open');
+}
+
+function markdownWrapper(type){
+  if(type==='bold')return ['**','**'];
+  if(type==='underline')return ['__','__'];
+  return ['*','*'];
+}
+
+function applyCaptionMarkdown(textarea,type){
+  if(!textarea)return;
+  const [open,close]=markdownWrapper(type);
+  const start=textarea.selectionStart??0;
+  const end=textarea.selectionEnd??start;
+  const value=textarea.value;
+  const selected=value.slice(start,end);
+
+  const replacement=open+selected+close;
+  textarea.setRangeText(replacement,start,end,'select');
+
+  if(start===end){
+    const caret=start+open.length;
+    textarea.setSelectionRange(caret,caret);
+  }else{
+    textarea.setSelectionRange(start+open.length,end+open.length);
+  }
+
+  textarea.dispatchEvent(new Event('input',{bubbles:true}));
+  textarea.focus();
+}
+
+captionFormatMenu.addEventListener('mousedown',event=>{
+  // Keep textarea selection alive while clicking the menu.
+  event.preventDefault();
+});
+
+captionFormatMenu.querySelectorAll('[data-format-markdown]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    const target=captionFormatTarget;
+    applyCaptionMarkdown(target,button.dataset.formatMarkdown);
+    closeCaptionFormatMenu();
+  });
+});
+
+document.addEventListener('mousedown',event=>{
+  if(!event.target.closest('#captionFormatMenu') && !event.target.closest('.eventRow textarea')){
+    closeCaptionFormatMenu();
+  }
+});
+
+window.addEventListener('scroll',closeCaptionFormatMenu,true);
+window.addEventListener('resize',closeCaptionFormatMenu);
+
 function renderList(){
   const active=document.activeElement,activeKey=active?.dataset?.key,ss=active?.selectionStart,se=active?.selectionEnd;
   eventList.innerHTML='';
@@ -3827,6 +3856,15 @@ function renderList(){
       updatePreview();
     };
     ta.onkeydown=ev=>{
+      if((ev.ctrlKey||ev.metaKey)&&!ev.altKey){
+        const key=ev.key.toLowerCase();
+        if(key==='b'||key==='i'||key==='u'){
+          ev.preventDefault();
+          applyCaptionMarkdown(ta,key==='b'?'bold':key==='u'?'underline':'italic');
+          return;
+        }
+      }
+
       if(
         ev.key==='Backspace' &&
         ta.selectionStart===0 &&
@@ -3865,7 +3903,25 @@ function renderList(){
       drawTimeline();
       updatePreview();
     };
-    ta.onclick=ev=>ev.stopPropagation();
+    ta.onclick=ev=>{
+      ev.stopPropagation();
+      if(ta.selectionStart!==ta.selectionEnd)openCaptionFormatMenu(ta);
+      else closeCaptionFormatMenu();
+    };
+    ta.onmouseup=()=>{
+      requestAnimationFrame(()=>{
+        if(ta.selectionStart!==ta.selectionEnd)openCaptionFormatMenu(ta);
+        else closeCaptionFormatMenu();
+      });
+    };
+    ta.onkeyup=ev=>{
+      if(ev.key==='Shift'||ev.key.startsWith('Arrow')){
+        requestAnimationFrame(()=>{
+          if(ta.selectionStart!==ta.selectionEnd)openCaptionFormatMenu(ta);
+          else closeCaptionFormatMenu();
+        });
+      }
+    };
     row.querySelectorAll('input,button').forEach(el=>el.onclick=ev=>ev.stopPropagation());
     row.querySelector('.pick').onclick=ev=>{
       if(ev.shiftKey||ev.ctrlKey||ev.metaKey||mobileMultiSelectMode){
@@ -3930,10 +3986,11 @@ function previewMarkdownRuns(input){
   let buffer='';
   let bold=false;
   let italic=false;
+  let underline=false;
 
   function flush(){
     if(!buffer)return;
-    runs.push({text:buffer,bold,italic});
+    runs.push({text:buffer,bold,italic,underline});
     buffer='';
   }
 
@@ -3959,6 +4016,13 @@ function previewMarkdownRuns(input){
       flush();
       italic=!italic;
       i+=1;
+      continue;
+    }
+
+    if(ch==='_' && next==='_'){
+      flush();
+      underline=!underline;
+      i+=2;
       continue;
     }
 
@@ -3995,6 +4059,7 @@ function appendPreviewMarkdown(container,input,visibleLimit=Infinity){
     span.textContent=shown;
     if(run.bold)span.style.fontWeight='700';
     if(run.italic)span.style.fontStyle='italic';
+    if(run.underline)span.style.textDecoration='underline';
     container.appendChild(span);
 
     remaining-=shown.length;
@@ -4181,6 +4246,7 @@ function appendStyledPreviewText(container,input,limit=Infinity,defaultColor=nul
       span.textContent=visible;
       if(run.bold)span.style.fontWeight='700';
       if(run.italic)span.style.fontStyle='italic';
+      if(run.underline)span.style.textDecoration='underline';
       if(colorRun.color)span.style.color=colorRun.color;
       container.appendChild(span);
       remaining-=visible.length;
@@ -4726,12 +4792,6 @@ const contactBackdrop=document.getElementById('contactBackdrop');
 const contactTodo=document.getElementById('contactTodo');
 const contactClose=document.getElementById('contactClose');
 const todoBackdrop=document.getElementById('todoBackdrop');
-const tutorialOverlay=document.getElementById('tutorialOverlay');
-const tutorialCard=document.getElementById('tutorialCard');
-const tutorialMessage=document.getElementById('tutorialMessage');
-const tutorialSpotlight=document.getElementById('tutorialSpotlight');
-const tutorialSkip=document.getElementById('tutorialSkip');
-const tutorialNext=document.getElementById('tutorialNext');
 const todoClose=document.getElementById('todoClose');
 
 let debugMessages=[];
@@ -4778,342 +4838,6 @@ if(typeof statusEl!=='undefined' && statusEl){
   }).observe(statusEl,{childList:true,subtree:true,characterData:true});
 }
 
-
-const TUTORIAL_STORAGE_KEY='msubberTutorialCompleted';
-let tutorialStepIndex=-1;
-let tutorialEditBaseline='';
-let tutorialCountBaseline=0;
-let tutorialLearnedSelectors=new Set();
-
-function tutorialIsMobile(){return window.matchMedia('(max-width:900px)').matches}
-function tutorialResolve(v){return typeof v==='function'?v():v}
-function tutorialSelectedTextarea(){
-  if(selected>=0){
-    const found=eventList.querySelector(`[data-key="text-${selected}"]`);
-    if(found)return found;
-  }
-  return eventList.querySelector('.eventRow textarea');
-}
-function tutorialAddSelector(){
-  return '#addAtPlayhead,#addCaptionBtn,#addBtn,[data-command="addCaption"]';
-}
-function tutorialImportSelector(){return '[data-command="importMedia"],#mediaFile'}
-function tutorialExportSelector(){return '[data-command="exportAss"],[data-command="exportSubtitles"],#exportBtn'}
-function tutorialSelectSelector(){return '.eventRow .pick'}
-
-function clearTutorialClasses(){
-  tutorialSpotlight.classList.remove('visible');
-  document.querySelectorAll('.tutorialTarget,.tutorialAllowed,.tutorialLocked').forEach(el=>{
-    el.classList.remove('tutorialTarget','tutorialAllowed','tutorialLocked');
-  });
-}
-function lockTutorialUI(allowed=[]){
-  clearTutorialClasses();
-
-  document.querySelectorAll('button,input,textarea,select,#combinedTimeline,#captionLane,#eventList,video').forEach(el=>{
-    if(!tutorialOverlay.contains(el))el.classList.add('tutorialLocked');
-  });
-
-  // Previously learned controls may remain usable, but they stay visually dimmed.
-  tutorialLearnedSelectors.forEach(selector=>{
-    if(!selector)return;
-    document.querySelectorAll(selector).forEach(el=>{
-      el.classList.remove('tutorialLocked');
-      el.classList.add('tutorialAllowed');
-    });
-  });
-
-  // Controls explicitly allowed for THIS step may also be used, but aren't
-  // visually promoted unless highlightTutorial() marks them as the current target.
-  allowed.forEach(selector=>{
-    if(!selector)return;
-    document.querySelectorAll(selector).forEach(el=>{
-      el.classList.remove('tutorialLocked');
-      el.classList.add('tutorialAllowed');
-    });
-  });
-}
-function updateTutorialSpotlight(target=null){
-  const el=target || document.querySelector('.tutorialTarget');
-  if(!el || !tutorialOverlay.classList.contains('open')){
-    tutorialSpotlight.classList.remove('visible');
-    return;
-  }
-
-  const r=el.getBoundingClientRect();
-  const pad=(el.id==='playhead' || el.classList.contains('playhead')) ? 8 : 5;
-
-  tutorialSpotlight.style.left=`${Math.max(2,r.left-pad)}px`;
-  tutorialSpotlight.style.top=`${Math.max(2,r.top-pad)}px`;
-  tutorialSpotlight.style.width=`${Math.max(8,r.width+pad*2)}px`;
-  tutorialSpotlight.style.height=`${Math.max(8,r.height+pad*2)}px`;
-  tutorialSpotlight.classList.add('visible');
-}
-function highlightTutorial(selector){
-  document.querySelectorAll('.tutorialTarget').forEach(el=>el.classList.remove('tutorialTarget'));
-
-  if(!selector){
-    tutorialSpotlight.classList.remove('visible');
-    return;
-  }
-
-  const nodes=typeof selector==='string'
-    ? [...document.querySelectorAll(selector)]
-    : selector instanceof Element
-      ? [selector]
-      : [];
-
-  const el=nodes[0];
-  if(!el){
-    tutorialSpotlight.classList.remove('visible');
-    return;
-  }
-
-  el.classList.remove('tutorialLocked');
-  el.classList.add('tutorialAllowed','tutorialTarget');
-  requestAnimationFrame(()=>updateTutorialSpotlight(el));
-}
-function positionTutorialCard(pos='centered'){
-  tutorialCard.classList.remove('centered','top','bottom');
-  tutorialCard.classList.add(pos);
-}
-
-function tutorialFileButtonSelector(){
-  return '#desktopMenuBar .desktopMenu:first-child > button[data-menu-button]';
-}
-
-function activateTutorialImportMenuItem(){
-  const popup=document.querySelector('#desktopMenuBar .desktopMenu:first-child .desktopMenuPopup');
-  if(popup){
-    popup.classList.remove('tutorialLocked');
-    popup.classList.add('tutorialAllowed');
-  }
-  document.querySelectorAll('[data-command="importMedia"]').forEach(el=>{
-    el.classList.remove('tutorialLocked');
-    el.classList.add('tutorialAllowed','tutorialTarget');
-  });
-  const item=document.querySelector('[data-command="importMedia"]');
-  if(item)requestAnimationFrame(()=>updateTutorialSpotlight(item));
-}
-function activateTutorialExportMenuItem(){
-  const popup=document.querySelector('#desktopMenuBar .desktopMenu:first-child .desktopMenuPopup');
-  if(popup){
-    popup.classList.remove('tutorialLocked');
-    popup.classList.add('tutorialAllowed');
-  }
-  document.querySelectorAll(tutorialExportSelector()).forEach(el=>{
-    el.classList.remove('tutorialLocked');
-    el.classList.add('tutorialAllowed','tutorialTarget');
-  });
-  const item=document.querySelector(tutorialExportSelector());
-  if(item)requestAnimationFrame(()=>updateTutorialSpotlight(item));
-}
-function setTutorialMenuFocus(on){
-  document.body.classList.toggle('tutorialMenuFocus',Boolean(on));
-}
-function tutorialOpenMenu(kind){
-  if(tutorialIsMobile()){
-    const btn=document.querySelector('[data-mobile-menu-button],#mobileMenuButton,.mobileMenuButton');
-    if(btn)btn.click();
-  }else{
-    const btn=[...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()===kind);
-    if(btn)btn.click();
-  }
-}
-
-const tutorialSteps=[
-  {
-    message:'Welcome to MSUBBER! A subtitle editor for your media!\n\nWould you like a tour to start off?',
-    position:'centered', next:true, skip:true
-  },
-  {
-    message:"Looks like you're new! Let's import some media!",
-    position:'centered', next:true
-  },
-  {
-    message:()=>tutorialIsMobile()?'Open the ≡ menu and choose Import Media.':'Go to FILE and choose Import Media.',
-    position:'top',
-    allowed:()=>tutorialIsMobile()
-      ?['#mobileMenuButton','#mobileImportMedia']
-      :[tutorialFileButtonSelector()],
-    target:()=>tutorialIsMobile()?'#mobileMenuButton':tutorialFileButtonSelector(),
-    enter:()=>{
-      setTutorialMenuFocus(!tutorialIsMobile());
-      if(!tutorialIsMobile()){
-        const fileBtn=document.querySelector(tutorialFileButtonSelector());
-        if(fileBtn){
-          fileBtn.classList.remove('tutorialLocked');
-          fileBtn.classList.add('tutorialAllowed','tutorialTarget');
-        }
-      }
-    },
-    complete:()=>Boolean(loadedMediaName||media.src)
-  },
-  {
-    message:'You can scroll on the timeline by dragging the empty space. Clicking anywhere in the empty space moves the playhead to that location.',
-    position:'top',next:true,target:'#combinedTimeline',
-    allowed:['#combinedTimeline','video','#playBtn','#pauseBtn'],
-    learn:['#combinedTimeline','video','#playBtn','#pauseBtn']
-  },
-  {
-    message:'You can also drag the playhead to move it.',
-    position:'top',next:true,target:'#playhead',
-    allowed:['#combinedTimeline','#playhead','video','#playBtn','#pauseBtn'],
-    learn:['#playhead']
-  },
-  {
-    message:'Once you find a place to insert a subtitle, press Add a caption at Playhead.',
-    position:'top',target:()=>tutorialAddSelector(),
-    allowed:()=>['#combinedTimeline','#playhead','video','#playBtn','#pauseBtn',tutorialAddSelector()],
-    enter:()=>{tutorialCountBaseline=events.length},
-    complete:()=>events.length>tutorialCountBaseline
-  },
-  {
-    message:'From this panel, your subtitles can be edited.',
-    position:'top',next:true,target:'#eventList',
-    allowed:['#eventList','#combinedTimeline','#playhead','video','#playBtn','#pauseBtn'],
-    learn:['#eventList']
-  },
-  {
-    message:'Try editing the subtitle now.',
-    position:'top',
-    target:()=> {
-      const ta=tutorialSelectedTextarea();
-      return ta?`[data-key="${ta.dataset.key}"]`:'.eventRow textarea';
-    },
-    allowed:['#eventList','.eventRow textarea'],
-    enter:()=>{const ta=tutorialSelectedTextarea();tutorialEditBaseline=ta?ta.value:''},
-    complete:()=>{const ta=tutorialSelectedTextarea();return Boolean(ta&&ta.value!==tutorialEditBaseline)},
-    revealNext:true
-  },
-  {
-    message:'If you want to duplicate the subtitle, press SELECT and right-click it to bring up the options.\n\nOn mobile, tap and hold the subtitle.\n\nOn a keyboard, you can also use CTRL+D or CTRL+SHIFT+D to duplicate here or at the end respectively! Try it now.',
-    position:'top',
-    target:()=>tutorialSelectSelector(),
-    allowed:()=>['#eventList',tutorialSelectSelector(),'#eventContextMenu'],
-    enter:()=>{tutorialCountBaseline=events.length},
-    complete:()=>events.length>tutorialCountBaseline,
-    revealNext:true
-  },
-  {
-    message:'There is a lot more you can do here! Have fun!',
-    position:'centered',next:true
-  },
-  {
-    message:"When you're ready to export your finished subtitles, you can feel free to do so here!",
-    position:'top',next:true,
-    target:()=>tutorialIsMobile()?'#mobileMenuButton':tutorialFileButtonSelector(),
-    allowed:()=>tutorialIsMobile()
-      ?['#mobileMenuButton','#mobileExport','#mobileExportSubtitles']
-      :[tutorialFileButtonSelector()],
-    enter:()=>{
-      setTutorialMenuFocus(!tutorialIsMobile());
-      if(!tutorialIsMobile()){
-        const fileBtn=document.querySelector(tutorialFileButtonSelector());
-        if(fileBtn){
-          fileBtn.classList.remove('tutorialLocked');
-          fileBtn.classList.add('tutorialAllowed','tutorialTarget');
-        }
-      }
-      tutorialOpenMenu('FILE');
-      setTimeout(activateTutorialExportMenuItem,0);
-      setTimeout(activateTutorialExportMenuItem,60);
-    }
-  },
-  {
-    message:"You've completed the tutorial! Hope you enjoy making the subtitles for your media!",
-    position:'centered',finish:true
-  }
-];
-
-function currentTutorialStep(){return tutorialSteps[tutorialStepIndex]||null}
-function renderTutorialStep(){
-  setTutorialMenuFocus(false);
-  const step=currentTutorialStep();
-  if(!step)return;
-
-  tutorialMessage.textContent=tutorialResolve(step.message);
-  positionTutorialCard(step.position||'centered');
-  tutorialSkip.style.display=step.skip?'':'none';
-  tutorialNext.style.display=(step.next||step.finish)?'':'none';
-  tutorialNext.textContent=step.finish?'FINISH >':'NEXT >';
-
-  const allowed=tutorialResolve(step.allowed)||[];
-  lockTutorialUI(allowed);
-  highlightTutorial(tutorialResolve(step.target));
-  (step.learn||[]).forEach(s=>tutorialLearnedSelectors.add(s));
-  if(step.enter)step.enter();
-
-  if(step.complete){
-    tutorialNext.style.display='none';
-    const poll=()=>{
-      if(!tutorialOverlay.classList.contains('open')||currentTutorialStep()!==step)return;
-      if(step.complete()){
-        if(step.revealNext){
-          tutorialNext.style.display='';
-          tutorialNext.textContent='NEXT >';
-          return;
-        }
-        setTimeout(advanceTutorial,120);
-        return;
-      }
-      requestAnimationFrame(poll);
-    };
-    requestAnimationFrame(poll);
-  }
-}
-function startTutorial(){
-  tutorialLearnedSelectors=new Set();
-  tutorialStepIndex=0;
-  tutorialOverlay.classList.add('open');
-  renderTutorialStep();
-}
-function finishTutorial(){
-  setTutorialMenuFocus(false);
-  localStorage.setItem(TUTORIAL_STORAGE_KEY,'1');
-  tutorialOverlay.classList.remove('open');
-  tutorialSpotlight.classList.remove('visible');
-  clearTutorialClasses();
-  tutorialStepIndex=-1;
-}
-function skipTutorial(){
-  tutorialStepIndex=tutorialSteps.length-1;
-  renderTutorialStep();
-}
-function advanceTutorial(){
-  const step=currentTutorialStep();
-  if(step?.finish){finishTutorial();return}
-  tutorialStepIndex=Math.min(tutorialSteps.length-1,tutorialStepIndex+1);
-  renderTutorialStep();
-}
-
-
-document.addEventListener('click',event=>{
-  if(!tutorialOverlay.classList.contains('open')||tutorialIsMobile())return;
-
-  const step=currentTutorialStep();
-  const fileButton=document.querySelector(tutorialFileButtonSelector());
-
-  if(fileButton && (event.target===fileButton || fileButton.contains(event.target))){
-    if(step===tutorialSteps[2]){
-      setTimeout(activateTutorialImportMenuItem,0);
-      setTimeout(activateTutorialImportMenuItem,60);
-    }else if(step===tutorialSteps[10]){
-      setTimeout(activateTutorialExportMenuItem,0);
-      setTimeout(activateTutorialExportMenuItem,60);
-    }
-  }
-},true);
-
-window.addEventListener('resize',()=>updateTutorialSpotlight());
-window.addEventListener('scroll',()=>updateTutorialSpotlight(),true);
-tutorialNext.addEventListener('click',advanceTutorial);
-tutorialSkip.addEventListener('click',skipTutorial);
-tutorialOverlay.addEventListener('click',e=>{
-  if(e.target===tutorialOverlay){
-    e.preventDefault();e.stopPropagation();
-  }
-},true);
 function executeCommand(id){
   const click=idValue=>{
     const element=document.getElementById(idValue);
@@ -5128,7 +4852,6 @@ function executeCommand(id){
       break;
     case 'openProject': projectFile.click(); break;
     case 'saveProject': saveProjectBtn.click(); break;
-    case 'importMedia': mediaFile.click(); break;
     case 'importVideo': videoFile.click(); break;
     case 'importAudio': audioFile.click(); break;
     case 'importSubtitles': textFile.click(); break;
@@ -5172,9 +4895,6 @@ function executeCommand(id){
       openContactDialog();
       break;
     case 'markdownHelp': openAppModal(markdownHelpBackdrop); break;
-    case 'tutorial':
-      startTutorial();
-      break;
     case 'about': openAppModal(aboutBackdrop); break;
   }
   closeDesktopMenus();
@@ -5237,10 +4957,6 @@ document.getElementById('headerUndoBtn').addEventListener('click',undo);
 document.getElementById('headerRedoBtn').addEventListener('click',redo);
 
 document.addEventListener('keydown',event=>{
-  if(tutorialOverlay.classList.contains('open')&&event.key==='Escape'){
-    event.preventDefault();
-    return;
-  }
   if(event.code==='Space'&&karaokeSyncSession){
     event.preventDefault();
     tapNextKaraokeWord();
@@ -5289,7 +5005,12 @@ document.addEventListener('keydown',event=>{
       requestAnimationFrame(()=>commandSearchInput.focus());
     }
   }
-  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='o'){
+  if((event.ctrlKey||event.metaKey)&&event.shiftKey&&!event.altKey&&event.key.toLowerCase()==='o'){
+    event.preventDefault();
+    mediaFile.click();
+    return;
+  }
+  if((event.ctrlKey||event.metaKey)&&!event.shiftKey&&event.key.toLowerCase()==='o'){
     event.preventDefault();executeCommand('openProject');
   }
   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='n'){
@@ -5708,6 +5429,16 @@ function markdownToVTT(input){
       }
     }
 
+    // Underline: __text__
+    if(source.startsWith('__',i)){
+      const end=source.indexOf('__',i+2);
+      if(end!==-1){
+        out+='<u>'+markdownToVTT(source.slice(i+2,end))+'</u>';
+        i=end+2;
+        continue;
+      }
+    }
+
     // Italic: _text_
     if(source[i]==='_'){
       const end=source.indexOf('_',i+1);
@@ -5813,6 +5544,7 @@ ${lines.join('\n')}
     return stripInlineColorSyntax(transformed)
       .replace(/\*\*(.*?)\*\*/g,'$1')
       .replace(/\*(.*?)\*/g,'$1')
+      .replace(/__(.*?)__/g,'$1')
       .replace(/_(.*?)_/g,'$1')
       .replace(/\\([*_\\])/g,'$1');
   }
@@ -6013,11 +5745,7 @@ function refreshAllEventCharacterCounts(){
 document.getElementById('preferred').addEventListener('input',refreshAllEventCharacterCounts);
 document.getElementById('hardMax').addEventListener('input',refreshAllEventCharacterCounts);
 
-applyTheme('dark');syncCustomizationControls();runImporterSelfTests();renderAll();updateStyle();
-setTimeout(()=>{
-  if(!localStorage.getItem(TUTORIAL_STORAGE_KEY))startTutorial();
-},350);
-updateTransport();updateUndoButtons();previewAnimationLoop();
+applyTheme('dark');syncCustomizationControls();runImporterSelfTests();renderAll();updateStyle();updateTransport();updateUndoButtons();previewAnimationLoop();
 </script>
 
 </body>
