@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC6</title>
+<title>MSUBBER v1.0 RC7</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1194,7 +1194,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 .tutorialOverlay{position:fixed;inset:0;z-index:1700;display:none}
 .tutorialOverlay.open{display:block}
 .tutorialDim{position:absolute;inset:0;background:rgba(0,0,0,.68);pointer-events:none}
-.tutorialCard{position:fixed;z-index:1704;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
+.tutorialCard{position:fixed;z-index:1710;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
 .tutorialCard.centered{left:50%;top:50%;transform:translate(-50%,-50%)}
 .tutorialCard.top{left:50%;top:20px;transform:translateX(-50%)}
 .tutorialCard.bottom{left:50%;bottom:20px;transform:translateX(-50%)}
@@ -1216,6 +1216,24 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialTarget{opacity
 body.tutorialMenuFocus .desktopMenuPopup{z-index:1703!important}
 body.tutorialMenuFocus .desktopMenuPopup .desktopMenuItem.tutorialLocked{opacity:.32}
 body.tutorialMenuFocus .desktopMenuPopup .desktopMenuItem.tutorialTarget{opacity:1}
+
+/* RC7: tutorial menu layering */
+body.tutorialMenuFocus #desktopMenuBar{
+  position:relative;
+  z-index:1702!important;
+}
+body.tutorialMenuFocus #desktopMenuBar .desktopMenuPopup{
+  z-index:1703!important;
+}
+body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialTarget,
+body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialTarget{
+  position:relative;
+  z-index:1704!important;
+}
+body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialAllowed,
+body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
+  pointer-events:auto!important;
+}
 </style>
 </head>
 <body>
@@ -1301,7 +1319,7 @@ body.tutorialMenuFocus .desktopMenuPopup .desktopMenuItem.tutorialTarget{opacity
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC6</h1>
+  <h1>MSUBBER v1.0 RC7</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1609,7 +1627,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC6</strong></div>
+    <div><strong>MSUBBER v1.0 RC7</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -4784,6 +4802,29 @@ function positionTutorialCard(pos='centered'){
 function tutorialFileButtonSelector(){
   return '#desktopMenuBar .desktopMenu:first-child > button[data-menu-button]';
 }
+
+function activateTutorialImportMenuItem(){
+  const popup=document.querySelector('#desktopMenuBar .desktopMenu:first-child .desktopMenuPopup');
+  if(popup){
+    popup.classList.remove('tutorialLocked');
+    popup.classList.add('tutorialAllowed');
+  }
+  document.querySelectorAll('[data-command="importMedia"]').forEach(el=>{
+    el.classList.remove('tutorialLocked');
+    el.classList.add('tutorialAllowed','tutorialTarget');
+  });
+}
+function activateTutorialExportMenuItem(){
+  const popup=document.querySelector('#desktopMenuBar .desktopMenu:first-child .desktopMenuPopup');
+  if(popup){
+    popup.classList.remove('tutorialLocked');
+    popup.classList.add('tutorialAllowed');
+  }
+  document.querySelectorAll(tutorialExportSelector()).forEach(el=>{
+    el.classList.remove('tutorialLocked');
+    el.classList.add('tutorialAllowed','tutorialTarget');
+  });
+}
 function setTutorialMenuFocus(on){
   document.body.classList.toggle('tutorialMenuFocus',Boolean(on));
 }
@@ -4815,6 +4856,13 @@ const tutorialSteps=[
     target:()=>tutorialIsMobile()?'#mobileMenuButton':tutorialFileButtonSelector(),
     enter:()=>{
       setTutorialMenuFocus(!tutorialIsMobile());
+      if(!tutorialIsMobile()){
+        const fileBtn=document.querySelector(tutorialFileButtonSelector());
+        if(fileBtn){
+          fileBtn.classList.remove('tutorialLocked');
+          fileBtn.classList.add('tutorialAllowed','tutorialTarget');
+        }
+      }
     },
     complete:()=>Boolean(loadedMediaName||media.src)
   },
@@ -4877,13 +4925,16 @@ const tutorialSteps=[
       :[tutorialFileButtonSelector()],
     enter:()=>{
       setTutorialMenuFocus(!tutorialIsMobile());
+      if(!tutorialIsMobile()){
+        const fileBtn=document.querySelector(tutorialFileButtonSelector());
+        if(fileBtn){
+          fileBtn.classList.remove('tutorialLocked');
+          fileBtn.classList.add('tutorialAllowed','tutorialTarget');
+        }
+      }
       tutorialOpenMenu('FILE');
-      setTimeout(()=>{
-        document.querySelectorAll(tutorialExportSelector()).forEach(el=>{
-          el.classList.remove('tutorialLocked');
-          el.classList.add('tutorialAllowed','tutorialTarget');
-        });
-      },0);
+      setTimeout(activateTutorialExportMenuItem,0);
+      setTimeout(activateTutorialExportMenuItem,60);
     }
   },
   {
@@ -4954,22 +5005,21 @@ function advanceTutorial(){
 
 
 document.addEventListener('click',event=>{
-  if(!tutorialOverlay.classList.contains('open'))return;
-  if(tutorialIsMobile())return;
+  if(!tutorialOverlay.classList.contains('open')||tutorialIsMobile())return;
 
   const step=currentTutorialStep();
-  if(step!==tutorialSteps[2])return;
-
   const fileButton=document.querySelector(tutorialFileButtonSelector());
+
   if(fileButton && (event.target===fileButton || fileButton.contains(event.target))){
-    setTimeout(()=>{
-      document.querySelectorAll(tutorialImportSelector()).forEach(el=>{
-        el.classList.remove('tutorialLocked');
-        el.classList.add('tutorialAllowed','tutorialTarget');
-      });
-    },0);
+    if(step===tutorialSteps[2]){
+      setTimeout(activateTutorialImportMenuItem,0);
+      setTimeout(activateTutorialImportMenuItem,60);
+    }else if(step===tutorialSteps[10]){
+      setTimeout(activateTutorialExportMenuItem,0);
+      setTimeout(activateTutorialExportMenuItem,60);
+    }
   }
-});
+},true);
 
 tutorialNext.addEventListener('click',advanceTutorial);
 tutorialSkip.addEventListener('click',skipTutorial);
