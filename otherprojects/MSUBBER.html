@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC2</title>
+<title>MSUBBER v1.0 RC3</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1190,6 +1190,25 @@ body.multiSelectMode .eventRow{cursor:pointer}
 #contactBackdrop a{color:inherit;text-decoration:underline}
 
 #status{display:none!important}
+
+.tutorialOverlay{position:fixed;inset:0;z-index:1700;display:none}
+.tutorialOverlay.open{display:block}
+.tutorialDim{position:absolute;inset:0;background:rgba(0,0,0,.68);pointer-events:auto}
+.tutorialCard{position:fixed;z-index:1704;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
+.tutorialCard.centered{left:50%;top:50%;transform:translate(-50%,-50%)}
+.tutorialCard.top{left:50%;top:20px;transform:translateX(-50%)}
+.tutorialCard.bottom{left:50%;bottom:20px;transform:translateX(-50%)}
+.tutorialMessage{white-space:pre-wrap;line-height:1.45}
+.tutorialFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.tutorialSkip{background:#ffd84d!important;color:#161616!important;border-color:#d5ae00!important}
+.tutorialTarget{position:relative!important;z-index:1703!important;pointer-events:auto!important;animation:tutorialBreathe 1.35s ease-in-out infinite}
+.tutorialAllowed{position:relative!important;z-index:1703!important;pointer-events:auto!important}
+.tutorialLocked{pointer-events:none!important}
+@keyframes tutorialBreathe{
+  0%,100%{box-shadow:0 0 0 2px rgba(255,213,56,.65),0 0 10px rgba(255,213,56,.38)}
+  50%{box-shadow:0 0 0 4px rgba(255,213,56,1),0 0 28px rgba(255,213,56,.95)}
+}
+@media(prefers-reduced-motion:reduce){.tutorialTarget{animation:none}}
 </style>
 </head>
 <body>
@@ -1268,6 +1287,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
       <div class="desktopMenuSeparator"></div>
       <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
       <button class="desktopMenuItem" type="button" data-command="contact"><span>Contact</span></button>
+      <button class="desktopMenuItem" type="button" data-command="tutorial"><span>Tutorial</span></button>
       <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
     </div>
   </div>
@@ -1275,7 +1295,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC2</h1>
+  <h1>MSUBBER v1.0 RC3</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
   <label class="file">Import Subtitles<input id="textFile" type="file" accept=".txt,.srt,.vtt,.ass,.ssa,.sbv,text/plain,text/vtt,application/x-subrip,application/octet-stream"></label>
@@ -1582,7 +1602,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC2</strong></div>
+    <div><strong>MSUBBER v1.0 RC3</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1675,6 +1695,17 @@ _This is also italic_</div></div>
     </ol>
     <p class="small">* I already have an idea on how this will work</p>
     <div class="rcFooter"><button id="todoClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div id="tutorialOverlay" class="tutorialOverlay">
+  <div id="tutorialDim" class="tutorialDim"></div>
+  <div id="tutorialCard" class="tutorialCard centered" role="dialog" aria-modal="true">
+    <div id="tutorialMessage" class="tutorialMessage"></div>
+    <div class="tutorialFooter">
+      <button id="tutorialSkip" class="tutorialSkip" type="button">SKIP TUTORIAL</button>
+      <button id="tutorialNext" type="button">NEXT &gt;</button>
+    </div>
   </div>
 </div>
 <script>
@@ -4610,6 +4641,11 @@ const contactBackdrop=document.getElementById('contactBackdrop');
 const contactTodo=document.getElementById('contactTodo');
 const contactClose=document.getElementById('contactClose');
 const todoBackdrop=document.getElementById('todoBackdrop');
+const tutorialOverlay=document.getElementById('tutorialOverlay');
+const tutorialCard=document.getElementById('tutorialCard');
+const tutorialMessage=document.getElementById('tutorialMessage');
+const tutorialSkip=document.getElementById('tutorialSkip');
+const tutorialNext=document.getElementById('tutorialNext');
 const todoClose=document.getElementById('todoClose');
 
 let debugMessages=[];
@@ -4656,6 +4692,217 @@ if(typeof statusEl!=='undefined' && statusEl){
   }).observe(statusEl,{childList:true,subtree:true,characterData:true});
 }
 
+
+const TUTORIAL_STORAGE_KEY='msubberTutorialCompleted';
+let tutorialStepIndex=-1;
+let tutorialEditBaseline='';
+let tutorialCountBaseline=0;
+let tutorialLearnedSelectors=new Set();
+
+function tutorialIsMobile(){return window.matchMedia('(max-width:900px)').matches}
+function tutorialResolve(v){return typeof v==='function'?v():v}
+function tutorialSelectedTextarea(){
+  if(selected>=0){
+    const found=eventList.querySelector(`[data-key="text-${selected}"]`);
+    if(found)return found;
+  }
+  return eventList.querySelector('.eventRow textarea');
+}
+function tutorialAddSelector(){
+  return '#addAtPlayhead,#addCaptionBtn,#addBtn,[data-command="addCaption"]';
+}
+function tutorialImportSelector(){return '[data-command="importMedia"],#mediaFile'}
+function tutorialExportSelector(){return '[data-command="exportAss"],[data-command="exportSubtitles"],#exportBtn'}
+function tutorialSelectSelector(){return '.eventRow .pick'}
+
+function clearTutorialClasses(){
+  document.querySelectorAll('.tutorialTarget,.tutorialAllowed,.tutorialLocked').forEach(el=>{
+    el.classList.remove('tutorialTarget','tutorialAllowed','tutorialLocked');
+  });
+}
+function lockTutorialUI(allowed=[]){
+  clearTutorialClasses();
+  document.querySelectorAll('button,input,textarea,select,#combinedTimeline,#captionLane,#eventList,video').forEach(el=>{
+    if(!tutorialOverlay.contains(el))el.classList.add('tutorialLocked');
+  });
+  [...tutorialLearnedSelectors,...allowed].forEach(selector=>{
+    if(!selector)return;
+    document.querySelectorAll(selector).forEach(el=>{
+      el.classList.remove('tutorialLocked');
+      el.classList.add('tutorialAllowed');
+    });
+  });
+}
+function highlightTutorial(selector){
+  if(!selector)return;
+  document.querySelectorAll(selector).forEach(el=>{
+    el.classList.remove('tutorialLocked');
+    el.classList.add('tutorialAllowed','tutorialTarget');
+  });
+}
+function positionTutorialCard(pos='centered'){
+  tutorialCard.classList.remove('centered','top','bottom');
+  tutorialCard.classList.add(pos);
+}
+function tutorialOpenMenu(kind){
+  if(tutorialIsMobile()){
+    const btn=document.querySelector('[data-mobile-menu-button],#mobileMenuButton,.mobileMenuButton');
+    if(btn)btn.click();
+  }else{
+    const btn=[...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()===kind);
+    if(btn)btn.click();
+  }
+}
+
+const tutorialSteps=[
+  {
+    message:'Welcome to MSUBBER! A subtitle editor for your media!\n\nWould you like a tour to start off?',
+    position:'centered', next:true, skip:true
+  },
+  {
+    message:"Looks like you're new! Let's import some media!",
+    position:'centered', next:true
+  },
+  {
+    message:()=>tutorialIsMobile()?'Open the ≡ menu and choose Import Media.':'Go to FILE and choose Import Media.',
+    position:'top',
+    allowed:()=>tutorialIsMobile()
+      ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialImportSelector()]
+      :['[data-menu-button]',tutorialImportSelector()],
+    target:()=>tutorialImportSelector(),
+    enter:()=>tutorialOpenMenu('FILE'),
+    complete:()=>Boolean(loadedMediaName||media.src)
+  },
+  {
+    message:'You can scroll on the timeline by dragging the empty space. Clicking anywhere in the empty space moves the playhead to that location.',
+    position:'top',next:true,target:'#combinedTimeline',
+    allowed:['#combinedTimeline','video','#playBtn','#pauseBtn'],
+    learn:['#combinedTimeline','video','#playBtn','#pauseBtn']
+  },
+  {
+    message:'You can also drag the playhead to move it.',
+    position:'top',next:true,target:'#playhead',
+    allowed:['#combinedTimeline','#playhead','video','#playBtn','#pauseBtn'],
+    learn:['#playhead']
+  },
+  {
+    message:'Once you find a place to insert a subtitle, press Add a caption at Playhead.',
+    position:'top',target:()=>tutorialAddSelector(),
+    allowed:()=>['#combinedTimeline','#playhead','video','#playBtn','#pauseBtn',tutorialAddSelector()],
+    enter:()=>{tutorialCountBaseline=events.length},
+    complete:()=>events.length>tutorialCountBaseline
+  },
+  {
+    message:'From this panel, your subtitles can be edited.',
+    position:'top',next:true,target:'#eventList',
+    allowed:['#eventList','#combinedTimeline','#playhead','video','#playBtn','#pauseBtn'],
+    learn:['#eventList']
+  },
+  {
+    message:'Try editing the subtitle now.',
+    position:'top',
+    target:()=> {
+      const ta=tutorialSelectedTextarea();
+      return ta?`[data-key="${ta.dataset.key}"]`:'.eventRow textarea';
+    },
+    allowed:['#eventList','.eventRow textarea'],
+    enter:()=>{const ta=tutorialSelectedTextarea();tutorialEditBaseline=ta?ta.value:''},
+    complete:()=>{const ta=tutorialSelectedTextarea();return Boolean(ta&&ta.value!==tutorialEditBaseline)},
+    revealNext:true
+  },
+  {
+    message:'If you want to duplicate the subtitle, press SELECT and right-click it to bring up the options.\n\nOn mobile, tap and hold the subtitle.\n\nOn a keyboard, you can also use CTRL+D or CTRL+SHIFT+D to duplicate here or at the end respectively! Try it now.',
+    position:'top',
+    target:()=>tutorialSelectSelector(),
+    allowed:()=>['#eventList',tutorialSelectSelector(),'#eventContextMenu'],
+    enter:()=>{tutorialCountBaseline=events.length},
+    complete:()=>events.length>tutorialCountBaseline,
+    revealNext:true
+  },
+  {
+    message:'There is a lot more you can do here! Have fun!',
+    position:'centered',next:true
+  },
+  {
+    message:"When you're ready to export your finished subtitles, you can feel free to do so here!",
+    position:'top',next:true,
+    target:()=>tutorialExportSelector(),
+    allowed:()=>tutorialIsMobile()
+      ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialExportSelector()]
+      :['[data-menu-button]',tutorialExportSelector()],
+    enter:()=>tutorialOpenMenu('FILE')
+  },
+  {
+    message:"You've completed the tutorial! Hope you enjoy making the subtitles for your media!",
+    position:'centered',finish:true
+  }
+];
+
+function currentTutorialStep(){return tutorialSteps[tutorialStepIndex]||null}
+function renderTutorialStep(){
+  const step=currentTutorialStep();
+  if(!step)return;
+
+  tutorialMessage.textContent=tutorialResolve(step.message);
+  positionTutorialCard(step.position||'centered');
+  tutorialSkip.style.display=step.skip?'':'none';
+  tutorialNext.style.display=(step.next||step.finish)?'':'none';
+  tutorialNext.textContent=step.finish?'FINISH >':'NEXT >';
+
+  const allowed=tutorialResolve(step.allowed)||[];
+  lockTutorialUI(allowed);
+  highlightTutorial(tutorialResolve(step.target));
+  (step.learn||[]).forEach(s=>tutorialLearnedSelectors.add(s));
+  if(step.enter)step.enter();
+
+  if(step.complete){
+    tutorialNext.style.display='none';
+    const poll=()=>{
+      if(!tutorialOverlay.classList.contains('open')||currentTutorialStep()!==step)return;
+      if(step.complete()){
+        if(step.revealNext){
+          tutorialNext.style.display='';
+          tutorialNext.textContent='NEXT >';
+          return;
+        }
+        setTimeout(advanceTutorial,120);
+        return;
+      }
+      requestAnimationFrame(poll);
+    };
+    requestAnimationFrame(poll);
+  }
+}
+function startTutorial(){
+  tutorialLearnedSelectors=new Set();
+  tutorialStepIndex=0;
+  tutorialOverlay.classList.add('open');
+  renderTutorialStep();
+}
+function finishTutorial(){
+  localStorage.setItem(TUTORIAL_STORAGE_KEY,'1');
+  tutorialOverlay.classList.remove('open');
+  clearTutorialClasses();
+  tutorialStepIndex=-1;
+}
+function skipTutorial(){
+  tutorialStepIndex=tutorialSteps.length-1;
+  renderTutorialStep();
+}
+function advanceTutorial(){
+  const step=currentTutorialStep();
+  if(step?.finish){finishTutorial();return}
+  tutorialStepIndex=Math.min(tutorialSteps.length-1,tutorialStepIndex+1);
+  renderTutorialStep();
+}
+
+tutorialNext.addEventListener('click',advanceTutorial);
+tutorialSkip.addEventListener('click',skipTutorial);
+tutorialOverlay.addEventListener('click',e=>{
+  if(e.target===tutorialOverlay||e.target.id==='tutorialDim'){
+    e.preventDefault();e.stopPropagation();
+  }
+},true);
 function executeCommand(id){
   const click=idValue=>{
     const element=document.getElementById(idValue);
@@ -4713,6 +4960,9 @@ function executeCommand(id){
       openContactDialog();
       break;
     case 'markdownHelp': openAppModal(markdownHelpBackdrop); break;
+    case 'tutorial':
+      startTutorial();
+      break;
     case 'about': openAppModal(aboutBackdrop); break;
   }
   closeDesktopMenus();
@@ -4775,6 +5025,10 @@ document.getElementById('headerUndoBtn').addEventListener('click',undo);
 document.getElementById('headerRedoBtn').addEventListener('click',redo);
 
 document.addEventListener('keydown',event=>{
+  if(tutorialOverlay.classList.contains('open')&&event.key==='Escape'){
+    event.preventDefault();
+    return;
+  }
   if(event.code==='Space'&&karaokeSyncSession){
     event.preventDefault();
     tapNextKaraokeWord();
@@ -5547,7 +5801,11 @@ function refreshAllEventCharacterCounts(){
 document.getElementById('preferred').addEventListener('input',refreshAllEventCharacterCounts);
 document.getElementById('hardMax').addEventListener('input',refreshAllEventCharacterCounts);
 
-applyTheme('dark');syncCustomizationControls();runImporterSelfTests();renderAll();updateStyle();updateTransport();updateUndoButtons();previewAnimationLoop();
+applyTheme('dark');syncCustomizationControls();runImporterSelfTests();renderAll();updateStyle();
+setTimeout(()=>{
+  if(!localStorage.getItem(TUTORIAL_STORAGE_KEY))startTutorial();
+},350);
+updateTransport();updateUndoButtons();previewAnimationLoop();
 </script>
 
 </body>
