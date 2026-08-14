@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC7</title>
+<title>MSUBBER v1.0 RC8</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1234,6 +1234,14 @@ body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialAllowed,
 body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
   pointer-events:auto!important;
 }
+
+/* RC8: learned controls stay usable but visually dimmed.
+   Only the current tutorial target is promoted above the dim layer. */
+.tutorialAllowed:not(.tutorialTarget){
+  z-index:auto!important;
+  box-shadow:none!important;
+  animation:none!important;
+}
 </style>
 </head>
 <body>
@@ -1319,7 +1327,7 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC7</h1>
+  <h1>MSUBBER v1.0 RC8</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1627,7 +1635,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC7</strong></div>
+    <div><strong>MSUBBER v1.0 RC8</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -4776,10 +4784,23 @@ function clearTutorialClasses(){
 }
 function lockTutorialUI(allowed=[]){
   clearTutorialClasses();
+
   document.querySelectorAll('button,input,textarea,select,#combinedTimeline,#captionLane,#eventList,video').forEach(el=>{
     if(!tutorialOverlay.contains(el))el.classList.add('tutorialLocked');
   });
-  [...tutorialLearnedSelectors,...allowed].forEach(selector=>{
+
+  // Previously learned controls may remain usable, but they stay visually dimmed.
+  tutorialLearnedSelectors.forEach(selector=>{
+    if(!selector)return;
+    document.querySelectorAll(selector).forEach(el=>{
+      el.classList.remove('tutorialLocked');
+      el.classList.add('tutorialAllowed');
+    });
+  });
+
+  // Controls explicitly allowed for THIS step may also be used, but aren't
+  // visually promoted unless highlightTutorial() marks them as the current target.
+  allowed.forEach(selector=>{
     if(!selector)return;
     document.querySelectorAll(selector).forEach(el=>{
       el.classList.remove('tutorialLocked');
