@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC8</title>
+<title>MSUBBER v1.0 RC9</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1193,7 +1193,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 .tutorialOverlay{position:fixed;inset:0;z-index:1700;display:none}
 .tutorialOverlay.open{display:block}
-.tutorialDim{position:absolute;inset:0;background:rgba(0,0,0,.68);pointer-events:none}
+.tutorialDim{display:none}
 .tutorialCard{position:fixed;z-index:1710;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
 .tutorialCard.centered{left:50%;top:50%;transform:translate(-50%,-50%)}
 .tutorialCard.top{left:50%;top:20px;transform:translateX(-50%)}
@@ -1201,7 +1201,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 .tutorialMessage{white-space:pre-wrap;line-height:1.45}
 .tutorialFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
 .tutorialSkip{background:#ffd84d!important;color:#161616!important;border-color:#d5ae00!important}
-.tutorialTarget{pointer-events:auto!important;animation:tutorialBreathe 1.35s ease-in-out infinite}
+.tutorialTarget{pointer-events:auto!important}
 .tutorialAllowed{pointer-events:auto!important}
 .tutorialLocked{pointer-events:none!important}
 @keyframes tutorialBreathe{
@@ -1225,23 +1225,45 @@ body.tutorialMenuFocus #desktopMenuBar{
 body.tutorialMenuFocus #desktopMenuBar .desktopMenuPopup{
   z-index:1703!important;
 }
-body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialTarget,
-body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialTarget{
-  position:relative;
-  z-index:1704!important;
-}
 body.tutorialMenuFocus #desktopMenuBar .desktopMenuItem.tutorialAllowed,
 body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
   pointer-events:auto!important;
 }
 
-/* RC8: learned controls stay usable but visually dimmed.
-   Only the current tutorial target is promoted above the dim layer. */
-.tutorialAllowed:not(.tutorialTarget){
-  z-index:auto!important;
-  box-shadow:none!important;
-  animation:none!important;
+
+/* RC9: real tutorial spotlight.
+   The current target is never moved between stacking contexts. Instead a fixed
+   transparent window is drawn over it and the rest of the page is dimmed by
+   the spotlight's huge outer box-shadow. */
+.tutorialSpotlight{
+  position:fixed;
+  z-index:1702;
+  display:none;
+  pointer-events:none;
+  border:2px solid #ffd538;
+  border-radius:10px;
+  box-shadow:
+    0 0 0 9999px rgba(0,0,0,.68),
+    0 0 18px rgba(255,213,56,.95);
+  transition:left .12s ease,top .12s ease,width .12s ease,height .12s ease;
+  animation:tutorialSpotlightBreathe 1.35s ease-in-out infinite;
 }
+.tutorialOverlay.open .tutorialSpotlight.visible{display:block}
+@keyframes tutorialSpotlightBreathe{
+  0%,100%{
+    border-color:rgba(255,213,56,.72);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 10px rgba(255,213,56,.45)
+  }
+  50%{
+    border-color:#ffd538;
+    box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 26px rgba(255,213,56,1)
+  }
+}
+.tutorialCard{z-index:1710!important}
+@media(prefers-reduced-motion:reduce){
+  .tutorialSpotlight{animation:none;transition:none}
+}
+
 </style>
 </head>
 <body>
@@ -1327,7 +1349,7 @@ body.tutorialMenuFocus #desktopMenuBar [data-menu-button].tutorialAllowed{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC8</h1>
+  <h1>MSUBBER v1.0 RC9</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1635,7 +1657,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC8</strong></div>
+    <div><strong>MSUBBER v1.0 RC9</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1733,6 +1755,7 @@ _This is also italic_</div></div>
 
 <div id="tutorialOverlay" class="tutorialOverlay">
   <div id="tutorialDim" class="tutorialDim"></div>
+  <div id="tutorialSpotlight" class="tutorialSpotlight"></div>
   <div id="tutorialCard" class="tutorialCard centered" role="dialog" aria-modal="true">
     <div id="tutorialMessage" class="tutorialMessage"></div>
     <div class="tutorialFooter">
@@ -4706,6 +4729,7 @@ const todoBackdrop=document.getElementById('todoBackdrop');
 const tutorialOverlay=document.getElementById('tutorialOverlay');
 const tutorialCard=document.getElementById('tutorialCard');
 const tutorialMessage=document.getElementById('tutorialMessage');
+const tutorialSpotlight=document.getElementById('tutorialSpotlight');
 const tutorialSkip=document.getElementById('tutorialSkip');
 const tutorialNext=document.getElementById('tutorialNext');
 const todoClose=document.getElementById('todoClose');
@@ -4778,6 +4802,7 @@ function tutorialExportSelector(){return '[data-command="exportAss"],[data-comma
 function tutorialSelectSelector(){return '.eventRow .pick'}
 
 function clearTutorialClasses(){
+  tutorialSpotlight.classList.remove('visible');
   document.querySelectorAll('.tutorialTarget,.tutorialAllowed,.tutorialLocked').forEach(el=>{
     el.classList.remove('tutorialTarget','tutorialAllowed','tutorialLocked');
   });
@@ -4808,12 +4833,45 @@ function lockTutorialUI(allowed=[]){
     });
   });
 }
+function updateTutorialSpotlight(target=null){
+  const el=target || document.querySelector('.tutorialTarget');
+  if(!el || !tutorialOverlay.classList.contains('open')){
+    tutorialSpotlight.classList.remove('visible');
+    return;
+  }
+
+  const r=el.getBoundingClientRect();
+  const pad=(el.id==='playhead' || el.classList.contains('playhead')) ? 8 : 5;
+
+  tutorialSpotlight.style.left=`${Math.max(2,r.left-pad)}px`;
+  tutorialSpotlight.style.top=`${Math.max(2,r.top-pad)}px`;
+  tutorialSpotlight.style.width=`${Math.max(8,r.width+pad*2)}px`;
+  tutorialSpotlight.style.height=`${Math.max(8,r.height+pad*2)}px`;
+  tutorialSpotlight.classList.add('visible');
+}
 function highlightTutorial(selector){
-  if(!selector)return;
-  document.querySelectorAll(selector).forEach(el=>{
-    el.classList.remove('tutorialLocked');
-    el.classList.add('tutorialAllowed','tutorialTarget');
-  });
+  document.querySelectorAll('.tutorialTarget').forEach(el=>el.classList.remove('tutorialTarget'));
+
+  if(!selector){
+    tutorialSpotlight.classList.remove('visible');
+    return;
+  }
+
+  const nodes=typeof selector==='string'
+    ? [...document.querySelectorAll(selector)]
+    : selector instanceof Element
+      ? [selector]
+      : [];
+
+  const el=nodes[0];
+  if(!el){
+    tutorialSpotlight.classList.remove('visible');
+    return;
+  }
+
+  el.classList.remove('tutorialLocked');
+  el.classList.add('tutorialAllowed','tutorialTarget');
+  requestAnimationFrame(()=>updateTutorialSpotlight(el));
 }
 function positionTutorialCard(pos='centered'){
   tutorialCard.classList.remove('centered','top','bottom');
@@ -4834,6 +4892,8 @@ function activateTutorialImportMenuItem(){
     el.classList.remove('tutorialLocked');
     el.classList.add('tutorialAllowed','tutorialTarget');
   });
+  const item=document.querySelector('[data-command="importMedia"]');
+  if(item)requestAnimationFrame(()=>updateTutorialSpotlight(item));
 }
 function activateTutorialExportMenuItem(){
   const popup=document.querySelector('#desktopMenuBar .desktopMenu:first-child .desktopMenuPopup');
@@ -4845,6 +4905,8 @@ function activateTutorialExportMenuItem(){
     el.classList.remove('tutorialLocked');
     el.classList.add('tutorialAllowed','tutorialTarget');
   });
+  const item=document.querySelector(tutorialExportSelector());
+  if(item)requestAnimationFrame(()=>updateTutorialSpotlight(item));
 }
 function setTutorialMenuFocus(on){
   document.body.classList.toggle('tutorialMenuFocus',Boolean(on));
@@ -5010,6 +5072,7 @@ function finishTutorial(){
   setTutorialMenuFocus(false);
   localStorage.setItem(TUTORIAL_STORAGE_KEY,'1');
   tutorialOverlay.classList.remove('open');
+  tutorialSpotlight.classList.remove('visible');
   clearTutorialClasses();
   tutorialStepIndex=-1;
 }
@@ -5042,6 +5105,8 @@ document.addEventListener('click',event=>{
   }
 },true);
 
+window.addEventListener('resize',()=>updateTutorialSpotlight());
+window.addEventListener('scroll',()=>updateTutorialSpotlight(),true);
 tutorialNext.addEventListener('click',advanceTutorial);
 tutorialSkip.addEventListener('click',skipTutorial);
 tutorialOverlay.addEventListener('click',e=>{
