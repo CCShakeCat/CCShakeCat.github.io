@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3</title>
+<title>MSUBBER v1.0 RC4</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1193,7 +1193,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 .tutorialOverlay{position:fixed;inset:0;z-index:1700;display:none}
 .tutorialOverlay.open{display:block}
-.tutorialDim{position:absolute;inset:0;background:rgba(0,0,0,.68);pointer-events:auto}
+.tutorialDim{position:absolute;inset:0;background:rgba(0,0,0,.68);pointer-events:none}
 .tutorialCard{position:fixed;z-index:1704;width:min(520px,calc(100vw - 28px));padding:16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.42)}
 .tutorialCard.centered{left:50%;top:50%;transform:translate(-50%,-50%)}
 .tutorialCard.top{left:50%;top:20px;transform:translateX(-50%)}
@@ -1203,6 +1203,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 .tutorialSkip{background:#ffd84d!important;color:#161616!important;border-color:#d5ae00!important}
 .tutorialTarget{position:relative!important;z-index:1703!important;pointer-events:auto!important;animation:tutorialBreathe 1.35s ease-in-out infinite}
 .tutorialAllowed{position:relative!important;z-index:1703!important;pointer-events:auto!important}
+.desktopMenu.tutorialAllowed,.desktopMenuPopup.tutorialAllowed{z-index:1703!important;pointer-events:auto!important}
 .tutorialLocked{pointer-events:none!important}
 @keyframes tutorialBreathe{
   0%,100%{box-shadow:0 0 0 2px rgba(255,213,56,.65),0 0 10px rgba(255,213,56,.38)}
@@ -1295,7 +1296,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3</h1>
+  <h1>MSUBBER v1.0 RC4</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
   <label class="file">Import Subtitles<input id="textFile" type="file" accept=".txt,.srt,.vtt,.ass,.ssa,.sbv,text/plain,text/vtt,application/x-subrip,application/octet-stream"></label>
@@ -1602,7 +1603,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3</strong></div>
+    <div><strong>MSUBBER v1.0 RC4</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -4713,6 +4714,11 @@ function tutorialAddSelector(){
 }
 function tutorialImportSelector(){return '[data-command="importMedia"],#mediaFile'}
 function tutorialExportSelector(){return '[data-command="exportAss"],[data-command="exportSubtitles"],#exportBtn'}
+function tutorialFileMenuContainer(){
+  const btn=[...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()==='FILE');
+  return btn?btn.closest('.desktopMenu'):null;
+}
+
 function tutorialSelectSelector(){return '.eventRow .pick'}
 
 function clearTutorialClasses(){
@@ -4768,9 +4774,24 @@ const tutorialSteps=[
     position:'top',
     allowed:()=>tutorialIsMobile()
       ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialImportSelector()]
-      :['[data-menu-button]',tutorialImportSelector()],
-    target:()=>tutorialImportSelector(),
-    enter:()=>tutorialOpenMenu('FILE'),
+      :['[data-menu-button]','.desktopMenu','.desktopMenuPopup',tutorialImportSelector()],
+    target:()=>tutorialIsMobile()
+      ? '[data-mobile-menu-button],#mobileMenuButton,.mobileMenuButton'
+      : [...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()==='FILE'),
+    enter:()=>{
+      if(!tutorialIsMobile()){
+        const menu=tutorialFileMenuContainer();
+        if(menu){
+          menu.classList.remove('tutorialLocked');
+          menu.classList.add('tutorialAllowed');
+          const popup=menu.querySelector('.desktopMenuPopup');
+          if(popup){
+            popup.classList.remove('tutorialLocked');
+            popup.classList.add('tutorialAllowed');
+          }
+        }
+      }
+    },
     complete:()=>Boolean(loadedMediaName||media.src)
   },
   {
@@ -4829,8 +4850,22 @@ const tutorialSteps=[
     target:()=>tutorialExportSelector(),
     allowed:()=>tutorialIsMobile()
       ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialExportSelector()]
-      :['[data-menu-button]',tutorialExportSelector()],
-    enter:()=>tutorialOpenMenu('FILE')
+      :['[data-menu-button]','.desktopMenu','.desktopMenuPopup',tutorialExportSelector()],
+    enter:()=>{
+      if(!tutorialIsMobile()){
+        const menu=tutorialFileMenuContainer();
+        if(menu){
+          menu.classList.remove('tutorialLocked');
+          menu.classList.add('tutorialAllowed');
+          const popup=menu.querySelector('.desktopMenuPopup');
+          if(popup){
+            popup.classList.remove('tutorialLocked');
+            popup.classList.add('tutorialAllowed');
+          }
+        }
+      }
+      tutorialOpenMenu('FILE');
+    }
   },
   {
     message:"You've completed the tutorial! Hope you enjoy making the subtitles for your media!",
@@ -4899,7 +4934,7 @@ function advanceTutorial(){
 tutorialNext.addEventListener('click',advanceTutorial);
 tutorialSkip.addEventListener('click',skipTutorial);
 tutorialOverlay.addEventListener('click',e=>{
-  if(e.target===tutorialOverlay||e.target.id==='tutorialDim'){
+  if(e.target===tutorialOverlay){
     e.preventDefault();e.stopPropagation();
   }
 },true);
