@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC4</title>
+<title>MSUBBER v1.0 RC5</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1201,15 +1201,20 @@ body.multiSelectMode .eventRow{cursor:pointer}
 .tutorialMessage{white-space:pre-wrap;line-height:1.45}
 .tutorialFooter{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
 .tutorialSkip{background:#ffd84d!important;color:#161616!important;border-color:#d5ae00!important}
-.tutorialTarget{position:relative!important;z-index:1703!important;pointer-events:auto!important;animation:tutorialBreathe 1.35s ease-in-out infinite}
-.tutorialAllowed{position:relative!important;z-index:1703!important;pointer-events:auto!important}
-.desktopMenu.tutorialAllowed,.desktopMenuPopup.tutorialAllowed{z-index:1703!important;pointer-events:auto!important}
+.tutorialTarget{z-index:1703!important;pointer-events:auto!important;animation:tutorialBreathe 1.35s ease-in-out infinite}
+.tutorialAllowed{z-index:1703!important;pointer-events:auto!important}
 .tutorialLocked{pointer-events:none!important}
 @keyframes tutorialBreathe{
   0%,100%{box-shadow:0 0 0 2px rgba(255,213,56,.65),0 0 10px rgba(255,213,56,.38)}
   50%{box-shadow:0 0 0 4px rgba(255,213,56,1),0 0 28px rgba(255,213,56,.95)}
 }
 @media(prefers-reduced-motion:reduce){.tutorialTarget{animation:none}}
+
+/* Tutorial-only menu layering without altering menu layout geometry */
+body.tutorialMenuFocus .desktopMenuBar{position:relative;z-index:1702}
+body.tutorialMenuFocus .desktopMenuPopup{z-index:1705!important}
+body.tutorialMenuFocus [data-menu-button].tutorialAllowed{position:relative;z-index:1704}
+body.tutorialMenuFocus .desktopMenuPopup.tutorialAllowed{pointer-events:auto!important}
 </style>
 </head>
 <body>
@@ -1296,7 +1301,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC4</h1>
+  <h1>MSUBBER v1.0 RC5</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
   <label class="file">Import Subtitles<input id="textFile" type="file" accept=".txt,.srt,.vtt,.ass,.ssa,.sbv,text/plain,text/vtt,application/x-subrip,application/octet-stream"></label>
@@ -1603,7 +1608,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC4</strong></div>
+    <div><strong>MSUBBER v1.0 RC5</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -4714,11 +4719,6 @@ function tutorialAddSelector(){
 }
 function tutorialImportSelector(){return '[data-command="importMedia"],#mediaFile'}
 function tutorialExportSelector(){return '[data-command="exportAss"],[data-command="exportSubtitles"],#exportBtn'}
-function tutorialFileMenuContainer(){
-  const btn=[...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()==='FILE');
-  return btn?btn.closest('.desktopMenu'):null;
-}
-
 function tutorialSelectSelector(){return '.eventRow .pick'}
 
 function clearTutorialClasses(){
@@ -4750,6 +4750,18 @@ function positionTutorialCard(pos='centered'){
   tutorialCard.classList.remove('centered','top','bottom');
   tutorialCard.classList.add(pos);
 }
+
+function tutorialFileButton(){
+  return [...document.querySelectorAll('[data-menu-button]')]
+    .find(b=>b.textContent.trim()==='FILE')||null;
+}
+function tutorialFilePopup(){
+  const btn=tutorialFileButton();
+  return btn?.closest('.desktopMenu')?.querySelector('.desktopMenuPopup')||null;
+}
+function setTutorialMenuFocus(on){
+  document.body.classList.toggle('tutorialMenuFocus',Boolean(on));
+}
 function tutorialOpenMenu(kind){
   if(tutorialIsMobile()){
     const btn=document.querySelector('[data-mobile-menu-button],#mobileMenuButton,.mobileMenuButton');
@@ -4774,22 +4786,17 @@ const tutorialSteps=[
     position:'top',
     allowed:()=>tutorialIsMobile()
       ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialImportSelector()]
-      :['[data-menu-button]','.desktopMenu','.desktopMenuPopup',tutorialImportSelector()],
+      :[],
     target:()=>tutorialIsMobile()
       ? '[data-mobile-menu-button],#mobileMenuButton,.mobileMenuButton'
-      : [...document.querySelectorAll('[data-menu-button]')].find(b=>b.textContent.trim()==='FILE'),
+      : tutorialFileButton(),
     enter:()=>{
-      if(!tutorialIsMobile()){
-        const menu=tutorialFileMenuContainer();
-        if(menu){
-          menu.classList.remove('tutorialLocked');
-          menu.classList.add('tutorialAllowed');
-          const popup=menu.querySelector('.desktopMenuPopup');
-          if(popup){
-            popup.classList.remove('tutorialLocked');
-            popup.classList.add('tutorialAllowed');
-          }
-        }
+      setTutorialMenuFocus(!tutorialIsMobile());
+      if(tutorialIsMobile())return;
+      const fileBtn=tutorialFileButton();
+      if(fileBtn){
+        fileBtn.classList.remove('tutorialLocked');
+        fileBtn.classList.add('tutorialAllowed','tutorialTarget');
       }
     },
     complete:()=>Boolean(loadedMediaName||media.src)
@@ -4847,24 +4854,33 @@ const tutorialSteps=[
   {
     message:"When you're ready to export your finished subtitles, you can feel free to do so here!",
     position:'top',next:true,
-    target:()=>tutorialExportSelector(),
+    target:()=>tutorialIsMobile()
+      ? tutorialExportSelector()
+      : tutorialFileButton(),
     allowed:()=>tutorialIsMobile()
       ?['[data-mobile-menu-button]','#mobileMenuButton','.mobileMenuButton',tutorialExportSelector()]
-      :['[data-menu-button]','.desktopMenu','.desktopMenuPopup',tutorialExportSelector()],
+      :[],
     enter:()=>{
+      setTutorialMenuFocus(!tutorialIsMobile());
       if(!tutorialIsMobile()){
-        const menu=tutorialFileMenuContainer();
-        if(menu){
-          menu.classList.remove('tutorialLocked');
-          menu.classList.add('tutorialAllowed');
-          const popup=menu.querySelector('.desktopMenuPopup');
+        const fileBtn=tutorialFileButton();
+        if(fileBtn){
+          fileBtn.classList.remove('tutorialLocked');
+          fileBtn.classList.add('tutorialAllowed','tutorialTarget');
+        }
+        tutorialOpenMenu('FILE');
+        setTimeout(()=>{
+          const popup=tutorialFilePopup();
           if(popup){
             popup.classList.remove('tutorialLocked');
             popup.classList.add('tutorialAllowed');
           }
-        }
+          document.querySelectorAll(tutorialExportSelector()).forEach(el=>{
+            el.classList.remove('tutorialLocked');
+            el.classList.add('tutorialAllowed','tutorialTarget');
+          });
+        },0);
       }
-      tutorialOpenMenu('FILE');
     }
   },
   {
@@ -4875,6 +4891,7 @@ const tutorialSteps=[
 
 function currentTutorialStep(){return tutorialSteps[tutorialStepIndex]||null}
 function renderTutorialStep(){
+  setTutorialMenuFocus(false);
   const step=currentTutorialStep();
   if(!step)return;
 
@@ -4915,6 +4932,7 @@ function startTutorial(){
   renderTutorialStep();
 }
 function finishTutorial(){
+  setTutorialMenuFocus(false);
   localStorage.setItem(TUTORIAL_STORAGE_KEY,'1');
   tutorialOverlay.classList.remove('open');
   clearTutorialClasses();
@@ -4930,6 +4948,27 @@ function advanceTutorial(){
   tutorialStepIndex=Math.min(tutorialSteps.length-1,tutorialStepIndex+1);
   renderTutorialStep();
 }
+
+
+document.addEventListener('click',event=>{
+  if(!tutorialOverlay.classList.contains('open')||tutorialIsMobile())return;
+  const step=currentTutorialStep();
+  const fileBtn=tutorialFileButton();
+
+  if(step===tutorialSteps[2] && (event.target===fileBtn || fileBtn?.contains(event.target))){
+    setTimeout(()=>{
+      const popup=tutorialFilePopup();
+      if(popup){
+        popup.classList.remove('tutorialLocked');
+        popup.classList.add('tutorialAllowed');
+      }
+      document.querySelectorAll(tutorialImportSelector()).forEach(el=>{
+        el.classList.remove('tutorialLocked');
+        el.classList.add('tutorialAllowed','tutorialTarget');
+      });
+    },0);
+  }
+});
 
 tutorialNext.addEventListener('click',advanceTutorial);
 tutorialSkip.addEventListener('click',skipTutorial);
