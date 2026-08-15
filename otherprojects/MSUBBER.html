@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.3</title>
+<title>MSUBBER v1.0 RC3.4</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1290,6 +1290,60 @@ body.findActive .leftColumn{
   .findMatchPulse{animation:none}
 }
 
+
+/* RC3.4: RGBA color controls */
+.rgbaControl{
+  display:grid;
+  grid-template-columns:42px minmax(115px,1fr) minmax(90px,.9fr) 48px;
+  gap:7px;
+  align-items:center;
+  min-width:0;
+}
+.rgbaControl .rgbaSwatch{
+  width:42px!important;
+  min-width:42px!important;
+  height:36px;
+  min-height:36px;
+  padding:2px!important;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--field);
+  cursor:pointer;
+}
+.rgbaControl .rgbaHex{
+  width:100%;
+  min-width:0;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  text-transform:uppercase;
+}
+.rgbaControl .rgbaAlpha{
+  width:100%;
+  min-width:70px;
+}
+.rgbaControl .rgbaAlphaValue{
+  color:var(--muted);
+  font-size:12px;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.rgbaControl.rgbaInvalid .rgbaHex{
+  border-color:var(--danger)!important;
+  outline:1px solid var(--danger);
+}
+@media(max-width:700px){
+  .rgbaControl{
+    grid-template-columns:42px minmax(0,1fr) 46px;
+    grid-template-areas:
+      "swatch hex hex"
+      "swatch alpha percent";
+    gap:6px 8px;
+  }
+  .rgbaControl .rgbaSwatch{grid-area:swatch;height:58px}
+  .rgbaControl .rgbaHex{grid-area:hex}
+  .rgbaControl .rgbaAlpha{grid-area:alpha;min-width:0}
+  .rgbaControl .rgbaAlphaValue{grid-area:percent}
+}
+
 </style>
 </head>
 <body>
@@ -1375,7 +1429,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.3</h1>
+  <h1>MSUBBER v1.0 RC3.4</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1501,12 +1555,42 @@ body.findActive .leftColumn{
           <option value="center">Center</option>
           <option value="right">Right</option>
         </select>
-        <label>Text color</label><input id="textColor" type="color" value="#ffffff">
-        <label>Outline color</label><input id="outlineColor" type="color" value="#000000">
-        <label>Shadow color</label><input id="shadowColor" type="color" value="#000000">
+        <label>Text color</label>
+        <div class="rgbaControl" data-rgba-control="textColor">
+          <input class="rgbaSwatch" type="color" aria-label="Text color picker">
+          <input id="textColor" class="rgbaHex" type="text" value="#FFFFFFFF" inputmode="text" spellcheck="false" aria-label="Text color hex">
+          <input class="rgbaAlpha" type="range" min="0" max="255" step="1" value="255" aria-label="Text color alpha">
+          <span class="rgbaAlphaValue">100%</span>
+        </div>
+        <label>Outline color</label>
+        <div class="rgbaControl" data-rgba-control="outlineColor">
+          <input class="rgbaSwatch" type="color" aria-label="Outline color picker">
+          <input id="outlineColor" class="rgbaHex" type="text" value="#000000FF" inputmode="text" spellcheck="false" aria-label="Outline color hex">
+          <input class="rgbaAlpha" type="range" min="0" max="255" step="1" value="255" aria-label="Outline color alpha">
+          <span class="rgbaAlphaValue">100%</span>
+        </div>
+        <label>Shadow color</label>
+        <div class="rgbaControl" data-rgba-control="shadowColor">
+          <input class="rgbaSwatch" type="color" aria-label="Shadow color picker">
+          <input id="shadowColor" class="rgbaHex" type="text" value="#000000FF" inputmode="text" spellcheck="false" aria-label="Shadow color hex">
+          <input class="rgbaAlpha" type="range" min="0" max="255" step="1" value="255" aria-label="Shadow color alpha">
+          <span class="rgbaAlphaValue">100%</span>
+        </div>
         <div id="karaokeSettings" class="karaokeSettings">
-          <label>Karaoke inactive color</label><input id="karaokeInactiveColor" type="color" value="#555555">
-          <label>Karaoke highlight color</label><input id="karaokeHighlightColor" type="color" value="#ffffff">
+          <label>Karaoke inactive color</label>
+          <div class="rgbaControl" data-rgba-control="karaokeInactiveColor">
+            <input class="rgbaSwatch" type="color" aria-label="Karaoke inactive color picker">
+            <input id="karaokeInactiveColor" class="rgbaHex" type="text" value="#555555FF" inputmode="text" spellcheck="false" aria-label="Karaoke inactive color hex">
+            <input class="rgbaAlpha" type="range" min="0" max="255" step="1" value="255" aria-label="Karaoke inactive alpha">
+            <span class="rgbaAlphaValue">100%</span>
+          </div>
+          <label>Karaoke highlight color</label>
+          <div class="rgbaControl" data-rgba-control="karaokeHighlightColor">
+            <input class="rgbaSwatch" type="color" aria-label="Karaoke highlight color picker">
+            <input id="karaokeHighlightColor" class="rgbaHex" type="text" value="#FFFFFFFF" inputmode="text" spellcheck="false" aria-label="Karaoke highlight color hex">
+            <input class="rgbaAlpha" type="range" min="0" max="255" step="1" value="255" aria-label="Karaoke highlight alpha">
+            <span class="rgbaAlphaValue">100%</span>
+          </div>
           <label>Karaoke timing</label>
           <select id="karaokeTimingMode">
             <option value="character">Per character</option>
@@ -1684,7 +1768,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.3</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.4</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1889,11 +1973,11 @@ let loadedMediaName='', loadedMediaKind='', loadedFontFileName='';
 let currentProjectName='';
 let syncingCustomization=false;
 let styleDefaults={
-  standard:{alignment:'center',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'},
-  karaoke:{alignment:'center',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'},
-  broadcast:{alignment:'left',position:'bottom',textColor:'#ffffff',outlineColor:'#000000',shadowColor:'#000000'}
+  standard:{alignment:'center',position:'bottom',textColor:'#FFFFFFFF',outlineColor:'#000000FF',shadowColor:'#000000FF'},
+  karaoke:{alignment:'center',position:'bottom',textColor:'#FFFFFFFF',outlineColor:'#000000FF',shadowColor:'#000000FF'},
+  broadcast:{alignment:'left',position:'bottom',textColor:'#FFFFFFFF',outlineColor:'#000000FF',shadowColor:'#000000FF'}
 };
-let karaokeDefaults={inactiveColor:'#555555',highlightColor:'#ffffff',timingMode:'word'};
+let karaokeDefaults={inactiveColor:'#555555FF',highlightColor:'#FFFFFFFF',timingMode:'word'};
 let karaokeSyncSession=null;
 const LANE_COUNT=3, LANE_HEIGHT=40, LANE_TOP=8, SNAP_PIXELS=6;
 
@@ -2196,7 +2280,7 @@ function parseMarkdownToASS(input){
 function inlineColorMarkdownToASSKaraoke(input,charCs,defaultColor){
   let output='{\\2a&HFF&\\1a&H00&}';
   for(const colorRun of inlineColorRuns(input,defaultColor)){
-    const ass=hexToAssColor(cssColorToHex(colorRun.color,defaultColor),'00').replace(/^&H/,'');
+    const ass=hexToAssColor(cssColorToHex(colorRun.color,defaultColor)).replace(/^&H/,'');
     output+=`{\\c&H${ass}&}`;
     for(const run of previewMarkdownRuns(colorRun.text)){
       let open='',close='';
@@ -2728,14 +2812,83 @@ systemThemeQuery.addEventListener?.('change',()=>{
 });
 
 
+
+function setupRGBAControl(id){
+  const valueInput=document.getElementById(id);
+  const wrap=document.querySelector(`[data-rgba-control="${id}"]`);
+  if(!valueInput||!wrap)return null;
+
+  const swatch=wrap.querySelector('.rgbaSwatch');
+  const alpha=wrap.querySelector('.rgbaAlpha');
+  const alphaValue=wrap.querySelector('.rgbaAlphaValue');
+
+  function renderFromValue({commit=false}={}){
+    const raw=valueInput.value.trim();
+    const valid=
+      /^#[0-9a-f]{3,4}$/i.test(raw) ||
+      /^#[0-9a-f]{6}$/i.test(raw) ||
+      /^#[0-9a-f]{8}$/i.test(raw) ||
+      /^rgba?\(/i.test(raw);
+
+    wrap.classList.toggle('rgbaInvalid',!valid);
+    if(!valid)return false;
+
+    const hex8=colorToHex8(raw,'#FFFFFFFF');
+    swatch.value=hex8.slice(0,7);
+    alpha.value=parseInt(hex8.slice(7,9),16);
+    alphaValue.textContent=`${Math.round(Number(alpha.value)/255*100)}%`;
+
+    if(commit)valueInput.value=hex8;
+    return true;
+  }
+
+  function emitCanonical(hex8){
+    valueInput.value=hex8;
+    wrap.classList.remove('rgbaInvalid');
+    valueInput.dispatchEvent(new Event('input',{bubbles:true}));
+    valueInput.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+
+  swatch.addEventListener('input',()=>{
+    const a=Number(alpha.value).toString(16).padStart(2,'0').toUpperCase();
+    emitCanonical(swatch.value.toUpperCase()+a);
+  });
+
+  alpha.addEventListener('input',()=>{
+    const a=Number(alpha.value).toString(16).padStart(2,'0').toUpperCase();
+    alphaValue.textContent=`${Math.round(Number(alpha.value)/255*100)}%`;
+    emitCanonical(swatch.value.toUpperCase()+a);
+  });
+
+  valueInput.addEventListener('input',()=>renderFromValue());
+  valueInput.addEventListener('change',()=>renderFromValue({commit:true}));
+  valueInput.addEventListener('blur',()=>renderFromValue({commit:true}));
+
+  renderFromValue({commit:true});
+  return {valueInput,wrap,swatch,alpha,alphaValue,renderFromValue};
+}
+
+const rgbaControls=[
+  'textColor','outlineColor','shadowColor','karaokeInactiveColor','karaokeHighlightColor'
+].map(setupRGBAControl).filter(Boolean);
+
+function syncRGBAWidgets(){
+  rgbaControls.forEach(control=>{
+    control.renderFromValue({commit:true});
+    const disabled=control.valueInput.disabled;
+    control.swatch.disabled=disabled;
+    control.alpha.disabled=disabled;
+  });
+}
+
 function cleanCaptionStyle(style){
   if(!style||typeof style!=='object')return null;
   return {
     alignment:['left','center','right'].includes(style.alignment)?style.alignment:'center',
     position:['top','bottom'].includes(style.position)?style.position:'bottom',
-    textColor:normalizeHexColor(style.textColor,'#ffffff'),
-    outlineColor:normalizeHexColor(style.outlineColor,'#000000'),
-    shadowColor:normalizeHexColor(style.shadowColor,'#000000')
+    textColor:normalizeHexColor(style.textColor,'#FFFFFFFF'),
+    outlineColor:normalizeHexColor(style.outlineColor,'#000000FF'),
+    shadowColor:normalizeHexColor(style.shadowColor,'#000000FF')
   };
 }
 function currentModeKey(){return styleMode.value==='broadcast'?'broadcast':styleMode.value==='karaoke'?'karaoke':'standard'}
@@ -2748,9 +2901,9 @@ function controlsStyleValue(){
   return {
     alignment:textAlignment.value,
     position:captionPosition.value,
-    textColor:normalizeHexColor(textColor.value,'#ffffff'),
-    outlineColor:normalizeHexColor(outlineColor.value,'#000000'),
-    shadowColor:normalizeHexColor(shadowColor.value,'#000000')
+    textColor:normalizeHexColor(textColor.value,'#FFFFFFFF'),
+    outlineColor:normalizeHexColor(outlineColor.value,'#000000FF'),
+    shadowColor:normalizeHexColor(shadowColor.value,'#000000FF')
   };
 }
 function syncCustomizationControls(){
@@ -2772,6 +2925,7 @@ function syncCustomizationControls(){
   karaokeInactiveColor.value=karaokeDefaults.inactiveColor;
   karaokeHighlightColor.value=karaokeDefaults.highlightColor;
   karaokeTimingMode.value=karaokeDefaults.timingMode;
+  syncRGBAWidgets();
   updateModeAwareCustomization();
   renderKaraokeTimingStatus();
   syncingCustomization=false;
@@ -4167,16 +4321,56 @@ function appendPreviewMarkdown(container,input,visibleLimit=Infinity){
 }
 
 
-function normalizeHexColor(value,fallback='#ffffff'){
-  return /^#[0-9a-f]{6}$/i.test(String(value))?String(value).toLowerCase():fallback;
+function colorToHex8(value,fallback='#FFFFFFFF'){
+  let v=String(value??'').trim();
+
+  if(/^#[0-9a-f]{3}$/i.test(v)){
+    const c=v.slice(1);
+    return '#'+[...c].map(x=>x+x).join('').toUpperCase()+'FF';
+  }
+  if(/^#[0-9a-f]{4}$/i.test(v)){
+    const c=v.slice(1);
+    return '#'+[...c].map(x=>x+x).join('').toUpperCase();
+  }
+  if(/^#[0-9a-f]{6}$/i.test(v))return v.toUpperCase()+'FF';
+  if(/^#[0-9a-f]{8}$/i.test(v))return v.toUpperCase();
+
+  let m=v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+%?))?\s*\)$/i);
+  if(m){
+    const rgb=[m[1],m[2],m[3]].map(n=>Math.max(0,Math.min(255,Math.round(Number(n)||0))));
+    let a=255;
+    if(m[4]!=null){
+      a=m[4].endsWith('%')
+        ? Math.round(Math.max(0,Math.min(100,Number(m[4].slice(0,-1))||0))*2.55)
+        : Math.round(Math.max(0,Math.min(1,Number(m[4])||0))*255);
+    }
+    return '#'+[...rgb,a].map(n=>n.toString(16).padStart(2,'0')).join('').toUpperCase();
+  }
+
+  const fallback8=String(fallback??'#FFFFFFFF');
+  if(/^#[0-9a-f]{8}$/i.test(fallback8))return fallback8.toUpperCase();
+  if(/^#[0-9a-f]{6}$/i.test(fallback8))return fallback8.toUpperCase()+'FF';
+  return '#FFFFFFFF';
 }
 
-function hexToAssColor(hex,alpha='00'){
-  const normalized=normalizeHexColor(hex,'#ffffff').slice(1);
+function normalizeHexColor(value,fallback='#FFFFFFFF'){
+  return colorToHex8(value,fallback);
+}
+
+function hex8ToCss(value,fallback='#FFFFFFFF'){
+  return colorToHex8(value,fallback);
+}
+
+function hexToAssColor(hex,alpha=null){
+  const normalized=colorToHex8(hex,'#FFFFFFFF').slice(1);
   const red=normalized.slice(0,2);
   const green=normalized.slice(2,4);
   const blue=normalized.slice(4,6);
-  return `&H${alpha}${blue}${green}${red}`;
+  const cssAlpha=parseInt(normalized.slice(6,8),16);
+  const assAlpha=alpha==null
+    ? (255-cssAlpha).toString(16).padStart(2,'0').toUpperCase()
+    : String(alpha).toUpperCase();
+  return `&H${assAlpha}${blue}${green}${red}`;
 }
 
 function previewTextShadow(outline,shadow){
@@ -4281,16 +4475,16 @@ function manualKaraokeProgressCount(event,now){
   }
   return words.slice(0,completed).join('').length;
 }
-function cssColorToHex(color,fallback='#ffffff'){
+function cssColorToHex(color,fallback='#FFFFFFFF'){
   const value=String(color??'').trim();
-  if(/^#[0-9a-f]{6}$/i.test(value))return value.toLowerCase();
-  const rgb=value.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
-  if(rgb){
-    const vals=[rgb[1],rgb[2],rgb[3]].map(v=>Math.max(0,Math.min(255,Number(v))));
-    return '#'+vals.map(v=>v.toString(16).padStart(2,'0')).join('');
-  }
-  const named={red:'#ff0000',green:'#008000',blue:'#0000ff',yellow:'#ffff00',cyan:'#00ffff',aqua:'#00ffff',magenta:'#ff00ff',fuchsia:'#ff00ff',white:'#ffffff',black:'#000000',gray:'#808080',grey:'#808080',orange:'#ffa500',purple:'#800080',pink:'#ffc0cb',lime:'#00ff00'};
-  return named[value.toLowerCase()]||fallback;
+  const named={
+    red:'#FF0000FF',green:'#008000FF',blue:'#0000FFFF',yellow:'#FFFF00FF',
+    cyan:'#00FFFFFF',aqua:'#00FFFFFF',magenta:'#FF00FFFF',fuchsia:'#FF00FFFF',
+    white:'#FFFFFFFF',black:'#000000FF',gray:'#808080FF',grey:'#808080FF',
+    orange:'#FFA500FF',purple:'#800080FF',pink:'#FFC0CBFF',lime:'#00FF00FF',
+    transparent:'#00000000'
+  };
+  return named[value.toLowerCase()]||colorToHex8(value,fallback);
 }
 function inlineColorRuns(input,defaultColor){
   const source=String(input??'');
@@ -4324,7 +4518,7 @@ function karaokeProgressCount(input,elapsedMs,event=null,now=0){
 function inlineColorMarkdownToASS(input,defaultColor){
   let output='';
   for(const run of inlineColorRuns(input,defaultColor)){
-    const ass=hexToAssColor(run.color,'00').replace(/^&H/,'');
+    const ass=hexToAssColor(run.color).replace(/^&H/,'');
     output+=`{\\c&H${ass}&}${parseMarkdownToASS(run.text)}{\\c}`;
   }
   return output;
@@ -5471,8 +5665,8 @@ karaokeClearTiming.addEventListener('click',clearKaraokeWordTiming);
 [karaokeInactiveColor,karaokeHighlightColor,karaokeTimingMode].forEach(control=>{
   const update=()=>{
     karaokeDefaults={
-      inactiveColor:normalizeHexColor(karaokeInactiveColor.value,'#555555'),
-      highlightColor:normalizeHexColor(karaokeHighlightColor.value,'#ffffff'),
+      inactiveColor:normalizeHexColor(karaokeInactiveColor.value,'#555555FF'),
+      highlightColor:normalizeHexColor(karaokeHighlightColor.value,'#FFFFFFFF'),
       timingMode:karaokeTimingMode.value
     };
     renderKaraokeTimingStatus();
@@ -5683,9 +5877,9 @@ function exportASStext(options={}){
   }
 
   function colorTags(style){
-    const primary=hexToAssColor(style.textColor,'00').replace(/^&H/,'');
-    const outline=hexToAssColor(style.outlineColor,'00').replace(/^&H/,'');
-    const shadow=hexToAssColor(style.shadowColor,'80').replace(/^&H/,'');
+    const primary=hexToAssColor(style.textColor).replace(/^&H/,'');
+    const outline=hexToAssColor(style.outlineColor).replace(/^&H/,'');
+    const shadow=hexToAssColor(style.shadowColor).replace(/^&H/,'');
     return `\\c&H${primary}&\\3c&H${outline}&\\4c&H${shadow}&`;
   }
 
@@ -5739,8 +5933,8 @@ ${lines.join('\n')}
       const style=resolvedCaptionStyle(event);
       const pos=placement(style);
       const raw=oneLineCaption(event.text);
-      const inactive=hexToAssColor(karaokeDefaults.inactiveColor,'00').replace(/^&H/,'');
-      const highlight=hexToAssColor(karaokeDefaults.highlightColor,'00').replace(/^&H/,'');
+      const inactive=hexToAssColor(karaokeDefaults.inactiveColor).replace(/^&H/,'');
+      const highlight=hexToAssColor(karaokeDefaults.highlightColor).replace(/^&H/,'');
       let body=`{\\c&H${inactive}&\\2c&H${highlight}&}`;
 
       if(karaokeDefaults.timingMode==='manual-word'){
@@ -5760,7 +5954,7 @@ ${lines.join('\n')}
       }else{
         const cs=Math.max(1,Math.round((Number(document.getElementById('charMs').value)||10)/10));
         for(const run of inlineColorRuns(raw,karaokeDefaults.highlightColor)){
-          const runColor=hexToAssColor(run.color,'00').replace(/^&H/,'');
+          const runColor=hexToAssColor(run.color).replace(/^&H/,'');
           body+=`{\\2c&H${runColor}&}`;
           for(const char of run.text)body+=`{\\kf${cs}}${escapeASSLiteral(char)}`;
         }
