@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC2.2</title>
+<title>MSUBBER v1.0 RC3.2</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -860,7 +860,8 @@ html[data-theme="light"] .eventBlock.selected{border-color:#2a1723}
 .findStatus{min-height:20px;margin-top:10px;color:var(--muted);font-size:13px}
 .findFooter{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
 .findReplaceOnly{display:none}
-.findBackdrop.replaceMode .findReplaceOnly{display:contents}
+.findBackdrop.replaceMode .findGrid .findReplaceOnly{display:block}
+.findBackdrop.replaceMode .findFooter .findReplaceOnly{display:inline-flex}
 @media(max-width:600px){
   .findBackdrop{padding-top:18px}
   .findGrid{grid-template-columns:1fr}
@@ -1219,6 +1220,76 @@ body.multiSelectMode .eventRow{cursor:pointer}
 .captionFormatMenu .fmtItalic{font-style:italic}
 .captionFormatMenu .fmtUnderline{text-decoration:underline}
 
+
+/* RC3: Find & Replace footer spacing */
+.findFooter{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.findFooter button{
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+@media(max-width:680px){
+  .findFooter{justify-content:flex-start}
+}
+
+
+/* RC3.1: Find & Replace visibility/layout fix */
+.findBackdrop.replaceMode #replaceText{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+.findBackdrop.replaceMode #replaceCurrentBtn,
+.findBackdrop.replaceMode #replaceAllBtn{
+  align-items:center;
+  justify-content:center;
+}
+
+
+/* RC3.2: Find keeps Subtitle Events readable */
+body.findActive .eventsPanel{
+  position:relative;
+  z-index:1460;
+}
+body.findActive .leftColumn{
+  position:relative;
+  z-index:1460;
+}
+.findDialog{
+  position:relative;
+  z-index:1470;
+}
+
+/* Temporary visual copy of the active match.
+   It scales with transform only, so nothing around it reflows or moves. */
+.findMatchPulse{
+  position:fixed;
+  z-index:1480;
+  pointer-events:none;
+  margin:0;
+  padding:0 2px;
+  border-radius:3px;
+  background:#ffd45a;
+  color:#17120a;
+  transform-origin:center center;
+  animation:findMatchPulse .34s ease-out;
+  box-shadow:0 0 0 1px rgba(255,212,90,.8);
+  white-space:pre-wrap;
+}
+@keyframes findMatchPulse{
+  0%{transform:scale(1);filter:brightness(1)}
+  45%{transform:scale(1.14);filter:brightness(1.12)}
+  100%{transform:scale(1);filter:brightness(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .findMatchPulse{animation:none}
+}
+
 </style>
 </head>
 <body>
@@ -1304,7 +1375,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC2.2</h1>
+  <h1>MSUBBER v1.0 RC3.2</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1613,7 +1684,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC2.2</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.2</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1714,6 +1785,7 @@ _This is also italic_</div></div>
   <button class="fmtItalic" type="button" data-format-markdown="italic">Italic</button>
   <button class="fmtUnderline" type="button" data-format-markdown="underline">Underline</button>
 </div>
+<div id="findMatchPulse" class="findMatchPulse" hidden></div>
 <script>
 const video=document.getElementById('video'), audio=document.getElementById('audio');
 const videoFile=document.getElementById('videoFile'), audioFile=document.getElementById('audioFile'), mediaFile=document.getElementById('mediaFile'), textFile=document.getElementById('textFile'), projectFile=document.getElementById('projectFile'), fontFile=document.getElementById('fontFile');
@@ -1741,6 +1813,7 @@ const preferencesFollow=document.getElementById('preferencesFollow');
 const preferencesCancel=document.getElementById('preferencesCancel');
 const preferencesApply=document.getElementById('preferencesApply');
 const findBackdrop=document.getElementById('findBackdrop');
+const findMatchPulse=document.getElementById('findMatchPulse');
 const findTitle=document.getElementById('findTitle');
 const findText=document.getElementById('findText');
 const replaceText=document.getElementById('replaceText');
@@ -4559,6 +4632,73 @@ function collectFindMatches(){
   });
   return findMatches;
 }
+
+function pulseFindMatch(textarea,start,end){
+  if(!textarea || start===end)return;
+
+  const selectedText=textarea.value.slice(start,end);
+  if(!selectedText)return;
+
+  const cs=getComputedStyle(textarea);
+  const rect=textarea.getBoundingClientRect();
+
+  const mirror=document.createElement('div');
+  mirror.style.position='fixed';
+  mirror.style.visibility='hidden';
+  mirror.style.pointerEvents='none';
+  mirror.style.left=`${rect.left-textarea.scrollLeft}px`;
+  mirror.style.top=`${rect.top-textarea.scrollTop}px`;
+  mirror.style.width=`${textarea.clientWidth}px`;
+  mirror.style.minHeight=`${textarea.clientHeight}px`;
+  mirror.style.boxSizing=cs.boxSizing;
+  mirror.style.padding=cs.padding;
+  mirror.style.border=cs.border;
+  mirror.style.font=cs.font;
+  mirror.style.fontFamily=cs.fontFamily;
+  mirror.style.fontSize=cs.fontSize;
+  mirror.style.fontWeight=cs.fontWeight;
+  mirror.style.fontStyle=cs.fontStyle;
+  mirror.style.letterSpacing=cs.letterSpacing;
+  mirror.style.lineHeight=cs.lineHeight;
+  mirror.style.textAlign=cs.textAlign;
+  mirror.style.whiteSpace='pre-wrap';
+  mirror.style.overflowWrap='break-word';
+  mirror.style.wordBreak='break-word';
+
+  const before=document.createTextNode(textarea.value.slice(0,start));
+  const mark=document.createElement('span');
+  mark.textContent=selectedText;
+  mirror.append(before,mark,document.createTextNode(textarea.value.slice(end)));
+  document.body.appendChild(mirror);
+
+  const mr=mark.getBoundingClientRect();
+  mirror.remove();
+
+  if(!mr.width && !mr.height)return;
+
+  findMatchPulse.hidden=false;
+  findMatchPulse.textContent=selectedText;
+  findMatchPulse.style.left=`${mr.left}px`;
+  findMatchPulse.style.top=`${mr.top}px`;
+  findMatchPulse.style.width=`${Math.max(1,mr.width)}px`;
+  findMatchPulse.style.minHeight=`${Math.max(1,mr.height)}px`;
+  findMatchPulse.style.font=cs.font;
+  findMatchPulse.style.fontFamily=cs.fontFamily;
+  findMatchPulse.style.fontSize=cs.fontSize;
+  findMatchPulse.style.fontWeight=cs.fontWeight;
+  findMatchPulse.style.fontStyle=cs.fontStyle;
+  findMatchPulse.style.letterSpacing=cs.letterSpacing;
+  findMatchPulse.style.lineHeight=cs.lineHeight;
+
+  // Restart the animation every time Find Next/Previous updates the result.
+  findMatchPulse.style.animation='none';
+  void findMatchPulse.offsetWidth;
+  findMatchPulse.style.animation='';
+
+  clearTimeout(pulseFindMatch._timer);
+  pulseFindMatch._timer=setTimeout(()=>{findMatchPulse.hidden=true},430);
+}
+
 function revealFindMatch(match){
   if(!match)return;
   selected=match.eventIndex;
@@ -4569,6 +4709,7 @@ function revealFindMatch(match){
     if(!textarea)return;
     textarea.focus();
     textarea.setSelectionRange(match.start,match.end);
+    pulseFindMatch(textarea,match.start,match.end);
   });
 }
 function updateFindStatus(){
@@ -4641,10 +4782,15 @@ function openFindDialog(mode='find'){
     const selectedText=active.value.slice(active.selectionStart,active.selectionEnd);
     if(selectedText)findText.value=selectedText;
   }
+  document.body.classList.add('findActive');
   findBackdrop.classList.add('open');
   requestAnimationFrame(()=>{findText.focus();findText.select();});
 }
-function closeFindDialog(){findBackdrop.classList.remove('open')}
+function closeFindDialog(){
+  findBackdrop.classList.remove('open');
+  document.body.classList.remove('findActive');
+  findMatchPulse.hidden=true;
+}
 
 findNextBtn.addEventListener('click',()=>findDirection(1));
 findPreviousBtn.addEventListener('click',()=>findDirection(-1));
