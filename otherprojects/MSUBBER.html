@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.6</title>
+<title>MSUBBER v1.0 RC3.7</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1429,7 +1429,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.6</h1>
+  <h1>MSUBBER v1.0 RC3.7</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1768,7 +1768,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.6</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.7</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -6147,15 +6147,30 @@ ${lines.join('\n')}
   }
 
   function buildTTMLRegions(){
-    const horizontal=[['left','start'],['center','center'],['right','end']];
+    // YouTube behaves more reliably when left/center/right are physically
+    // different regions instead of one nearly full-width region.
+    //
+    // These regions intentionally overlap somewhat. Their ORIGIN is what
+    // establishes the anchor; textAlign then aligns inside that local box.
+    const horizontal=[
+      ['left',   '4%',  '46%', 'start'],
+      ['center', '20%', '60%', 'center'],
+      ['right',  '50%', '46%', 'end']
+    ];
     const vertical=[
-      ['top','5% 5%','90% 40%','before'],
-      ['bottom','5% 55%','90% 40%','after']
+      ['top','5%','40%','before'],
+      ['bottom','55%','40%','after']
     ];
     const regions=[];
-    for(const [v,origin,extent,displayAlign] of vertical){
-      for(const [h,textAlign] of horizontal){
-        regions.push(`      <region xml:id="${v}_${h}" tts:origin="${origin}" tts:extent="${extent}" tts:displayAlign="${displayAlign}" tts:textAlign="${textAlign}"/>`);
+
+    for(const [v,y,height,displayAlign] of vertical){
+      for(const [h,x,width,textAlign] of horizontal){
+        regions.push(
+          `      <region xml:id="${v}_${h}" `+
+          `tts:origin="${x} ${y}" tts:extent="${width} ${height}" `+
+          `tts:displayAlign="${displayAlign}" tts:textAlign="${textAlign}" `+
+          `tts:overflow="visible"/>`
+        );
       }
     }
     return regions.join('\n');
