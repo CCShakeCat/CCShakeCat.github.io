@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.4</title>
+<title>MSUBBER v1.0 RC3.6</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1429,7 +1429,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.4</h1>
+  <h1>MSUBBER v1.0 RC3.6</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1768,7 +1768,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.4</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.6</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -5715,7 +5715,7 @@ function updateExportDialogDetails(){
   }else if(type==='ttml'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
-      `An advanced YouTube-supported subtitle format with styling and positioning support. MSUBBER exports static TTML 1.0-compatible captions; animation is not used.`;
+      `An advanced YouTube-supported subtitle format with positioning, RGBA colors, and MSUBBER formatting. Carrd-style [text]{color} markup is converted into real TTML styling.`;
   }else if(type==='ass'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
@@ -6075,58 +6075,104 @@ ${lines.join('\n')}
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(milli).padStart(3,'0')}`;
   }
 
-  function markdownToTTML(input){
+  function inlineColorRunsTTML(input,defaultColor){
     const source=String(input??'');
-    let out='';
-    let i=0;
+    const runs=[];
+    let cursor=0;
+    const regex=/\[([^\]]+)\]\{([^}]+)\}/g;
+    let match;
 
-    function walk(inner){return markdownToTTML(inner)}
+    while((match=regex.exec(source))){
+      if(match.index>0 && source[match.index-1]==='\\')continue;
 
-    while(i<source.length){
-      if(source[i]==='\\' && i+1<source.length && ['*','_','\\'].includes(source[i+1])){
-        out+=xmlEscape(source[i+1]); i+=2; continue;
+      if(match.index>cursor){
+        runs.push({text:source.slice(cursor,match.index),color:defaultColor});
       }
-      if(source.startsWith('**',i)){
-        const end=source.indexOf('**',i+2);
-        if(end!==-1){out+=`<span tts:fontWeight="bold">${walk(source.slice(i+2,end))}</span>`;i=end+2;continue}
-      }
-      if(source.startsWith('__',i)){
-        const end=source.indexOf('__',i+2);
-        if(end!==-1){out+=`<span tts:textDecoration="underline">${walk(source.slice(i+2,end))}</span>`;i=end+2;continue}
-      }
-      if(source[i]==='*'){
-        const end=source.indexOf('*',i+1);
-        if(end!==-1){out+=`<span tts:fontStyle="italic">${walk(source.slice(i+1,end))}</span>`;i=end+1;continue}
-      }
-      if(source[i]==='_'){
-        const end=source.indexOf('_',i+1);
-        if(end!==-1){out+=`<span tts:fontStyle="italic">${walk(source.slice(i+1,end))}</span>`;i=end+1;continue}
-      }
-      if(source[i]==='\n'){out+='<br/>';i++;continue}
-      out+=xmlEscape(source[i]); i++;
+
+      runs.push({
+        text:match[1],
+        color:cssColorToHex(match[2],defaultColor)
+      });
+
+      cursor=regex.lastIndex;
     }
-    return out;
+
+    if(cursor<source.length){
+      runs.push({text:source.slice(cursor),color:defaultColor});
+    }
+
+    return runs.length?runs:[{text:source,color:defaultColor}];
+  }
+
+  function ttmlSpanForRun(run,color){
+    const attrs=[];
+    if(color)attrs.push(`tts:color="${xmlEscape(colorToHex8(color,'#FFFFFFFF'))}"`);
+    if(run.bold)attrs.push('tts:fontWeight="bold"');
+    if(run.italic)attrs.push('tts:fontStyle="italic"');
+    if(run.underline)attrs.push('tts:textDecoration="underline"');
+
+    const escaped=xmlEscape(run.text).replace(/\n/g,'<br/>');
+    return attrs.length?`<span ${attrs.join(' ')}>${escaped}</span>`:escaped;
+  }
+
+  function richTextToTTML(input,defaultColor='#FFFFFFFF'){
+    let output='';
+
+    for(const colorRun of inlineColorRunsTTML(input,defaultColor)){
+      const color=colorToHex8(colorRun.color,defaultColor);
+
+      for(const run of previewMarkdownRuns(colorRun.text)){
+        output+=ttmlSpanForRun(run,color);
+      }
+    }
+
+    return output;
+  }
+
+  function markdownToTTML(input){
+    return richTextToTTML(input,'#FFFFFFFF');
   }
 
   function ttmlStyleAttrs(event){
     const style=resolvedCaptionStyle(event);
-    const align=style.alignment==='left'?'left':style.alignment==='right'?'right':'center';
-    const color=style.textColor||'#FFFFFF';
-    return `tts:textAlign="${align}" tts:color="${xmlEscape(color)}"`;
+    const align=style.alignment==='left'?'start':style.alignment==='right'?'end':'center';
+    const color=style.textColor||'#FFFFFFFF';
+    return `tts:textAlign="${align}" tts:color="${xmlEscape(colorToHex8(color,'#FFFFFFFF'))}"`;
+  }
+
+  function ttmlRegionId(style){
+    const vertical=style.position==='top'?'top':'bottom';
+    const horizontal=style.alignment==='left'?'left':style.alignment==='right'?'right':'center';
+    return `${vertical}_${horizontal}`;
+  }
+
+  function buildTTMLRegions(){
+    const horizontal=[['left','start'],['center','center'],['right','end']];
+    const vertical=[
+      ['top','5% 5%','90% 40%','before'],
+      ['bottom','5% 55%','90% 40%','after']
+    ];
+    const regions=[];
+    for(const [v,origin,extent,displayAlign] of vertical){
+      for(const [h,textAlign] of horizontal){
+        regions.push(`      <region xml:id="${v}_${h}" tts:origin="${origin}" tts:extent="${extent}" tts:displayAlign="${displayAlign}" tts:textAlign="${textAlign}"/>`);
+      }
+    }
+    return regions.join('\n');
   }
 
   function buildPlainTTML(){
     const body=sorted.map((event,index)=>{
-      const region=resolvedCaptionStyle(event).position==='top'?'top':'bottom';
-      return `      <p xml:id="caption${index+1}" region="${region}" begin="${ttmlTime(event.start)}" end="${ttmlTime(event.end)}" ${ttmlStyleAttrs(event)}>${markdownToTTML(event.text)}</p>`;
+      const region=ttmlRegionId(resolvedCaptionStyle(event));
+      const defaultColor=resolvedCaptionStyle(event).textColor;
+      return `      <p xml:id="caption${index+1}" region="${region}" begin="${ttmlTime(event.start)}" end="${ttmlTime(event.end)}" ${ttmlStyleAttrs(event)}>${richTextToTTML(event.text,defaultColor)}</p>`;
     }).join('\n');
 
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
-`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" ttp:timeBase="media">\n`+
+`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" xml:space="preserve" ttp:timeBase="media">\n`+
 `  <head>\n`+
 `    <layout>\n`+
-`      <region xml:id="top" tts:origin="5% 5%" tts:extent="90% 40%" tts:displayAlign="before"/>\n`+
-`      <region xml:id="bottom" tts:origin="5% 55%" tts:extent="90% 40%" tts:displayAlign="after"/>\n`+
+`${buildTTMLRegions()}\n`+
 `    </layout>\n`+
 `  </head>\n`+
 `  <body>\n    <div>\n${body}\n    </div>\n  </body>\n</tt>\n`;
@@ -6146,17 +6192,19 @@ ${lines.join('\n')}
         const selected=style.position==='top'
           ?soFar.filter(e=>resolvedCaptionStyle(e).position==='top').slice(-2)
           :soFar.filter(e=>resolvedCaptionStyle(e).position!=='top').slice(-3);
-        const body=selected.map(e=>markdownToTTML(e.text)).filter(Boolean).join('<br/>');
+        const body=selected.map(e=>{
+          const eventColor=resolvedCaptionStyle(e).textColor;
+          return richTextToTTML(e.text,eventColor);
+        }).filter(Boolean).join('<br/>');
         if(!body)continue;
-        const region=style.position==='top'?'top':'bottom';
+        const region=ttmlRegionId(style);
         cues.push(`      <p xml:id="caption${id++}" region="${region}" begin="${ttmlTime(stateStart)}" end="${ttmlTime(stateEnd)}" ${ttmlStyleAttrs(current)}>${body}</p>`);
       }
     }
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
-`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" ttp:timeBase="media">\n`+
+`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" xml:space="preserve" ttp:timeBase="media">\n`+
 `  <head>\n    <layout>\n`+
-`      <region xml:id="top" tts:origin="5% 5%" tts:extent="90% 40%" tts:displayAlign="before"/>\n`+
-`      <region xml:id="bottom" tts:origin="5% 55%" tts:extent="90% 40%" tts:displayAlign="after"/>\n`+
+`${buildTTMLRegions()}\n`+
 `    </layout>\n  </head>\n  <body>\n    <div>\n${cues.join('\n')}\n    </div>\n  </body>\n</tt>\n`;
   }
 
