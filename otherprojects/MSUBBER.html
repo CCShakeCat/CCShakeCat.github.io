@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.7</title>
+<title>MSUBBER v1.0 RC3.8</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1429,7 +1429,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.7</h1>
+  <h1>MSUBBER v1.0 RC3.8</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1768,7 +1768,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.7</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.8</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1803,8 +1803,8 @@ _This is also italic_</div></div>
 
       <label for="exportFileType">File type</label>
       <select id="exportFileType">
-        <option value="vtt">WebVTT (.vtt) — Recommended for positioned subtitles</option>
-        <option value="ttml">Timed Text Markup Language (.ttml) — YouTube styling &amp; positioning</option>
+        <option value="vtt">WebVTT (.vtt) — Recommended for positioning on YouTube</option>
+        <option value="ttml">Timed Text Markup Language (.ttml) — Recommended for color/styling on YouTube</option>
         <option value="ass">Advanced SubStation Alpha (.ass)</option>
         <option value="srt">SubRip (.srt)</option>
       </select>
@@ -5711,11 +5711,11 @@ function updateExportDialogDetails(){
   if(type==='vtt'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
-      `The intermediate subtitle format that supports bold, italic, underline, and positioning. Recommended if your subtitles use positioning.`;
+      `Recommended for YouTube positioning. Supports bold, italic, underline, and MSUBBER’s top/bottom plus left/center/right placement more reliably than TTML on YouTube.`;
   }else if(type==='ttml'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
-      `An advanced YouTube-supported subtitle format with positioning, RGBA colors, and MSUBBER formatting. Carrd-style [text]{color} markup is converted into real TTML styling.`;
+      `Recommended for color and styling on YouTube. Supports RGBA colors plus bold, italic, underline, and MSUBBER color markup. YouTube may normalize TTML positioning, so use VTT when precise placement matters more.`;
   }else if(type==='ass'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
