@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.8</title>
+<title>MSUBBER v1.0 RC3.3</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1291,7 +1291,7 @@ body.findActive .leftColumn{
 }
 
 
-/* RC3.4: RGBA color controls */
+/* CLEAN RGBA color controls */
 .rgbaControl{
   display:grid;
   grid-template-columns:42px minmax(115px,1fr) minmax(90px,.9fr) 48px;
@@ -1316,10 +1316,7 @@ body.findActive .leftColumn{
   font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
   text-transform:uppercase;
 }
-.rgbaControl .rgbaAlpha{
-  width:100%;
-  min-width:70px;
-}
+.rgbaControl .rgbaAlpha{width:100%;min-width:70px}
 .rgbaControl .rgbaAlphaValue{
   color:var(--muted);
   font-size:12px;
@@ -1429,7 +1426,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.8</h1>
+  <h1>MSUBBER v1.0 RC3.3</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1768,7 +1765,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.8</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.3</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1803,8 +1800,7 @@ _This is also italic_</div></div>
 
       <label for="exportFileType">File type</label>
       <select id="exportFileType">
-        <option value="vtt">WebVTT (.vtt) — Recommended for positioning on YouTube</option>
-        <option value="ttml">Timed Text Markup Language (.ttml) — Recommended for color/styling on YouTube</option>
+        <option value="vtt">WebVTT (.vtt) — Recommended for positioned subtitles</option>
         <option value="ass">Advanced SubStation Alpha (.ass)</option>
         <option value="srt">SubRip (.srt)</option>
       </select>
@@ -1855,6 +1851,7 @@ _This is also italic_</div></div>
       <li>Proper layouts for Mobile and Foldables</li>
       <li>Add animations to the menus for mobile</li>
       <li>Per-speaker colour*</li>
+      <li>Colour support for YouTube-compatible subtitle exports</li>
       <li>Add Video URL to Import Media</li>
       <li>Save media to project file</li>
       <li>Autosave (Customize frequency in Preferences)</li>
@@ -2817,7 +2814,6 @@ function setupRGBAControl(id){
   const valueInput=document.getElementById(id);
   const wrap=document.querySelector(`[data-rgba-control="${id}"]`);
   if(!valueInput||!wrap)return null;
-
   const swatch=wrap.querySelector('.rgbaSwatch');
   const alpha=wrap.querySelector('.rgbaAlpha');
   const alphaValue=wrap.querySelector('.rgbaAlphaValue');
@@ -2829,15 +2825,12 @@ function setupRGBAControl(id){
       /^#[0-9a-f]{6}$/i.test(raw) ||
       /^#[0-9a-f]{8}$/i.test(raw) ||
       /^rgba?\(/i.test(raw);
-
     wrap.classList.toggle('rgbaInvalid',!valid);
     if(!valid)return false;
-
     const hex8=colorToHex8(raw,'#FFFFFFFF');
     swatch.value=hex8.slice(0,7);
     alpha.value=parseInt(hex8.slice(7,9),16);
     alphaValue.textContent=`${Math.round(Number(alpha.value)/255*100)}%`;
-
     if(commit)valueInput.value=hex8;
     return true;
   }
@@ -2853,19 +2846,16 @@ function setupRGBAControl(id){
     const a=Number(alpha.value).toString(16).padStart(2,'0').toUpperCase();
     emitCanonical(swatch.value.toUpperCase()+a);
   });
-
   alpha.addEventListener('input',()=>{
     const a=Number(alpha.value).toString(16).padStart(2,'0').toUpperCase();
     alphaValue.textContent=`${Math.round(Number(alpha.value)/255*100)}%`;
     emitCanonical(swatch.value.toUpperCase()+a);
   });
-
   valueInput.addEventListener('input',()=>renderFromValue());
   valueInput.addEventListener('change',()=>renderFromValue({commit:true}));
   valueInput.addEventListener('blur',()=>renderFromValue({commit:true}));
-
   renderFromValue({commit:true});
-  return {valueInput,wrap,swatch,alpha,alphaValue,renderFromValue};
+  return {valueInput,swatch,alpha,renderFromValue};
 }
 
 const rgbaControls=[
@@ -2873,11 +2863,11 @@ const rgbaControls=[
 ].map(setupRGBAControl).filter(Boolean);
 
 function syncRGBAWidgets(){
-  rgbaControls.forEach(control=>{
-    control.renderFromValue({commit:true});
-    const disabled=control.valueInput.disabled;
-    control.swatch.disabled=disabled;
-    control.alpha.disabled=disabled;
+  rgbaControls.forEach(c=>{
+    c.renderFromValue({commit:true});
+    const disabled=c.valueInput.disabled;
+    c.swatch.disabled=disabled;
+    c.alpha.disabled=disabled;
   });
 }
 
@@ -4322,7 +4312,7 @@ function appendPreviewMarkdown(container,input,visibleLimit=Infinity){
 
 
 function colorToHex8(value,fallback='#FFFFFFFF'){
-  let v=String(value??'').trim();
+  const v=String(value??'').trim();
 
   if(/^#[0-9a-f]{3}$/i.test(v)){
     const c=v.slice(1);
@@ -4335,7 +4325,7 @@ function colorToHex8(value,fallback='#FFFFFFFF'){
   if(/^#[0-9a-f]{6}$/i.test(v))return v.toUpperCase()+'FF';
   if(/^#[0-9a-f]{8}$/i.test(v))return v.toUpperCase();
 
-  let m=v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+%?))?\s*\)$/i);
+  const m=v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+%?))?\s*\)$/i);
   if(m){
     const rgb=[m[1],m[2],m[3]].map(n=>Math.max(0,Math.min(255,Math.round(Number(n)||0))));
     let a=255;
@@ -4347,17 +4337,13 @@ function colorToHex8(value,fallback='#FFFFFFFF'){
     return '#'+[...rgb,a].map(n=>n.toString(16).padStart(2,'0')).join('').toUpperCase();
   }
 
-  const fallback8=String(fallback??'#FFFFFFFF');
-  if(/^#[0-9a-f]{8}$/i.test(fallback8))return fallback8.toUpperCase();
-  if(/^#[0-9a-f]{6}$/i.test(fallback8))return fallback8.toUpperCase()+'FF';
+  const fb=String(fallback??'#FFFFFFFF');
+  if(/^#[0-9a-f]{8}$/i.test(fb))return fb.toUpperCase();
+  if(/^#[0-9a-f]{6}$/i.test(fb))return fb.toUpperCase()+'FF';
   return '#FFFFFFFF';
 }
 
 function normalizeHexColor(value,fallback='#FFFFFFFF'){
-  return colorToHex8(value,fallback);
-}
-
-function hex8ToCss(value,fallback='#FFFFFFFF'){
   return colorToHex8(value,fallback);
 }
 
@@ -5697,12 +5683,12 @@ document.getElementById('exportBtn').onclick=openExportDialog;
 
 function sanitizeExportBaseName(value){
   let name=String(value??'').trim();
-  name=name.replace(/\.(ass|vtt|srt|ttml|dfxp)$/i,'');
+  name=name.replace(/\.(ass|vtt|srt)$/i,'');
   name=name.replace(/[<>:"/\\|?*\x00-\x1F]/g,' ').replace(/\s+/g,' ').trim();
   return name||'MSUBBER_Subtitles';
 }
 function exportExtensionForType(type){
-  return type==='ass'?'.ass':type==='srt'?'.srt':type==='ttml'?'.ttml':'.vtt';
+  return type==='ass'?'.ass':type==='srt'?'.srt':'.vtt';
 }
 function updateExportDialogDetails(){
   const type=exportFileType.value;
@@ -5711,15 +5697,11 @@ function updateExportDialogDetails(){
   if(type==='vtt'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
-      `Recommended for YouTube positioning. Supports bold, italic, underline, and MSUBBER’s top/bottom plus left/center/right placement more reliably than TTML on YouTube.`;
-  }else if(type==='ttml'){
-    exportFormatDetails.innerHTML=
-      `<strong>${name}</strong>`+
-      `Recommended for color and styling on YouTube. Supports RGBA colors plus bold, italic, underline, and MSUBBER color markup. YouTube may normalize TTML positioning, so use VTT when precise placement matters more.`;
+      `The intermediate subtitle format that supports bold, italic, underline, and positioning. Recommended if your subtitles use positioning.`;
   }else if(type==='ass'){
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
-      `An advanced subtitle format with rich styling and colour support. Not supported for direct upload to YouTube.`;
+      `The most advanced subtitle format. Supports all of VTT’s formatting, plus allows you to change subtitle colours and use richer styling.`;
   }else{
     exportFormatDetails.innerHTML=
       `<strong>${name}</strong>`+
@@ -5879,7 +5861,7 @@ function exportASStext(options={}){
   function colorTags(style){
     const primary=hexToAssColor(style.textColor).replace(/^&H/,'');
     const outline=hexToAssColor(style.outlineColor).replace(/^&H/,'');
-    const shadow=hexToAssColor(style.shadowColor).replace(/^&H/,'');
+    const shadow=hexToAssColor(style.shadowColor,'80').replace(/^&H/,'');
     return `\\c&H${primary}&\\3c&H${outline}&\\4c&H${shadow}&`;
   }
 
@@ -6057,172 +6039,6 @@ ${lines.join('\n')}
     return `WEBVTT\n\nNOTE Static MSUBBER TV Roll history.\n\n${cues.join('\n\n')}\n`;
   }
 
-  function xmlEscape(value){
-    return String(value??'')
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&apos;');
-  }
-
-  function ttmlTime(seconds){
-    const ms=Math.max(0,Math.round(Number(seconds||0)*1000));
-    const h=Math.floor(ms/3600000);
-    const m=Math.floor((ms%3600000)/60000);
-    const s=Math.floor((ms%60000)/1000);
-    const milli=ms%1000;
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(milli).padStart(3,'0')}`;
-  }
-
-  function inlineColorRunsTTML(input,defaultColor){
-    const source=String(input??'');
-    const runs=[];
-    let cursor=0;
-    const regex=/\[([^\]]+)\]\{([^}]+)\}/g;
-    let match;
-
-    while((match=regex.exec(source))){
-      if(match.index>0 && source[match.index-1]==='\\')continue;
-
-      if(match.index>cursor){
-        runs.push({text:source.slice(cursor,match.index),color:defaultColor});
-      }
-
-      runs.push({
-        text:match[1],
-        color:cssColorToHex(match[2],defaultColor)
-      });
-
-      cursor=regex.lastIndex;
-    }
-
-    if(cursor<source.length){
-      runs.push({text:source.slice(cursor),color:defaultColor});
-    }
-
-    return runs.length?runs:[{text:source,color:defaultColor}];
-  }
-
-  function ttmlSpanForRun(run,color){
-    const attrs=[];
-    if(color)attrs.push(`tts:color="${xmlEscape(colorToHex8(color,'#FFFFFFFF'))}"`);
-    if(run.bold)attrs.push('tts:fontWeight="bold"');
-    if(run.italic)attrs.push('tts:fontStyle="italic"');
-    if(run.underline)attrs.push('tts:textDecoration="underline"');
-
-    const escaped=xmlEscape(run.text).replace(/\n/g,'<br/>');
-    return attrs.length?`<span ${attrs.join(' ')}>${escaped}</span>`:escaped;
-  }
-
-  function richTextToTTML(input,defaultColor='#FFFFFFFF'){
-    let output='';
-
-    for(const colorRun of inlineColorRunsTTML(input,defaultColor)){
-      const color=colorToHex8(colorRun.color,defaultColor);
-
-      for(const run of previewMarkdownRuns(colorRun.text)){
-        output+=ttmlSpanForRun(run,color);
-      }
-    }
-
-    return output;
-  }
-
-  function markdownToTTML(input){
-    return richTextToTTML(input,'#FFFFFFFF');
-  }
-
-  function ttmlStyleAttrs(event){
-    const style=resolvedCaptionStyle(event);
-    const align=style.alignment==='left'?'start':style.alignment==='right'?'end':'center';
-    const color=style.textColor||'#FFFFFFFF';
-    return `tts:textAlign="${align}" tts:color="${xmlEscape(colorToHex8(color,'#FFFFFFFF'))}"`;
-  }
-
-  function ttmlRegionId(style){
-    const vertical=style.position==='top'?'top':'bottom';
-    const horizontal=style.alignment==='left'?'left':style.alignment==='right'?'right':'center';
-    return `${vertical}_${horizontal}`;
-  }
-
-  function buildTTMLRegions(){
-    // YouTube behaves more reliably when left/center/right are physically
-    // different regions instead of one nearly full-width region.
-    //
-    // These regions intentionally overlap somewhat. Their ORIGIN is what
-    // establishes the anchor; textAlign then aligns inside that local box.
-    const horizontal=[
-      ['left',   '4%',  '46%', 'start'],
-      ['center', '20%', '60%', 'center'],
-      ['right',  '50%', '46%', 'end']
-    ];
-    const vertical=[
-      ['top','5%','40%','before'],
-      ['bottom','55%','40%','after']
-    ];
-    const regions=[];
-
-    for(const [v,y,height,displayAlign] of vertical){
-      for(const [h,x,width,textAlign] of horizontal){
-        regions.push(
-          `      <region xml:id="${v}_${h}" `+
-          `tts:origin="${x} ${y}" tts:extent="${width} ${height}" `+
-          `tts:displayAlign="${displayAlign}" tts:textAlign="${textAlign}" `+
-          `tts:overflow="visible"/>`
-        );
-      }
-    }
-    return regions.join('\n');
-  }
-
-  function buildPlainTTML(){
-    const body=sorted.map((event,index)=>{
-      const region=ttmlRegionId(resolvedCaptionStyle(event));
-      const defaultColor=resolvedCaptionStyle(event).textColor;
-      return `      <p xml:id="caption${index+1}" region="${region}" begin="${ttmlTime(event.start)}" end="${ttmlTime(event.end)}" ${ttmlStyleAttrs(event)}>${richTextToTTML(event.text,defaultColor)}</p>`;
-    }).join('\n');
-
-    return `<?xml version="1.0" encoding="UTF-8"?>\n`+
-`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" xml:space="preserve" ttp:timeBase="media">\n`+
-`  <head>\n`+
-`    <layout>\n`+
-`${buildTTMLRegions()}\n`+
-`    </layout>\n`+
-`  </head>\n`+
-`  <body>\n    <div>\n${body}\n    </div>\n  </body>\n</tt>\n`;
-  }
-
-  function buildStaticTvRollTTML(){
-    const cues=[];
-    let id=1;
-    for(const group of tvRollGroups()){
-      const groupEnd=group[group.length-1].start+clear;
-      for(let stateIndex=0;stateIndex<group.length;stateIndex++){
-        const stateStart=group[stateIndex].start;
-        const stateEnd=stateIndex<group.length-1?group[stateIndex+1].start:groupEnd;
-        const current=group[stateIndex];
-        const style=resolvedCaptionStyle(current);
-        const soFar=group.slice(0,stateIndex+1);
-        const selected=style.position==='top'
-          ?soFar.filter(e=>resolvedCaptionStyle(e).position==='top').slice(-2)
-          :soFar.filter(e=>resolvedCaptionStyle(e).position!=='top').slice(-3);
-        const body=selected.map(e=>{
-          const eventColor=resolvedCaptionStyle(e).textColor;
-          return richTextToTTML(e.text,eventColor);
-        }).filter(Boolean).join('<br/>');
-        if(!body)continue;
-        const region=ttmlRegionId(style);
-        cues.push(`      <p xml:id="caption${id++}" region="${region}" begin="${ttmlTime(stateStart)}" end="${ttmlTime(stateEnd)}" ${ttmlStyleAttrs(current)}>${body}</p>`);
-      }
-    }
-    return `<?xml version="1.0" encoding="UTF-8"?>\n`+
-`<tt xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xml:lang="en" xml:space="preserve" ttp:timeBase="media">\n`+
-`  <head>\n    <layout>\n`+
-`${buildTTMLRegions()}\n`+
-`    </layout>\n  </head>\n  <body>\n    <div>\n${cues.join('\n')}\n    </div>\n  </body>\n</tt>\n`;
-  }
-
   function buildPlainVTT(){
     const cues=sorted.map(event=>
       `${vttTime(event.start)} --> ${vttTime(event.end)}\n${eventTextForVTT(event)}`
@@ -6259,11 +6075,6 @@ ${lines.join('\n')}
     downloadTextFile(`${baseName}.srt`,buildPlainSRT(),'application/x-subrip;charset=utf-8');
   }
 
-  function exportTTML(){
-    const content=styleMode.value==='broadcast'?buildStaticTvRollTTML():buildPlainTTML();
-    downloadTextFile(`${baseName}.ttml`,content,'application/ttml+xml;charset=utf-8');
-  }
-
   if(requested==='ass'){
     exportASS();
     setStatus('Exported ASS subtitles.');
@@ -6279,18 +6090,12 @@ ${lines.join('\n')}
     setStatus('Exported SRT subtitles.');
     return;
   }
-  if(requested==='ttml'){
-    exportTTML();
-    setStatus('Exported TTML subtitles.');
-    return;
-  }
 
   // All subtitle files.
   exportASS();
   setTimeout(exportVTT,120);
   setTimeout(exportSRT,240);
-  setTimeout(exportTTML,360);
-  setStatus('Exported all subtitle files: ASS, WebVTT, SRT, and TTML.');
+  setStatus('Exported all subtitle files: ASS, WebVTT, and SRT.');
 }
 window.onresize=()=>{drawWave();drawTimeline();syncPlayhead()};
 
