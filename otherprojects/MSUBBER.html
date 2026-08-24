@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.6 CLEAN</title>
+<title>MSUBBER v1.0 RC3.7 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1472,7 +1472,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.6 CLEAN</h1>
+  <h1>MSUBBER v1.0 RC3.7 CLEAN</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1545,7 +1545,7 @@ body.findActive .leftColumn{
 
       <div class="small">
         Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
-        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio for editor-style jog audio that follows the playhead while you drag.
+        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio for editor-style jog audio. Audio is heard only while you move the playhead; holding the mouse still keeps the playhead stationary.
       </div>
     </section>
   </div>
@@ -1815,7 +1815,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.6 CLEAN</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.7 CLEAN</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -3662,6 +3662,8 @@ let scrubDecodeFailed=false;
 let scrubGrainSource=null;
 let scrubGrainGain=null;
 let scrubFallbackLastSeek=0;
+let scrubFallbackStopTimer=0;
+let scrubFallbackTarget=0;
 let scrubLastTarget=-1;
 let scrubLastPointerStamp=0;
 let scrubVelocity=0;
@@ -3805,17 +3807,31 @@ function playScrubGrain(target){
 
 function fallbackMediaScrub(target){
   const stamp=performance.now();
+  scrubFallbackTarget=target;
 
-  // Unlike RC3.5's isolated 70ms bursts, fallback playback stays running
-  // while the pointer moves, which is closer to NLE jog audio.
-  if(stamp-scrubFallbackLastSeek>45 || Math.abs(media.currentTime-target)>0.08){
+  // Fallback audio is a tiny grain only. The media element is forcibly paused
+  // and snapped back to the requested position, so holding LMB still can never
+  // become ordinary playback.
+  if(stamp-scrubFallbackLastSeek>38 || Math.abs(media.currentTime-target)>0.05){
     try{media.currentTime=target}catch(_){}
     scrubFallbackLastSeek=stamp;
   }
 
-  if(media.paused){
-    media.play().catch(()=>{});
+  if(scrubFallbackStopTimer){
+    clearTimeout(scrubFallbackStopTimer);
+    scrubFallbackStopTimer=0;
   }
+
+  media.play().then(()=>{
+    scrubFallbackStopTimer=setTimeout(()=>{
+      if(!audioScrubSession)return;
+      try{
+        media.pause();
+        media.currentTime=scrubFallbackTarget;
+      }catch(_){}
+      scrubFallbackStopTimer=0;
+    },48);
+  }).catch(()=>{});
 }
 
 function previewAudioScrub(time){
@@ -3833,17 +3849,28 @@ function previewAudioScrub(time){
   try{media.currentTime=target}catch(_){}
 
   if(scrubAudioBuffer){
-    // Don't let the media element duplicate the Web Audio sound.
-    try{media.pause()}catch(_){}
+    // Keep the media element PAUSED at the pointer position. Web Audio handles
+    // the audible scrub grain separately.
+    try{
+      media.pause();
+      media.currentTime=target;
+    }catch(_){}
     playScrubGrain(target);
   }else{
-    // Use continuous fallback until/if decoded audio becomes ready.
+    // Fallback also uses only a short grain, never continuous playback.
     fallbackMediaScrub(target);
 
     if(!scrubDecodeFailed && loadedMediaFile){
       ensureDecodedScrubAudio().then(buffer=>{
         if(buffer && audioScrubSession){
-          try{media.pause()}catch(_){}
+          if(scrubFallbackStopTimer){
+            clearTimeout(scrubFallbackStopTimer);
+            scrubFallbackStopTimer=0;
+          }
+          try{
+            media.pause();
+            media.currentTime=scrubLastTarget;
+          }catch(_){}
           playScrubGrain(scrubLastTarget);
         }
       });
@@ -3855,7 +3882,16 @@ function endAudioScrub(){
   if(!audioScrubSession)return;
 
   stopScrubGrain();
-  try{media.pause()}catch(_){}
+
+  if(scrubFallbackStopTimer){
+    clearTimeout(scrubFallbackStopTimer);
+    scrubFallbackStopTimer=0;
+  }
+
+  try{
+    media.pause();
+    if(scrubLastTarget>=0)media.currentTime=scrubLastTarget;
+  }catch(_){}
 
   const resume=audioScrubWasPlaying;
   audioScrubSession=false;
@@ -5945,6 +5981,16 @@ scrubBar.addEventListener('change',endAudioScrub);
 video.addEventListener('loadedmetadata',updateTransport);
 audio.addEventListener('loadedmetadata',updateTransport);
 video.addEventListener('play',updateTransport);video.addEventListener('pause',updateTransport);
+
+function holdScrubPlayhead(){
+  if(!audioScrubSession || scrubLastTarget<0)return;
+  if(Math.abs(media.currentTime-scrubLastTarget)>0.035){
+    try{media.currentTime=scrubLastTarget}catch(_){}
+  }
+}
+video.addEventListener('timeupdate',holdScrubPlayhead);
+audio.addEventListener('timeupdate',holdScrubPlayhead);
+
 audio.addEventListener('play',updateTransport);audio.addEventListener('pause',updateTransport);
 undoBtn.onclick=undo;redoBtn.onclick=redo;
 document.addEventListener('keydown',ev=>{
