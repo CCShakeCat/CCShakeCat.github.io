@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="msubber_logo.png">
-<title>MSUBBER v1.0 RC3.8 CLEAN</title>
+<title>MSUBBER v1.0 RC3.9 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1831,7 +1831,7 @@ _This is also italic_</div></div>
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent aboutContent">
     <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
-    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.8 CLEAN</strong></div>
+    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.9 CLEAN</strong></div>
     <div class="aboutSubtitle">Subtitle editor</div>
     <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
     <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
@@ -2470,7 +2470,8 @@ function peaksFromAudioBuffer(buf,count=4000){
   }
 
   const total=buf.length;
-  const size=Math.max(1,Math.floor(total/count));
+  count=Math.max(1,Math.min(count,total));
+  const size=Math.max(1,Math.ceil(total/count));
   const result=new Array(count).fill(0);
 
   for(let i=0;i<count;i++){
@@ -2503,71 +2504,61 @@ async function decodePeaksNative(file){
 }
 
 async function decodePeaksMediabunny(file){
-  const {
-    Input,
-    ALL_FORMATS,
-    BlobSource,
-    AudioSampleSink
-  }=await loadMediabunny();
-
-  const input=new Input({
-    formats:ALL_FORMATS,
-    source:new BlobSource(file)
-  });
+  const {Input,ALL_FORMATS,BlobSource,AudioSampleSink}=await loadMediabunny();
+  const input=new Input({formats:ALL_FORMATS,source:new BlobSource(file)});
 
   try{
     const track=await input.getPrimaryAudioTrack();
-    if(!track)return null;
+    if(!track)throw new Error('This media file has no audio track.');
+    if(!(await track.canDecode()))throw new Error('The browser cannot decode this audio codec.');
 
-    if(!(await track.canDecode()))return null;
-
-    const duration=Number(await input.getDuration()) ||
-      Number(await track.getDuration()) ||
+    const duration=Number(await track.computeDuration()) ||
+      Number(await input.computeDuration()) ||
       Number(media.duration) || 0;
+    if(!(duration>0))throw new Error('Could not determine audio duration.');
 
-    if(!(duration>0))return null;
-
-    // Sparse monotonic sampling avoids decoding the full video into memory.
-    // Mediabunny internally demuxes the audio track from MP4/WebM/etc.
-    const count=Math.max(900,Math.min(4000,Math.round(duration*3)));
-    const timestamps=Array.from({length:count},(_,i)=>
-      Math.min(duration,((i+.5)/count)*duration)
-    );
-
+    const bucketCount=Math.max(1200,Math.min(6000,Math.round(duration*12)));
+    const result=new Float32Array(bucketCount);
     const sink=new AudioSampleSink(track);
-    const result=new Array(count).fill(0);
-    let index=0;
 
-    for await(const sample of sink.samplesAtTimestamps(timestamps)){
-      let peak=0;
+    let processed=0;
+    for await(const sample of sink.samples()){
+      try{
+        const timestamp=Math.max(0,Number(sample.timestamp)||0);
+        const sampleDuration=Math.max(0,Number(sample.duration)||0);
+        const startBucket=Math.max(0,Math.min(bucketCount-1,
+          Math.floor((timestamp/duration)*bucketCount)));
+        const endBucket=Math.max(startBucket,Math.min(bucketCount-1,
+          Math.floor(((timestamp+sampleDuration)/duration)*bucketCount)));
 
-      if(sample){
-        try{
-          const buffer=sample.toAudioBuffer();
-
-          for(let channel=0;channel<buffer.numberOfChannels;channel++){
-            const data=buffer.getChannelData(channel);
-            for(let i=0;i<data.length;i++){
-              const value=Math.abs(data[i]);
-              if(value>peak)peak=value;
-            }
+        let peak=0;
+        for(let channel=0;channel<sample.numberOfChannels;channel++){
+          const bytes=sample.allocationSize({format:'f32-planar',planeIndex:channel});
+          if(!bytes)continue;
+          const floats=new Float32Array(bytes/4);
+          sample.copyTo(floats,{format:'f32-planar',planeIndex:channel});
+          for(let i=0;i<floats.length;i++){
+            const value=Math.abs(floats[i]);
+            if(value>peak)peak=value;
           }
-        }finally{
-          // Current Mediabunny samples may expose close(); harmless if absent.
-          try{sample.close?.()}catch(_){}
         }
+
+        for(let bucket=startBucket;bucket<=endBucket;bucket++){
+          if(peak>result[bucket])result[bucket]=peak;
+        }
+      }finally{
+        try{sample.close?.()}catch(_){}
       }
 
-      result[index++]=peak;
-
-      // Yield occasionally so long videos don't freeze the editor while the
-      // waveform is being built.
-      if(index%120===0){
-        await new Promise(resolve=>setTimeout(resolve,0));
-      }
+      processed++;
+      if(processed%250===0)await new Promise(resolve=>setTimeout(resolve,0));
     }
 
-    return {peaks:result,duration};
+    const output=Array.from(result);
+    if(!output.some(value=>value>0)){
+      throw new Error('Audio decoded, but no waveform samples were produced.');
+    }
+    return {peaks:output,duration};
   }finally{
     try{input.dispose?.()}catch(_){}
   }
@@ -2577,6 +2568,7 @@ async function decodePeaks(file){
   const requestId=(decodePeaks.requestId=(decodePeaks.requestId||0)+1);
 
   peaks=[];
+  waveformDuration=0;
   drawWave();
   setStatus('Building waveform…');
 
@@ -2601,6 +2593,7 @@ async function decodePeaks(file){
 
   if(decoded?.peaks?.length){
     peaks=decoded.peaks;
+    waveformDuration=Number(decoded.duration)||Number(media.duration)||0;
     drawWave();
     setStatus(`Loaded ${file.name}; waveform ready.`);
   }else{
@@ -3520,7 +3513,7 @@ function drawWave(){
 
   // --- Audio waveform ---
   // Drawn only in the caption lane area so the ruler stays easy to read.
-  if(peaks.length && Number.isFinite(media.duration) && media.duration>0){
+  if(peaks.length && Number.isFinite(waveformDuration) && waveformDuration>0){
     const waveTop=rulerHeight+4;
     const waveBottom=rect.height-5;
     const waveHeight=Math.max(8,waveBottom-waveTop);
@@ -3528,7 +3521,7 @@ function drawWave(){
     const halfHeight=waveHeight/2;
 
     ctx.save();
-    ctx.globalAlpha=.48;
+    ctx.globalAlpha=.68;
     ctx.fillStyle=waveformColor;
 
     // One vertical bar per screen pixel. Each bar uses the strongest peak
@@ -3537,8 +3530,8 @@ function drawWave(){
       const t0=v.start+(x/rect.width)*v.span;
       const t1=v.start+((x+1)/rect.width)*v.span;
 
-      let i0=Math.floor((t0/media.duration)*peaks.length);
-      let i1=Math.ceil((t1/media.duration)*peaks.length);
+      let i0=Math.floor((t0/waveformDuration)*peaks.length);
+      let i1=Math.ceil((t1/waveformDuration)*peaks.length);
       i0=Math.max(0,Math.min(peaks.length-1,i0));
       i1=Math.max(i0+1,Math.min(peaks.length,i1));
 
@@ -5904,8 +5897,8 @@ function updateTransport(){
 }
 playPauseBtn.onclick=()=>{if(media.paused)media.play();else media.pause();updateTransport();updatePreview()};
 scrubBar.oninput=()=>{media.currentTime=Number(scrubBar.value)||0;syncPlayhead();updateTransport()};
-video.addEventListener('loadedmetadata',updateTransport);
-audio.addEventListener('loadedmetadata',updateTransport);
+video.addEventListener('loadedmetadata',()=>{updateTransport();drawWave();});
+audio.addEventListener('loadedmetadata',()=>{updateTransport();drawWave();});
 video.addEventListener('play',updateTransport);video.addEventListener('pause',updateTransport);
 audio.addEventListener('play',updateTransport);audio.addEventListener('pause',updateTransport);
 undoBtn.onclick=undo;redoBtn.onclick=redo;
