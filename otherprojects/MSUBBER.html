@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="msubber_logo.png">
-<title>MSUBBER v1.0 RC3.7 CLEAN.1</title>
+<title>MSUBBER v1.0 RC3.8 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1560,7 +1560,7 @@ body.findActive .leftColumn{
 
       <div class="small">
         Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
-        The timeline shows the media waveform when decoding is available. Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
+        The timeline shows the audio waveform for supported audio and video files. Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
       </div>
     </section>
   </div>
@@ -1831,7 +1831,7 @@ _This is also italic_</div></div>
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent aboutContent">
     <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
-    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.7 CLEAN.1</strong></div>
+    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.8 CLEAN</strong></div>
     <div class="aboutSubtitle">Subtitle editor</div>
     <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
     <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
@@ -2448,13 +2448,166 @@ function parseTranscript(){
   events=blocks.map((text,i)=>({start:i*step,end:Math.min(dur,i*step+Math.max(1.1,step*.9)),text,lane:i%LANE_COUNT}));assignLanes();undoStack=[];redoStack=[];updateUndoButtons();
   selected=events.length?0:-1;renderAll();setStatus(`Created ${events.length} editable captions. Drag them into place.`);
 }
+let mediabunnyModulePromise=null;
+
+async function loadMediabunny(){
+  if(mediabunnyModulePromise)return mediabunnyModulePromise;
+
+  // Pinned version: keep release behavior stable.
+  mediabunnyModulePromise=import('https://cdn.jsdelivr.net/npm/mediabunny@1.55.2/+esm')
+    .catch(error=>{
+      mediabunnyModulePromise=null;
+      throw error;
+    });
+
+  return mediabunnyModulePromise;
+}
+
+function peaksFromAudioBuffer(buf,count=4000){
+  const channels=[];
+  for(let channel=0;channel<buf.numberOfChannels;channel++){
+    channels.push(buf.getChannelData(channel));
+  }
+
+  const total=buf.length;
+  const size=Math.max(1,Math.floor(total/count));
+  const result=new Array(count).fill(0);
+
+  for(let i=0;i<count;i++){
+    const a=i*size;
+    const b=i===count-1?total:Math.min(total,a+size);
+    let max=0;
+
+    for(let j=a;j<b;j++){
+      for(let channel=0;channel<channels.length;channel++){
+        const value=Math.abs(channels[channel][j]||0);
+        if(value>max)max=value;
+      }
+    }
+
+    result[i]=max;
+  }
+
+  return result;
+}
+
+async function decodePeaksNative(file){
+  const ab=await file.arrayBuffer();
+  audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+  const buf=await audioContext.decodeAudioData(ab.slice(0));
+
+  return {
+    peaks:peaksFromAudioBuffer(buf,4000),
+    duration:buf.duration
+  };
+}
+
+async function decodePeaksMediabunny(file){
+  const {
+    Input,
+    ALL_FORMATS,
+    BlobSource,
+    AudioSampleSink
+  }=await loadMediabunny();
+
+  const input=new Input({
+    formats:ALL_FORMATS,
+    source:new BlobSource(file)
+  });
+
+  try{
+    const track=await input.getPrimaryAudioTrack();
+    if(!track)return null;
+
+    if(!(await track.canDecode()))return null;
+
+    const duration=Number(await input.getDuration()) ||
+      Number(await track.getDuration()) ||
+      Number(media.duration) || 0;
+
+    if(!(duration>0))return null;
+
+    // Sparse monotonic sampling avoids decoding the full video into memory.
+    // Mediabunny internally demuxes the audio track from MP4/WebM/etc.
+    const count=Math.max(900,Math.min(4000,Math.round(duration*3)));
+    const timestamps=Array.from({length:count},(_,i)=>
+      Math.min(duration,((i+.5)/count)*duration)
+    );
+
+    const sink=new AudioSampleSink(track);
+    const result=new Array(count).fill(0);
+    let index=0;
+
+    for await(const sample of sink.samplesAtTimestamps(timestamps)){
+      let peak=0;
+
+      if(sample){
+        try{
+          const buffer=sample.toAudioBuffer();
+
+          for(let channel=0;channel<buffer.numberOfChannels;channel++){
+            const data=buffer.getChannelData(channel);
+            for(let i=0;i<data.length;i++){
+              const value=Math.abs(data[i]);
+              if(value>peak)peak=value;
+            }
+          }
+        }finally{
+          // Current Mediabunny samples may expose close(); harmless if absent.
+          try{sample.close?.()}catch(_){}
+        }
+      }
+
+      result[index++]=peak;
+
+      // Yield occasionally so long videos don't freeze the editor while the
+      // waveform is being built.
+      if(index%120===0){
+        await new Promise(resolve=>setTimeout(resolve,0));
+      }
+    }
+
+    return {peaks:result,duration};
+  }finally{
+    try{input.dispose?.()}catch(_){}
+  }
+}
+
 async function decodePeaks(file){
-  setStatus('Building waveform…');const ab=await file.arrayBuffer();audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
-  try{const buf=await audioContext.decodeAudioData(ab.slice(0)),data=buf.getChannelData(0),count=4000,size=Math.max(1,Math.floor(data.length/count));peaks=[];
-    for(let i=0;i<count;i++){let max=0,a=i*size,b=Math.min(data.length,a+size);for(let j=a;j<b;j++)max=Math.max(max,Math.abs(data[j]));peaks.push(max)}
-    setStatus(`Loaded ${file.name} (${fmt(buf.duration)}).`);
-  }catch{peaks=[];setStatus(`Loaded ${file.name}; waveform decoding was unavailable.`)}
-  renderAll();
+  const requestId=(decodePeaks.requestId=(decodePeaks.requestId||0)+1);
+
+  peaks=[];
+  drawWave();
+  setStatus('Building waveform…');
+
+  let decoded=null;
+
+  // Audio-only formats are generally handled perfectly by Web Audio and this
+  // avoids loading the extra media parser when it isn't necessary.
+  try{
+    decoded=await decodePeaksNative(file);
+  }catch(nativeError){
+    console.info('Native waveform decode unavailable; trying container audio track.',nativeError);
+
+    try{
+      decoded=await decodePeaksMediabunny(file);
+    }catch(mediaError){
+      console.warn('Container waveform decode unavailable.',mediaError);
+    }
+  }
+
+  // Ignore a stale result if the user imported another media file meanwhile.
+  if(requestId!==decodePeaks.requestId)return;
+
+  if(decoded?.peaks?.length){
+    peaks=decoded.peaks;
+    drawWave();
+    setStatus(`Loaded ${file.name}; waveform ready.`);
+  }else{
+    peaks=[];
+    drawWave();
+    setStatus(`Loaded ${file.name}; waveform unavailable for this media/codec.`);
+  }
 }
 
 mediaFile.addEventListener('change',async event=>{
