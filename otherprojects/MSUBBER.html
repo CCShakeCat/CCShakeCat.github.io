@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.5 CLEAN</title>
+<title>MSUBBER v1.0 RC3.6 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1472,7 +1472,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.5 CLEAN</h1>
+  <h1>MSUBBER v1.0 RC3.6 CLEAN</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1545,7 +1545,7 @@ body.findActive .leftColumn{
 
       <div class="small">
         Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
-        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio to hear short snippets while dragging the playhead or scrub bar.
+        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio for editor-style jog audio that follows the playhead while you drag.
       </div>
     </section>
   </div>
@@ -1815,7 +1815,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.5 CLEAN</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.6 CLEAN</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -2020,6 +2020,7 @@ let selectionBoxDrag=null;
 let pendingTouchEventDrag=null;
 let lastAutoFollowEventIndex=-1;
 let loadedMediaName='', loadedMediaKind='', loadedFontFileName='';
+let loadedMediaFile=null;
 let currentProjectName='';
 let syncingCustomization=false;
 let styleDefaults={
@@ -2453,6 +2454,8 @@ mediaFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
+    loadedMediaFile=f;
+    resetDecodedScrubAudio();
     if(f.type.startsWith('audio/')){
       loadedMediaName=f.name;
       loadedMediaKind='audio';
@@ -2481,6 +2484,8 @@ videoFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
+    loadedMediaFile=f;
+    resetDecodedScrubAudio();
     loadedMediaName=f.name;
     loadedMediaKind='video';
     setActiveMedia(video);
@@ -2499,6 +2504,8 @@ audioFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
+    loadedMediaFile=f;
+    resetDecodedScrubAudio();
     loadedMediaName=f.name;
     loadedMediaKind='audio';
     setActiveMedia(audio);
@@ -3648,9 +3655,66 @@ function endEventDrag(ev){
 
 let audioScrubSession=false;
 let audioScrubWasPlaying=false;
-let audioScrubPauseTimer=0;
-let audioScrubLastStamp=0;
-let audioScrubLastTime=-1;
+let scrubAudioContext=null;
+let scrubAudioBuffer=null;
+let scrubDecodePromise=null;
+let scrubDecodeFailed=false;
+let scrubGrainSource=null;
+let scrubGrainGain=null;
+let scrubFallbackLastSeek=0;
+let scrubLastTarget=-1;
+let scrubLastPointerStamp=0;
+let scrubVelocity=0;
+
+function resetDecodedScrubAudio(){
+  if(scrubGrainSource){
+    try{scrubGrainSource.stop()}catch(_){}
+    scrubGrainSource=null;
+  }
+  scrubAudioBuffer=null;
+  scrubDecodePromise=null;
+  scrubDecodeFailed=false;
+}
+
+function ensureScrubAudioContext(){
+  if(!scrubAudioContext){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return null;
+    scrubAudioContext=new AC();
+  }
+  if(scrubAudioContext.state==='suspended'){
+    scrubAudioContext.resume().catch(()=>{});
+  }
+  return scrubAudioContext;
+}
+
+async function ensureDecodedScrubAudio(){
+  if(scrubAudioBuffer)return scrubAudioBuffer;
+  if(scrubDecodeFailed||!loadedMediaFile)return null;
+  if(scrubDecodePromise)return scrubDecodePromise;
+
+  const ctx=ensureScrubAudioContext();
+  if(!ctx)return null;
+
+  scrubDecodePromise=(async()=>{
+    try{
+      // Browser support depends on the source container/codec. If this fails,
+      // MSUBBER automatically falls back to media-element scrub playback.
+      const bytes=await loadedMediaFile.arrayBuffer();
+      const decoded=await ctx.decodeAudioData(bytes.slice(0));
+      scrubAudioBuffer=decoded;
+      return decoded;
+    }catch(err){
+      scrubDecodeFailed=true;
+      console.warn('MSUBBER scrub-audio decode fallback:',err);
+      return null;
+    }finally{
+      scrubDecodePromise=null;
+    }
+  })();
+
+  return scrubDecodePromise;
+}
 
 function audioScrubAvailable(){
   return Boolean(
@@ -3662,15 +3726,95 @@ function audioScrubAvailable(){
 }
 
 function beginAudioScrub(){
-  if(!audioScrubAvailable() || audioScrubSession)return;
+  if(!audioScrubAvailable()||audioScrubSession)return;
   audioScrubSession=true;
   audioScrubWasPlaying=!media.paused;
-  if(audioScrubPauseTimer){
-    clearTimeout(audioScrubPauseTimer);
-    audioScrubPauseTimer=0;
+  scrubLastTarget=media.currentTime||0;
+  scrubLastPointerStamp=performance.now();
+  scrubVelocity=0;
+
+  try{media.pause()}catch(_){}
+
+  // Start preparing editor-style sample-accurate scrub audio. We don't wait
+  // for it here, so dragging remains responsive.
+  ensureDecodedScrubAudio();
+}
+
+function stopScrubGrain(){
+  if(scrubGrainSource){
+    try{
+      const ctx=scrubAudioContext;
+      if(ctx&&scrubGrainGain){
+        const now=ctx.currentTime;
+        scrubGrainGain.gain.cancelScheduledValues(now);
+        scrubGrainGain.gain.setValueAtTime(scrubGrainGain.gain.value,now);
+        scrubGrainGain.gain.linearRampToValueAtTime(0,now+0.006);
+        scrubGrainSource.stop(now+0.008);
+      }else{
+        scrubGrainSource.stop();
+      }
+    }catch(_){}
   }
-  if(audioScrubWasPlaying){
-    try{media.pause()}catch(_){}
+  scrubGrainSource=null;
+  scrubGrainGain=null;
+}
+
+function playScrubGrain(target){
+  const ctx=ensureScrubAudioContext();
+  const buffer=scrubAudioBuffer;
+  if(!ctx||!buffer)return false;
+
+  stopScrubGrain();
+
+  const duration=Math.min(0.11,Math.max(0.045,0.055+Math.min(0.055,Math.abs(scrubVelocity)*0.018)));
+  const offset=Math.max(0,Math.min(buffer.duration-0.01,target));
+
+  const source=ctx.createBufferSource();
+  const gain=ctx.createGain();
+
+  source.buffer=buffer;
+
+  // Editing-app style jog feel: faster dragging slightly raises playback
+  // speed, but keeps it close enough to normal to identify speech.
+  const rate=Math.max(0.65,Math.min(1.8,0.9+Math.abs(scrubVelocity)*0.12));
+  source.playbackRate.value=rate;
+
+  source.connect(gain);
+  gain.connect(ctx.destination);
+
+  const now=ctx.currentTime;
+  gain.gain.setValueAtTime(0,now);
+  gain.gain.linearRampToValueAtTime(0.95,now+0.004);
+  gain.gain.setValueAtTime(0.95,now+Math.max(0.008,duration-0.010));
+  gain.gain.linearRampToValueAtTime(0,now+duration);
+
+  const available=Math.max(0.01,buffer.duration-offset);
+  source.start(now,offset,Math.min(duration*rate,available));
+  source.stop(now+duration+0.004);
+
+  scrubGrainSource=source;
+  scrubGrainGain=gain;
+  source.onended=()=>{
+    if(scrubGrainSource===source){
+      scrubGrainSource=null;
+      scrubGrainGain=null;
+    }
+  };
+  return true;
+}
+
+function fallbackMediaScrub(target){
+  const stamp=performance.now();
+
+  // Unlike RC3.5's isolated 70ms bursts, fallback playback stays running
+  // while the pointer moves, which is closer to NLE jog audio.
+  if(stamp-scrubFallbackLastSeek>45 || Math.abs(media.currentTime-target)>0.08){
+    try{media.currentTime=target}catch(_){}
+    scrubFallbackLastSeek=stamp;
+  }
+
+  if(media.paused){
+    media.play().catch(()=>{});
   }
 }
 
@@ -3680,43 +3824,43 @@ function previewAudioScrub(time){
 
   const target=Math.max(0,Math.min(media.duration,Number(time)||0));
   const stamp=performance.now();
+  const deltaT=Math.max(1,stamp-scrubLastPointerStamp)/1000;
+  scrubVelocity=(target-scrubLastTarget)/deltaT;
+  scrubLastTarget=target;
+  scrubLastPointerStamp=stamp;
 
-  // Keep this responsive without issuing dozens of play() calls per second.
-  if(stamp-audioScrubLastStamp<55 && Math.abs(target-audioScrubLastTime)<0.04)return;
-  audioScrubLastStamp=stamp;
-  audioScrubLastTime=target;
-
-  if(audioScrubPauseTimer){
-    clearTimeout(audioScrubPauseTimer);
-    audioScrubPauseTimer=0;
-  }
-
+  // Keep the visible/video frame locked exactly to the pointer.
   try{media.currentTime=target}catch(_){}
 
-  // A short burst gives enough context to hear consonants/word boundaries.
-  media.play().then(()=>{
-    audioScrubPauseTimer=setTimeout(()=>{
-      if(audioScrubSession){
-        try{media.pause()}catch(_){}
-      }
-    },70);
-  }).catch(()=>{});
+  if(scrubAudioBuffer){
+    // Don't let the media element duplicate the Web Audio sound.
+    try{media.pause()}catch(_){}
+    playScrubGrain(target);
+  }else{
+    // Use continuous fallback until/if decoded audio becomes ready.
+    fallbackMediaScrub(target);
+
+    if(!scrubDecodeFailed && loadedMediaFile){
+      ensureDecodedScrubAudio().then(buffer=>{
+        if(buffer && audioScrubSession){
+          try{media.pause()}catch(_){}
+          playScrubGrain(scrubLastTarget);
+        }
+      });
+    }
+  }
 }
 
 function endAudioScrub(){
   if(!audioScrubSession)return;
 
-  if(audioScrubPauseTimer){
-    clearTimeout(audioScrubPauseTimer);
-    audioScrubPauseTimer=0;
-  }
-
+  stopScrubGrain();
   try{media.pause()}catch(_){}
-  const resume=audioScrubWasPlaying;
 
+  const resume=audioScrubWasPlaying;
   audioScrubSession=false;
   audioScrubWasPlaying=false;
-  audioScrubLastTime=-1;
+  scrubVelocity=0;
 
   if(resume){
     media.play().catch(()=>{});
@@ -3725,6 +3869,7 @@ function endAudioScrub(){
 
 scrubAudio.addEventListener('change',()=>{
   if(!scrubAudio.checked)endAudioScrub();
+  else ensureDecodedScrubAudio();
 });
 
 function startPlayheadDrag(ev){
