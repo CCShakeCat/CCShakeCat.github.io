@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="msubber_logo.png">
-<title>MSUBBER v1.0</title>
+<title>MSUBBER v1.0.10</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1424,6 +1424,196 @@ body.findActive .leftColumn{
   filter:brightness(1.15);
 }
 
+
+/* v1.0.10: external Markdown + motion text */
+.preferencesCheck{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:36px;
+}
+.preferencesCheck input{
+  width:18px;
+  height:18px;
+  accent-color:var(--accent);
+}
+
+.markdownDialog{width:min(760px,100%)}
+.markdownModalTitle{
+  margin:0 0 14px;
+  font-size:24px;
+  font-weight:700;
+  line-height:1.2;
+}
+.markdownContent{
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3{
+  margin:1.15em 0 .45em;
+  line-height:1.2;
+}
+.markdownContent h1:first-child,
+.markdownContent h2:first-child{margin-top:0}
+.markdownContent p{margin:.55em 0}
+.markdownContent ol,
+.markdownContent ul{padding-left:1.7em}
+.markdownContent li{margin:.4em 0}
+.markdownContent a{color:var(--accent);text-decoration:underline}
+.markdownContent code{
+  padding:.12em .32em;
+  border-radius:4px;
+  background:var(--field);
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.markdownSubtext{
+  color:var(--muted);
+  font-size:.82em;
+  line-height:1.35;
+}
+
+/* Motion spans use transforms only: zero layout reflow.
+   v1.0.10 tuned to behave like a continuous traveling wave. */
+.motionText{
+  display:inline;
+  white-space:pre-wrap;
+}
+.motionChar{
+  display:inline-block;
+  position:relative;
+  will-change:transform;
+  transform:translate3d(0,0,0);
+  transform-origin:center center;
+}
+
+/* A negative phase shift means every character is on the SAME motion curve,
+   just a little farther along than its neighbor. */
+.motion-lr .motionChar{
+  animation:msubberMotionLR 1.25s linear infinite;
+  animation-delay:calc(var(--motion-i) * -72ms);
+}
+.motion-ud .motionChar{
+  animation:msubberMotionUD 1.18s linear infinite;
+  animation-delay:calc(var(--motion-i) * -68ms);
+}
+.motion-circle .motionChar{
+  animation:msubberMotionCircle 1.30s linear infinite;
+  animation-delay:calc(var(--motion-i) * -74ms);
+}
+
+@keyframes msubberMotionLR{
+  0%   {transform:translate3d(0,0,0)}
+  12.5%{transform:translate3d(1.8px,0,0)}
+  25%  {transform:translate3d(3.2px,0,0)}
+  37.5%{transform:translate3d(1.8px,0,0)}
+  50%  {transform:translate3d(0,0,0)}
+  62.5%{transform:translate3d(-1.8px,0,0)}
+  75%  {transform:translate3d(-3.2px,0,0)}
+  87.5%{transform:translate3d(-1.8px,0,0)}
+  100% {transform:translate3d(0,0,0)}
+}
+
+@keyframes msubberMotionUD{
+  0%   {transform:translate3d(0,0,0)}
+  12.5%{transform:translate3d(0,-1.8px,0)}
+  25%  {transform:translate3d(0,-3.4px,0)}
+  37.5%{transform:translate3d(0,-1.8px,0)}
+  50%  {transform:translate3d(0,0,0)}
+  62.5%{transform:translate3d(0,1.8px,0)}
+  75%  {transform:translate3d(0,3.4px,0)}
+  87.5%{transform:translate3d(0,1.8px,0)}
+  100% {transform:translate3d(0,0,0)}
+}
+
+@keyframes msubberMotionCircle{
+  0%   {transform:translate3d(0,-3px,0)}
+  12.5%{transform:translate3d(2.1px,-2.1px,0)}
+  25%  {transform:translate3d(3px,0,0)}
+  37.5%{transform:translate3d(2.1px,2.1px,0)}
+  50%  {transform:translate3d(0,3px,0)}
+  62.5%{transform:translate3d(-2.1px,2.1px,0)}
+  75%  {transform:translate3d(-3px,0,0)}
+  87.5%{transform:translate3d(-2.1px,-2.1px,0)}
+  100% {transform:translate3d(0,-3px,0)}
+}
+
+html[data-text-motion="off"] .motionChar{
+  animation:none!important;
+  transform:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .motionChar{
+    animation:none!important;
+    transform:none!important;
+  }
+}
+
+/* v1.0.10 Markdown-load error handler */
+.markdownErrorBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:2200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.64);
+}
+.markdownErrorBackdrop.open{display:flex}
+.markdownErrorDialog{
+  width:min(680px,100%);
+  max-height:calc(100dvh - 36px);
+  overflow:auto;
+  padding:26px;
+  text-align:center;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 18px 60px rgba(0,0,0,.45);
+}
+.markdownErrorDialog h1{
+  margin:0 0 20px;
+  color:var(--accent);
+  font-size:clamp(26px,5vw,48px);
+  line-height:1.08;
+}
+.markdownErrorDialog p{
+  margin:14px auto;
+  max-width:580px;
+  font-size:clamp(16px,2.5vw,22px);
+  line-height:1.4;
+}
+.markdownErrorDialog a{
+  color:inherit;
+  text-decoration:underline;
+}
+.markdownErrorCode{
+  width:max-content;
+  max-width:100%;
+  margin:24px auto 12px;
+  padding:10px 18px;
+  overflow-wrap:anywhere;
+  background:var(--field);
+  border:1px solid var(--line);
+  border-radius:7px;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:clamp(15px,2vw,20px);
+}
+.markdownErrorOk{
+  min-width:170px;
+  min-height:58px;
+  margin-top:2px;
+  font-size:28px;
+}
+.markdownErrorEggHint{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:11px;
+}
+
 </style>
 </head>
 <body>
@@ -1501,6 +1691,7 @@ body.findActive .leftColumn{
       </div>
       <div class="desktopMenuSeparator"></div>
       <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
+      <button class="desktopMenuItem" type="button" data-command="changelog"><span>Changelog</span></button>
             <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
     </div>
   </div>
@@ -1508,7 +1699,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1><span class="msubberBrand"><img src="msubber_logo.png" alt="MSUBBER"><span>V1.0</span></span></h1>
+  <h1><span class="msubberBrand"><img src="msubber_logo.png" alt="MSUBBER"><span>v1.0.10</span></span></h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1791,6 +1982,12 @@ body.findActive .leftColumn{
         <option value="edge">Edge-to-edge</option>
         <option value="smooth">Smooth</option>
       </select>
+
+      <label for="preferencesMotion">Text motion effects</label>
+      <label class="preferencesCheck">
+        <input id="preferencesMotion" type="checkbox" checked>
+        <span>Allow wiggle/wave text</span>
+      </label>
     </div>
     <div class="preferencesFooter">
       <button id="preferencesCancel" class="secondary" type="button">Cancel</button>
@@ -1842,6 +2039,10 @@ body.findActive .leftColumn{
 _This is also italic_</div></div>
     <div><strong>Underline</strong><div class="markdownExample">__This is underlined__</div></div>
     <div><strong>Literal Markdown</strong><div class="markdownExample">\*This is not italic\*</div></div>
+    <div><strong>Subtext</strong><div class="markdownExample">-# Small, muted text</div></div>
+    <div><strong>Text motion</strong><div class="markdownExample">&lt;~left/right~&gt;
+^~up/down~^
+)~circle~(</div></div>
     <div class="small">Formatting is preserved in the preview and supported exports. WebVTT carries bold/italic/underline; ASS carries richer styling.</div>
   </div>
   <div class="appModalFooter"><button id="markdownHelpClose" type="button">Close</button></div>
@@ -1851,7 +2052,7 @@ _This is also italic_</div></div>
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent aboutContent">
     <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
-    <div class="aboutVersion"><strong>MSUBBER v1.0</strong></div>
+    <div class="aboutVersion"><strong>MSUBBER v1.0.10</strong></div>
     <div class="aboutSubtitle">Subtitle editor</div>
     <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
     <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
@@ -1921,25 +2122,32 @@ _This is also italic_</div></div>
 
 
 <div id="todoBackdrop" class="rcBackdrop">
-  <div class="rcDialog">
+  <div class="rcDialog markdownDialog">
     <h2>TO-DO</h2>
-    <ol>
-      <li>Add support for typing in effects</li>
-      <li>Add colour theming for UI</li>
-      <li>Add Playhead Nudging (Back and forth frame-by-frame with , and .; forward and back one second with ← and →)</li>
-      <li>Fullscreen preview rendering</li>
-      <li>Proper layouts for Mobile and Foldables</li>
-      <li>Add animations to the menus for mobile</li>
-      <li>Per-speaker colour*</li>
-      <li>Colour support for YouTube-compatible subtitle exports</li>
-      <li>Export preview animations to compatible subtitle formats/platforms</li>
-      <li>Add Video URL to Import Media</li>
-      <li>Save media to project file</li>
-      <li>Autosave (Customize frequency in Preferences)</li>
-      <li>Apps?</li>
-    </ol>
-    <p class="small">* I already have an idea on how this will work</p>
+    <div id="todoMarkdown" class="markdownContent">
+      <p class="small">Loading TO-DO…</p>
+    </div>
     <div class="rcFooter"><button id="todoClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div id="changelogBackdrop" class="rcBackdrop">
+  <div class="rcDialog markdownDialog">
+    <div id="changelogMarkdown" class="markdownContent">
+      <p class="small">Loading changelog…</p>
+    </div>
+    <div class="rcFooter"><button id="changelogClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div id="markdownErrorBackdrop" class="markdownErrorBackdrop" role="dialog" aria-modal="true" aria-labelledby="markdownErrorTitle">
+  <div class="markdownErrorDialog">
+    <h1 id="markdownErrorTitle">&gt;&gt; MSUBBER: <span id="markdownErrorHeader">Aw, snag!</span></h1>
+    <p>Something went wrong with loading the markdown file. Please try again.</p>
+    <p>If the issue persists, please contact <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
+    <div id="markdownErrorCode" class="markdownErrorCode">ERR: unknown_error (0)</div>
+    <button id="markdownErrorOk" class="markdownErrorOk" type="button">OK</button>
+    <div class="markdownErrorEggHint">Got a funny header easter egg? Let me know!</div>
   </div>
 </div>
 
@@ -1973,6 +2181,7 @@ const themeMode=document.getElementById('themeMode');
 const preferencesBackdrop=document.getElementById('preferencesBackdrop');
 const preferencesTheme=document.getElementById('preferencesTheme');
 const preferencesFollow=document.getElementById('preferencesFollow');
+const preferencesMotion=document.getElementById('preferencesMotion');
 const preferencesCancel=document.getElementById('preferencesCancel');
 const preferencesApply=document.getElementById('preferencesApply');
 const findBackdrop=document.getElementById('findBackdrop');
@@ -5072,6 +5281,7 @@ const commandCatalog=[
   {id:'parseTranscript',title:'Turn Transcript into Captions',path:'TOOLS / TRANSCRIPT',aliases:'parse convert'},
   {id:'preferences',title:'Preferences…',path:'EDIT / PREFERENCES',aliases:'pref settings options theme light dark system'},
   {id:'markdownHelp',title:'Markdown Guide',path:'HELP / MARKDOWN GUIDE',aliases:'bold italic escape'},
+  {id:'changelog',title:'Changelog',path:'HELP / CHANGELOG',aliases:'release notes history versions'},
   {id:'about',title:'About MSUBBER',path:'HELP / ABOUT',aliases:'version'}
 ];
 
@@ -5101,6 +5311,7 @@ function setFollowMode(mode){
 function openPreferences(){
   preferencesTheme.value=themeMode.value;
   preferencesFollow.value=followMode;
+  preferencesMotion.checked=textMotionEnabled;
   preferencesBackdrop.classList.add('open');
 }
 function closePreferences(){
@@ -5110,6 +5321,7 @@ preferencesCancel.addEventListener('click',closePreferences);
 preferencesApply.addEventListener('click',()=>{
   applyTheme(preferencesTheme.value);
   setFollowMode(preferencesFollow.value);
+  setTextMotionEnabled(preferencesMotion.checked);
   closePreferences();
   setStatus('Preferences applied.');
 });
@@ -5449,7 +5661,9 @@ window.addEventListener('resize',closeEventContextMenu);
 function openAppModal(backdrop){backdrop.classList.add('open');requestAnimationFrame(()=>backdrop.querySelector('button')?.focus())}
 function closeAppModal(backdrop){backdrop.classList.remove('open')}
 function closeAnyAppModal(){
+  if(markdownErrorBackdrop.classList.contains('open')){markdownErrorBackdrop.classList.remove('open');return true;}
   if(todoBackdrop.classList.contains('open')){closeTodoDialog();return true;}
+  if(changelogBackdrop.classList.contains('open')){closeChangelogDialog();return true;}
   if(debugBackdrop.classList.contains('open')){closeDebugDialog();return true;}
   if(exportDialogBackdrop.classList.contains('open')){
     closeExportDialog();
@@ -5477,6 +5691,244 @@ const debugCopy=document.getElementById('debugCopy');
 const debugClose=document.getElementById('debugClose');
 const todoBackdrop=document.getElementById('todoBackdrop');
 const todoClose=document.getElementById('todoClose');
+const todoMarkdown=document.getElementById('todoMarkdown');
+const changelogBackdrop=document.getElementById('changelogBackdrop');
+const changelogMarkdown=document.getElementById('changelogMarkdown');
+const changelogClose=document.getElementById('changelogClose');
+const markdownErrorBackdrop=document.getElementById('markdownErrorBackdrop');
+const markdownErrorHeader=document.getElementById('markdownErrorHeader');
+const markdownErrorCode=document.getElementById('markdownErrorCode');
+const markdownErrorOk=document.getElementById('markdownErrorOk');
+
+
+let textMotionEnabled=localStorage.getItem('msubber:textMotion')!=='off';
+document.documentElement.dataset.textMotion=textMotionEnabled?'on':'off';
+
+function setTextMotionEnabled(enabled){
+  textMotionEnabled=Boolean(enabled);
+  document.documentElement.dataset.textMotion=textMotionEnabled?'on':'off';
+  localStorage.setItem('msubber:textMotion',textMotionEnabled?'on':'off');
+}
+
+const markdownResourceCache=new Map();
+let errorHeaders=['Aw, snag!'];
+
+function escapeHtml(value){
+  return String(value??'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function motionChars(textValue,motionClass){
+  const chars=[...String(textValue??'')];
+  return `<span class="motionText ${motionClass}">`+
+    chars.map((char,index)=>{
+      // Spaces stay visually static, but index still advances so the wave's
+      // phase continues naturally across word gaps.
+      if(char===' ')return ' ';
+      return `<span class="motionChar" style="--motion-i:${index}">${escapeHtml(char)}</span>`;
+    }).join('')+
+    `</span>`;
+}
+
+function renderInlineMarkdown(raw){
+  let source=String(raw??'');
+
+  // Protect escaped Markdown punctuation first.
+  const protectedChars=[];
+  source=source.replace(/\\([\\*_`\[\]<>^()\-])/g,(_,char)=>{
+    protectedChars.push(char);
+    return `\uE000${protectedChars.length-1}\uE001`;
+  });
+
+  // Extract motion syntax before escaping markup.
+  const motions=[];
+  source=source.replace(/<~(.+?)~>|<-(.+?)->|\^~(.+?)~\^|\^-(.+?)-\^|\)~(.+?)~\(|\)-(.+?)-\(/g,(full,lrTilde,lrDash,udTilde,udDash,circleTilde,circleDash)=>{
+    const lr=lrTilde??lrDash;
+    const ud=udTilde??udDash;
+    const circle=circleTilde??circleDash;
+    const type=lr!=null?'motion-lr':ud!=null?'motion-ud':'motion-circle';
+    const value=lr??ud??circle??'';
+    motions.push(motionChars(value,type));
+    return `\uE100${motions.length-1}\uE101`;
+  });
+
+  source=escapeHtml(source);
+
+  // Basic inline Markdown used by MSUBBER docs.
+  source=source
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/__([^_]+)__/g,'<u>$1</u>')
+    .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,'<em>$1</em>')
+    .replace(/(?<!_)_([^_]+)_(?!_)/g,'<em>$1</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  source=source.replace(/\uE100(\d+)\uE101/g,(_,i)=>motions[Number(i)]??'');
+  source=source.replace(/\uE000(\d+)\uE001/g,(_,i)=>escapeHtml(protectedChars[Number(i)]??''));
+  return source;
+}
+
+function renderMSUBBERMarkdown(markdown){
+  const lines=String(markdown??'').replace(/\r\n?/g,'\n').split('\n');
+  const out=[];
+  let listType=null;
+
+  const closeList=()=>{
+    if(listType){
+      out.push(`</${listType}>`);
+      listType=null;
+    }
+  };
+
+  for(const rawLine of lines){
+    const line=rawLine.trimEnd();
+
+    if(!line.trim()){
+      closeList();
+      continue;
+    }
+
+    if(line.startsWith('-# ')){
+      closeList();
+      out.push(`<div class="markdownSubtext">${renderInlineMarkdown(line.slice(3))}</div>`);
+      continue;
+    }
+
+    const heading=line.match(/^(#{1,3})\s+(.+)$/);
+    if(heading){
+      closeList();
+      const level=heading[1].length;
+      out.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+      continue;
+    }
+
+    const ordered=line.match(/^\s*\d+\.\s+(.+)$/);
+    if(ordered){
+      if(listType!=='ol'){
+        closeList();
+        listType='ol';
+        out.push('<ol>');
+      }
+      out.push(`<li>${renderInlineMarkdown(ordered[1])}</li>`);
+      continue;
+    }
+
+    const bullet=line.match(/^\s*[-*+]\s+(.+)$/);
+    if(bullet){
+      if(listType!=='ul'){
+        closeList();
+        listType='ul';
+        out.push('<ul>');
+      }
+      out.push(`<li>${renderInlineMarkdown(bullet[1])}</li>`);
+      continue;
+    }
+
+    closeList();
+    out.push(`<p>${renderInlineMarkdown(line)}</p>`);
+  }
+
+  closeList();
+  return out.join('\n');
+}
+
+function msubberErrorName(status){
+  const names={
+    0:'lost_as_a_lamb',
+    403:'insufficient_permissions',
+    404:'lost_files',
+    408:'took_too_long',
+    422:'uhhhh_syntax_error_i_guess',
+    500:'our_bad',
+    503:'freak_you_lol'
+  };
+  return names[status]||'unknown_error';
+}
+
+async function preloadErrorHeaders(){
+  try{
+    const response=await fetch('error_text.txt',{cache:'no-store'});
+    if(!response.ok)return;
+    const raw=await response.text();
+    const entries=raw
+      .replace(/\r\n?/g,'\n')
+      .split('\n')
+      .map(line=>line.trim())
+      .filter(Boolean)
+      .map(line=>line.replace(/\\n/g,'\n'));
+    if(entries.length)errorHeaders=entries;
+  }catch(_){
+    // The error handler must never depend on its own optional easter-egg file.
+  }
+}
+
+function randomErrorHeader(){
+  return errorHeaders[Math.floor(Math.random()*errorHeaders.length)]||'Aw, snag!';
+}
+
+function showMarkdownError(status=0){
+  const numeric=Number(status)||0;
+  markdownErrorHeader.textContent=randomErrorHeader();
+  markdownErrorCode.textContent=`ERR: ${msubberErrorName(numeric)} (${numeric})`;
+  markdownErrorBackdrop.classList.add('open');
+}
+
+markdownErrorOk.addEventListener('click',()=>markdownErrorBackdrop.classList.remove('open'));
+markdownErrorBackdrop.addEventListener('click',event=>{
+  if(event.target===markdownErrorBackdrop)markdownErrorBackdrop.classList.remove('open');
+});
+
+async function fetchMarkdownResource(path){
+  if(markdownResourceCache.has(path))return markdownResourceCache.get(path);
+
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),8000);
+
+  try{
+    const response=await fetch(path,{cache:'no-store',signal:controller.signal});
+    if(!response.ok){
+      const status=response.status||0;
+      throw Object.assign(new Error(`HTTP ${status}`),{status});
+    }
+    const markdown=await response.text();
+
+    let rendered;
+    try{
+      rendered=renderMSUBBERMarkdown(markdown);
+    }catch(error){
+      throw Object.assign(error,{status:422});
+    }
+
+    markdownResourceCache.set(path,rendered);
+    return rendered;
+  }catch(error){
+    if(error?.name==='AbortError'){
+      throw Object.assign(new Error('Request timed out'),{status:408});
+    }
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function loadMarkdownInto(path,container){
+  container.innerHTML='<p class="small">Loading…</p>';
+  try{
+    const rendered=await fetchMarkdownResource(path);
+    container.innerHTML=rendered;
+    return true;
+  }catch(error){
+    container.innerHTML='<p class="small">Unable to load this file.</p>';
+    showMarkdownError(error?.status||0);
+    return false;
+  }
+}
+
+preloadErrorHeaders();
 
 let debugMessages=[];
 function renderDebugLog(){
@@ -5493,8 +5945,17 @@ function addDebugMessage(message){
 }
 function openDebugDialog(){debugBackdrop.classList.add('open');renderDebugLog()}
 function closeDebugDialog(){debugBackdrop.classList.remove('open')}
-function openTodoDialog(){todoBackdrop.classList.add('open')}
+async function openTodoDialog(){
+  todoBackdrop.classList.add('open');
+  await loadMarkdownInto('to-do.md',todoMarkdown);
+}
 function closeTodoDialog(){todoBackdrop.classList.remove('open')}
+
+async function openChangelogDialog(){
+  changelogBackdrop.classList.add('open');
+  await loadMarkdownInto('changelog.md',changelogMarkdown);
+}
+function closeChangelogDialog(){changelogBackdrop.classList.remove('open')}
 
 debugClear.addEventListener('click',()=>{debugMessages=[];renderDebugLog()});
 debugCopy.addEventListener('click',async()=>{
@@ -5502,6 +5963,8 @@ debugCopy.addEventListener('click',async()=>{
 });
 debugClose.addEventListener('click',closeDebugDialog);
 todoClose.addEventListener('click',closeTodoDialog);
+changelogClose.addEventListener('click',closeChangelogDialog);
+changelogBackdrop.addEventListener('click',e=>{if(e.target===changelogBackdrop)closeChangelogDialog()});
 debugBackdrop.addEventListener('click',e=>{if(e.target===debugBackdrop)closeDebugDialog()});
 todoBackdrop.addEventListener('click',e=>{if(e.target===todoBackdrop)closeTodoDialog()});
 
@@ -5571,6 +6034,7 @@ function executeCommand(id){
       openDebugDialog();
       break;
     case 'markdownHelp': openAppModal(markdownHelpBackdrop); break;
+    case 'changelog': openChangelogDialog(); break;
     case 'about': openAppModal(aboutBackdrop); break;
   }
   closeDesktopMenus();
