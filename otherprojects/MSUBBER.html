@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.4 CLEAN.1</title>
+<title>MSUBBER v1.0 RC3.5 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1370,6 +1370,23 @@ body.findActive .leftColumn{
   .previewAnimationToggle{min-height:42px}
 }
 
+
+/* RC3.5 CLEAN: audio scrubbing */
+.scrubAudioToggle{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:0 2px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.scrubAudioToggle input{
+  width:18px;
+  height:18px;
+  accent-color:var(--accent);
+}
+
 </style>
 </head>
 <body>
@@ -1455,7 +1472,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.4 CLEAN.1</h1>
+  <h1>MSUBBER v1.0 RC3.5 CLEAN</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1517,6 +1534,7 @@ body.findActive .leftColumn{
         <button id="redoBtn" class="secondary">Redo</button>
         <label>Zoom <input id="zoom" type="range" min="1" max="40" step="0.25" value="1"></label>
         <button id="followBtn" class="secondary">Follow playhead: On</button>
+        <label class="scrubAudioToggle"><input id="scrubAudio" type="checkbox"> Scrub audio</label>
       </div>
 
       <div id="combinedTimeline">
@@ -1527,7 +1545,7 @@ body.findActive .leftColumn{
 
       <div class="small">
         Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
-        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
+        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio to hear short snippets while dragging the playhead or scrub bar.
       </div>
     </section>
   </div>
@@ -1797,7 +1815,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.4 CLEAN.1</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.5 CLEAN</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1986,6 +2004,7 @@ const playhead=document.getElementById('playhead'), playheadHit=document.getElem
 const eventList=document.getElementById('eventList'), overlayStack=document.getElementById('overlayStack');
 const zoomEl=document.getElementById('zoom'), statusEl=document.getElementById('status'), mediaEmpty=document.getElementById('mediaEmpty'), styleMode=document.getElementById('styleMode'), exportFormat=document.getElementById('exportFormat'), styleHelp=document.getElementById('styleHelp');
 const playPauseBtn=document.getElementById('playPauseBtn'), scrubBar=document.getElementById('scrubBar'), transportTime=document.getElementById('transportTime');
+const scrubAudio=document.getElementById('scrubAudio');
 const undoBtn=document.getElementById('undoBtn'), redoBtn=document.getElementById('redoBtn');
 
 let media=video, peaks=[], events=[], selected=-1, follow=true, followMode='edge', viewStart=0, drag=null, playheadDrag=false, timelinePan=null, audioContext=null;
@@ -3626,8 +3645,92 @@ function endEventDrag(ev){
   }
   drag=null;assignLanes();renderList();drawTimeline();
 }
+
+let audioScrubSession=false;
+let audioScrubWasPlaying=false;
+let audioScrubPauseTimer=0;
+let audioScrubLastStamp=0;
+let audioScrubLastTime=-1;
+
+function audioScrubAvailable(){
+  return Boolean(
+    scrubAudio.checked &&
+    media &&
+    Number.isFinite(media.duration) &&
+    media.duration>0
+  );
+}
+
+function beginAudioScrub(){
+  if(!audioScrubAvailable() || audioScrubSession)return;
+  audioScrubSession=true;
+  audioScrubWasPlaying=!media.paused;
+  if(audioScrubPauseTimer){
+    clearTimeout(audioScrubPauseTimer);
+    audioScrubPauseTimer=0;
+  }
+  if(audioScrubWasPlaying){
+    try{media.pause()}catch(_){}
+  }
+}
+
+function previewAudioScrub(time){
+  if(!audioScrubAvailable())return;
+  if(!audioScrubSession)beginAudioScrub();
+
+  const target=Math.max(0,Math.min(media.duration,Number(time)||0));
+  const stamp=performance.now();
+
+  // Keep this responsive without issuing dozens of play() calls per second.
+  if(stamp-audioScrubLastStamp<55 && Math.abs(target-audioScrubLastTime)<0.04)return;
+  audioScrubLastStamp=stamp;
+  audioScrubLastTime=target;
+
+  if(audioScrubPauseTimer){
+    clearTimeout(audioScrubPauseTimer);
+    audioScrubPauseTimer=0;
+  }
+
+  try{media.currentTime=target}catch(_){}
+
+  // A short burst gives enough context to hear consonants/word boundaries.
+  media.play().then(()=>{
+    audioScrubPauseTimer=setTimeout(()=>{
+      if(audioScrubSession){
+        try{media.pause()}catch(_){}
+      }
+    },70);
+  }).catch(()=>{});
+}
+
+function endAudioScrub(){
+  if(!audioScrubSession)return;
+
+  if(audioScrubPauseTimer){
+    clearTimeout(audioScrubPauseTimer);
+    audioScrubPauseTimer=0;
+  }
+
+  try{media.pause()}catch(_){}
+  const resume=audioScrubWasPlaying;
+
+  audioScrubSession=false;
+  audioScrubWasPlaying=false;
+  audioScrubLastTime=-1;
+
+  if(resume){
+    media.play().catch(()=>{});
+  }
+}
+
+scrubAudio.addEventListener('change',()=>{
+  if(!scrubAudio.checked)endAudioScrub();
+});
+
 function startPlayheadDrag(ev){
   if(ev.button!==undefined && ev.button!==0)return;
+
+  if(scrubAudio.checked)beginAudioScrub();
 
   ev.preventDefault();
   ev.stopPropagation();
@@ -3646,6 +3749,7 @@ function startPlayheadDrag(ev){
 
   // Seek immediately where the pointer was pressed.
   media.currentTime=timeFromClientX(ev.clientX);
+  previewAudioScrub(media.currentTime);
   syncPlayhead();
 }
 
@@ -3661,6 +3765,7 @@ function movePlayheadDrag(ev){
   }
 
   media.currentTime=timeFromClientX(ev.clientX);
+  previewAudioScrub(media.currentTime);
   syncPlayhead();
 }
 
@@ -3676,6 +3781,7 @@ function endPlayheadDrag(ev){
 
   playheadDrag=false;
   playhead.classList.remove('dragging');
+  endAudioScrub();
 }
 
 playheadHit.addEventListener('pointerdown',startPlayheadDrag);
@@ -3685,6 +3791,7 @@ playheadHit.addEventListener('pointercancel',endPlayheadDrag);
 playheadHit.addEventListener('lostpointercapture',()=>{
   playheadDrag=false;
   playhead.classList.remove('dragging');
+  endAudioScrub();
 });
 function isEmptyTimelineTarget(target){
   return target===combinedTimeline || target===wave || target===captionLane;
@@ -5680,7 +5787,16 @@ function updateTransport(){
   playPauseBtn.textContent=media.paused?'Play':'Pause';
 }
 playPauseBtn.onclick=()=>{if(media.paused)media.play();else media.pause();updateTransport();updatePreview()};
-scrubBar.oninput=()=>{media.currentTime=Number(scrubBar.value)||0;syncPlayhead();updateTransport()};
+scrubBar.oninput=()=>{
+  media.currentTime=Number(scrubBar.value)||0;
+  previewAudioScrub(media.currentTime);
+  syncPlayhead();
+  updateTransport();
+};
+scrubBar.addEventListener('pointerdown',()=>{if(scrubAudio.checked)beginAudioScrub()});
+scrubBar.addEventListener('pointerup',endAudioScrub);
+scrubBar.addEventListener('pointercancel',endAudioScrub);
+scrubBar.addEventListener('change',endAudioScrub);
 video.addEventListener('loadedmetadata',updateTransport);
 audio.addEventListener('loadedmetadata',updateTransport);
 video.addEventListener('play',updateTransport);video.addEventListener('pause',updateTransport);
@@ -5745,6 +5861,7 @@ karaokeClearTiming.addEventListener('click',clearKaraokeWordTiming);
       timingMode:karaokeTimingMode.value
     };
   if(typeof project?.previewAnimations==='boolean')previewAnimations.checked=project.previewAnimations;
+  if(typeof project?.scrubAudio==='boolean')scrubAudio.checked=project.scrubAudio;
     renderKaraokeTimingStatus();
     updatePreview();
   };
