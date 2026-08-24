@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/png" href="msubber_logo.png">
 <title>MSUBBER v1.0 RC3.7 CLEAN</title>
 <style>
 :root{
@@ -69,7 +70,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:12px;
 @keyframes previewEnter{from{transform:translateY(70%);opacity:0}to{transform:translateY(0);opacity:1}}
 
 #combinedTimeline{position:relative;height:150px;background:var(--timeline);border-radius:8px;overflow:hidden;margin-top:10px;cursor:grab;touch-action:none}
-#wave{position:absolute;inset:0;width:100%;height:100%;display:block}
+#wave{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0}
 #playhead{position:absolute;top:0;bottom:0;width:3px;background:#fff;cursor:ew-resize;z-index:30;transform:translateX(-1px)}
 #playhead::before{content:"";position:absolute;top:0;left:50%;transform:translate(-50%,0);width:18px;height:18px;background:#fff;clip-path:polygon(50% 100%,0 0,100% 0)}
 #playheadHit{
@@ -85,7 +86,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:12px;
   pointer-events:auto;
   z-index:30
 }
-#captionLane{position:absolute;left:0;right:0;top:38px;bottom:0;border-top:1px solid #3d3447}
+#captionLane{position:absolute;left:0;right:0;top:38px;bottom:0;border-top:1px solid #3d3447;z-index:10}
 .eventBlock{position:absolute;height:34px;border-radius:6px;background:var(--accent);color:#1d0f18;padding:5px 18px 5px 12px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:grab;border:2px solid transparent;user-select:none;touch-action:none}
 .eventBlock:active{cursor:grabbing}
 .eventBlock.selected{border-color:#fff}
@@ -1371,20 +1372,33 @@ body.findActive .leftColumn{
 }
 
 
-/* RC3.5 CLEAN: audio scrubbing */
-.scrubAudioToggle{
+/* RC3.7 CLEAN branding */
+.msubberBrand{
   display:inline-flex;
   align-items:center;
-  gap:7px;
-  min-height:36px;
-  padding:0 2px;
-  white-space:nowrap;
-  cursor:pointer;
+  gap:10px;
+  min-width:0;
 }
-.scrubAudioToggle input{
-  width:18px;
-  height:18px;
-  accent-color:var(--accent);
+.msubberBrand img{
+  display:block;
+  width:auto;
+  height:30px;
+  max-width:150px;
+  object-fit:contain;
+}
+.msubberBrand > span{
+  white-space:nowrap;
+}
+.aboutLogo{
+  display:block;
+  width:min(360px,80%);
+  height:auto;
+  margin:4px auto 18px;
+}
+@media (max-width:700px){
+  .msubberBrand{gap:7px}
+  .msubberBrand img{height:26px;max-width:130px}
+  .aboutLogo{width:min(300px,90%)}
 }
 
 </style>
@@ -1465,14 +1479,15 @@ body.findActive .leftColumn{
       <div class="desktopMenuSeparator"></div>
       <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
       <button class="desktopMenuItem" type="button" data-command="contact"><span>Contact</span></button>
-      <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
+      <button class="desktopMenuItem" type="button" data-command="about"><span>About <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
+MSUBBER</span></button>
     </div>
   </div>
 </nav>
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.7 CLEAN</h1>
+  <h1><span class="msubberBrand"><img src="msubber_logo.png" alt="MSUBBER"><span>v1.0 RC3.7 CLEAN</span></span></h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1534,7 +1549,6 @@ body.findActive .leftColumn{
         <button id="redoBtn" class="secondary">Redo</button>
         <label>Zoom <input id="zoom" type="range" min="1" max="40" step="0.25" value="1"></label>
         <button id="followBtn" class="secondary">Follow playhead: On</button>
-        <label class="scrubAudioToggle"><input id="scrubAudio" type="checkbox"> Scrub audio</label>
       </div>
 
       <div id="combinedTimeline">
@@ -1545,7 +1559,7 @@ body.findActive .leftColumn{
 
       <div class="small">
         Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
-        Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim. Enable Scrub audio for editor-style jog audio. Audio is heard only while you move the playhead; holding the mouse still keeps the playhead stationary.
+        The timeline shows the media waveform when decoding is available. Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
       </div>
     </section>
   </div>
@@ -1584,7 +1598,7 @@ body.findActive .leftColumn{
         <label for="previewAnimations">Preview animations</label>
         <label class="previewAnimationToggle"><input id="previewAnimations" type="checkbox"> <span>Show built-in animations</span></label>
         <span></span><div class="small previewAnimationDisclaimer">* Animations (including slide-up) will only apply to the preview. Exportable animation support is on the TO-DO list.</div>
-        <div class="settingRow mode-all"><label>Font</label><input id="fontName" value="DIN 2014"></div>
+        <div class="settingRow mode-all"><label>Font</label><input id="fontName" value="-system-"></div>
         <div class="settingRow mode-all"><label>Font size</label><input id="fontSize" type="number" value="54" min="10" max="120"></div>
         <label>Customize</label>
         <select id="customizationTarget">
@@ -2004,7 +2018,6 @@ const playhead=document.getElementById('playhead'), playheadHit=document.getElem
 const eventList=document.getElementById('eventList'), overlayStack=document.getElementById('overlayStack');
 const zoomEl=document.getElementById('zoom'), statusEl=document.getElementById('status'), mediaEmpty=document.getElementById('mediaEmpty'), styleMode=document.getElementById('styleMode'), exportFormat=document.getElementById('exportFormat'), styleHelp=document.getElementById('styleHelp');
 const playPauseBtn=document.getElementById('playPauseBtn'), scrubBar=document.getElementById('scrubBar'), transportTime=document.getElementById('transportTime');
-const scrubAudio=document.getElementById('scrubAudio');
 const undoBtn=document.getElementById('undoBtn'), redoBtn=document.getElementById('redoBtn');
 
 let media=video, peaks=[], events=[], selected=-1, follow=true, followMode='edge', viewStart=0, drag=null, playheadDrag=false, timelinePan=null, audioContext=null;
@@ -2020,7 +2033,6 @@ let selectionBoxDrag=null;
 let pendingTouchEventDrag=null;
 let lastAutoFollowEventIndex=-1;
 let loadedMediaName='', loadedMediaKind='', loadedFontFileName='';
-let loadedMediaFile=null;
 let currentProjectName='';
 let syncingCustomization=false;
 let styleDefaults={
@@ -2454,14 +2466,13 @@ mediaFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
-    loadedMediaFile=f;
-    resetDecodedScrubAudio();
     if(f.type.startsWith('audio/')){
       loadedMediaName=f.name;
       loadedMediaKind='audio';
       setActiveMedia(audio);
       audio.src=URL.createObjectURL(f);
       audio.load();
+      decodePeaks(f);
       setStatus(`Loaded audio: ${f.name}`);
     }else{
       loadedMediaName=f.name;
@@ -2469,6 +2480,7 @@ mediaFile.addEventListener('change',async event=>{
       setActiveMedia(video);
       video.src=URL.createObjectURL(f);
       video.load();
+      decodePeaks(f);
       setStatus(`Loaded video: ${f.name}`);
     }
   }catch(err){
@@ -2484,13 +2496,12 @@ videoFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
-    loadedMediaFile=f;
-    resetDecodedScrubAudio();
     loadedMediaName=f.name;
     loadedMediaKind='video';
     setActiveMedia(video);
     video.src=URL.createObjectURL(f);
     video.load();
+    decodePeaks(f);
     setStatus(`Loaded video: ${f.name}`);
   }catch(err){
     setStatus(`Could not load video: ${err.message}`);
@@ -2504,13 +2515,12 @@ audioFile.addEventListener('change',async event=>{
   if(!f)return;
 
   try{
-    loadedMediaFile=f;
-    resetDecodedScrubAudio();
     loadedMediaName=f.name;
     loadedMediaKind='audio';
     setActiveMedia(audio);
     audio.src=URL.createObjectURL(f);
     audio.load();
+    decodePeaks(f);
     setStatus(`Loaded audio: ${f.name}`);
   }catch(err){
     setStatus(`Could not load audio: ${err.message}`);
@@ -3352,11 +3362,50 @@ function drawWave(){
   const rulerBackground=styles.getPropertyValue('--timeline-ruler').trim()||'#17131b';
   const rulerLine=styles.getPropertyValue('--timeline-line').trim()||'#4d4257';
   const rulerText=styles.getPropertyValue('--muted').trim()||'#c9bdcf';
+  const waveformColor=styles.getPropertyValue('--accent').trim()||'#eb8bc8';
 
   const rulerHeight=38;
   ctx.fillStyle=rulerBackground;
   ctx.fillRect(0,0,rect.width,rulerHeight);
 
+  // --- Audio waveform ---
+  // Drawn only in the caption lane area so the ruler stays easy to read.
+  if(peaks.length && Number.isFinite(media.duration) && media.duration>0){
+    const waveTop=rulerHeight+4;
+    const waveBottom=rect.height-5;
+    const waveHeight=Math.max(8,waveBottom-waveTop);
+    const centerY=waveTop+waveHeight/2;
+    const halfHeight=waveHeight/2;
+
+    ctx.save();
+    ctx.globalAlpha=.48;
+    ctx.fillStyle=waveformColor;
+
+    // One vertical bar per screen pixel. Each bar uses the strongest peak
+    // represented by that pixel so the waveform stays legible while zooming.
+    for(let x=0;x<rect.width;x++){
+      const t0=v.start+(x/rect.width)*v.span;
+      const t1=v.start+((x+1)/rect.width)*v.span;
+
+      let i0=Math.floor((t0/media.duration)*peaks.length);
+      let i1=Math.ceil((t1/media.duration)*peaks.length);
+      i0=Math.max(0,Math.min(peaks.length-1,i0));
+      i1=Math.max(i0+1,Math.min(peaks.length,i1));
+
+      let peak=0;
+      for(let i=i0;i<i1;i++)peak=Math.max(peak,peaks[i]||0);
+
+      const h=Math.max(1,peak*halfHeight);
+      ctx.fillRect(x,centerY-h,1,Math.max(1,h*2));
+    }
+
+    // Center line makes quiet sections easier to track.
+    ctx.globalAlpha=.22;
+    ctx.fillRect(0,Math.round(centerY),rect.width,1);
+    ctx.restore();
+  }
+
+  // --- Time ruler ---
   ctx.strokeStyle=rulerLine;
   ctx.lineWidth=1;
   ctx.beginPath();
@@ -3652,266 +3701,8 @@ function endEventDrag(ev){
   }
   drag=null;assignLanes();renderList();drawTimeline();
 }
-
-let audioScrubSession=false;
-let audioScrubWasPlaying=false;
-let scrubAudioContext=null;
-let scrubAudioBuffer=null;
-let scrubDecodePromise=null;
-let scrubDecodeFailed=false;
-let scrubGrainSource=null;
-let scrubGrainGain=null;
-let scrubFallbackLastSeek=0;
-let scrubFallbackStopTimer=0;
-let scrubFallbackTarget=0;
-let scrubLastTarget=-1;
-let scrubLastPointerStamp=0;
-let scrubVelocity=0;
-
-function resetDecodedScrubAudio(){
-  if(scrubGrainSource){
-    try{scrubGrainSource.stop()}catch(_){}
-    scrubGrainSource=null;
-  }
-  scrubAudioBuffer=null;
-  scrubDecodePromise=null;
-  scrubDecodeFailed=false;
-}
-
-function ensureScrubAudioContext(){
-  if(!scrubAudioContext){
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)return null;
-    scrubAudioContext=new AC();
-  }
-  if(scrubAudioContext.state==='suspended'){
-    scrubAudioContext.resume().catch(()=>{});
-  }
-  return scrubAudioContext;
-}
-
-async function ensureDecodedScrubAudio(){
-  if(scrubAudioBuffer)return scrubAudioBuffer;
-  if(scrubDecodeFailed||!loadedMediaFile)return null;
-  if(scrubDecodePromise)return scrubDecodePromise;
-
-  const ctx=ensureScrubAudioContext();
-  if(!ctx)return null;
-
-  scrubDecodePromise=(async()=>{
-    try{
-      // Browser support depends on the source container/codec. If this fails,
-      // MSUBBER automatically falls back to media-element scrub playback.
-      const bytes=await loadedMediaFile.arrayBuffer();
-      const decoded=await ctx.decodeAudioData(bytes.slice(0));
-      scrubAudioBuffer=decoded;
-      return decoded;
-    }catch(err){
-      scrubDecodeFailed=true;
-      console.warn('MSUBBER scrub-audio decode fallback:',err);
-      return null;
-    }finally{
-      scrubDecodePromise=null;
-    }
-  })();
-
-  return scrubDecodePromise;
-}
-
-function audioScrubAvailable(){
-  return Boolean(
-    scrubAudio.checked &&
-    media &&
-    Number.isFinite(media.duration) &&
-    media.duration>0
-  );
-}
-
-function beginAudioScrub(){
-  if(!audioScrubAvailable()||audioScrubSession)return;
-  audioScrubSession=true;
-  audioScrubWasPlaying=!media.paused;
-  scrubLastTarget=media.currentTime||0;
-  scrubLastPointerStamp=performance.now();
-  scrubVelocity=0;
-
-  try{media.pause()}catch(_){}
-
-  // Start preparing editor-style sample-accurate scrub audio. We don't wait
-  // for it here, so dragging remains responsive.
-  ensureDecodedScrubAudio();
-}
-
-function stopScrubGrain(){
-  if(scrubGrainSource){
-    try{
-      const ctx=scrubAudioContext;
-      if(ctx&&scrubGrainGain){
-        const now=ctx.currentTime;
-        scrubGrainGain.gain.cancelScheduledValues(now);
-        scrubGrainGain.gain.setValueAtTime(scrubGrainGain.gain.value,now);
-        scrubGrainGain.gain.linearRampToValueAtTime(0,now+0.006);
-        scrubGrainSource.stop(now+0.008);
-      }else{
-        scrubGrainSource.stop();
-      }
-    }catch(_){}
-  }
-  scrubGrainSource=null;
-  scrubGrainGain=null;
-}
-
-function playScrubGrain(target){
-  const ctx=ensureScrubAudioContext();
-  const buffer=scrubAudioBuffer;
-  if(!ctx||!buffer)return false;
-
-  stopScrubGrain();
-
-  const duration=Math.min(0.11,Math.max(0.045,0.055+Math.min(0.055,Math.abs(scrubVelocity)*0.018)));
-  const offset=Math.max(0,Math.min(buffer.duration-0.01,target));
-
-  const source=ctx.createBufferSource();
-  const gain=ctx.createGain();
-
-  source.buffer=buffer;
-
-  // Editing-app style jog feel: faster dragging slightly raises playback
-  // speed, but keeps it close enough to normal to identify speech.
-  const rate=Math.max(0.65,Math.min(1.8,0.9+Math.abs(scrubVelocity)*0.12));
-  source.playbackRate.value=rate;
-
-  source.connect(gain);
-  gain.connect(ctx.destination);
-
-  const now=ctx.currentTime;
-  gain.gain.setValueAtTime(0,now);
-  gain.gain.linearRampToValueAtTime(0.95,now+0.004);
-  gain.gain.setValueAtTime(0.95,now+Math.max(0.008,duration-0.010));
-  gain.gain.linearRampToValueAtTime(0,now+duration);
-
-  const available=Math.max(0.01,buffer.duration-offset);
-  source.start(now,offset,Math.min(duration*rate,available));
-  source.stop(now+duration+0.004);
-
-  scrubGrainSource=source;
-  scrubGrainGain=gain;
-  source.onended=()=>{
-    if(scrubGrainSource===source){
-      scrubGrainSource=null;
-      scrubGrainGain=null;
-    }
-  };
-  return true;
-}
-
-function fallbackMediaScrub(target){
-  const stamp=performance.now();
-  scrubFallbackTarget=target;
-
-  // Fallback audio is a tiny grain only. The media element is forcibly paused
-  // and snapped back to the requested position, so holding LMB still can never
-  // become ordinary playback.
-  if(stamp-scrubFallbackLastSeek>38 || Math.abs(media.currentTime-target)>0.05){
-    try{media.currentTime=target}catch(_){}
-    scrubFallbackLastSeek=stamp;
-  }
-
-  if(scrubFallbackStopTimer){
-    clearTimeout(scrubFallbackStopTimer);
-    scrubFallbackStopTimer=0;
-  }
-
-  media.play().then(()=>{
-    scrubFallbackStopTimer=setTimeout(()=>{
-      if(!audioScrubSession)return;
-      try{
-        media.pause();
-        media.currentTime=scrubFallbackTarget;
-      }catch(_){}
-      scrubFallbackStopTimer=0;
-    },48);
-  }).catch(()=>{});
-}
-
-function previewAudioScrub(time){
-  if(!audioScrubAvailable())return;
-  if(!audioScrubSession)beginAudioScrub();
-
-  const target=Math.max(0,Math.min(media.duration,Number(time)||0));
-  const stamp=performance.now();
-  const deltaT=Math.max(1,stamp-scrubLastPointerStamp)/1000;
-  scrubVelocity=(target-scrubLastTarget)/deltaT;
-  scrubLastTarget=target;
-  scrubLastPointerStamp=stamp;
-
-  // Keep the visible/video frame locked exactly to the pointer.
-  try{media.currentTime=target}catch(_){}
-
-  if(scrubAudioBuffer){
-    // Keep the media element PAUSED at the pointer position. Web Audio handles
-    // the audible scrub grain separately.
-    try{
-      media.pause();
-      media.currentTime=target;
-    }catch(_){}
-    playScrubGrain(target);
-  }else{
-    // Fallback also uses only a short grain, never continuous playback.
-    fallbackMediaScrub(target);
-
-    if(!scrubDecodeFailed && loadedMediaFile){
-      ensureDecodedScrubAudio().then(buffer=>{
-        if(buffer && audioScrubSession){
-          if(scrubFallbackStopTimer){
-            clearTimeout(scrubFallbackStopTimer);
-            scrubFallbackStopTimer=0;
-          }
-          try{
-            media.pause();
-            media.currentTime=scrubLastTarget;
-          }catch(_){}
-          playScrubGrain(scrubLastTarget);
-        }
-      });
-    }
-  }
-}
-
-function endAudioScrub(){
-  if(!audioScrubSession)return;
-
-  stopScrubGrain();
-
-  if(scrubFallbackStopTimer){
-    clearTimeout(scrubFallbackStopTimer);
-    scrubFallbackStopTimer=0;
-  }
-
-  try{
-    media.pause();
-    if(scrubLastTarget>=0)media.currentTime=scrubLastTarget;
-  }catch(_){}
-
-  const resume=audioScrubWasPlaying;
-  audioScrubSession=false;
-  audioScrubWasPlaying=false;
-  scrubVelocity=0;
-
-  if(resume){
-    media.play().catch(()=>{});
-  }
-}
-
-scrubAudio.addEventListener('change',()=>{
-  if(!scrubAudio.checked)endAudioScrub();
-  else ensureDecodedScrubAudio();
-});
-
 function startPlayheadDrag(ev){
   if(ev.button!==undefined && ev.button!==0)return;
-
-  if(scrubAudio.checked)beginAudioScrub();
 
   ev.preventDefault();
   ev.stopPropagation();
@@ -3930,7 +3721,6 @@ function startPlayheadDrag(ev){
 
   // Seek immediately where the pointer was pressed.
   media.currentTime=timeFromClientX(ev.clientX);
-  previewAudioScrub(media.currentTime);
   syncPlayhead();
 }
 
@@ -3946,7 +3736,6 @@ function movePlayheadDrag(ev){
   }
 
   media.currentTime=timeFromClientX(ev.clientX);
-  previewAudioScrub(media.currentTime);
   syncPlayhead();
 }
 
@@ -3962,7 +3751,6 @@ function endPlayheadDrag(ev){
 
   playheadDrag=false;
   playhead.classList.remove('dragging');
-  endAudioScrub();
 }
 
 playheadHit.addEventListener('pointerdown',startPlayheadDrag);
@@ -3972,7 +3760,6 @@ playheadHit.addEventListener('pointercancel',endPlayheadDrag);
 playheadHit.addEventListener('lostpointercapture',()=>{
   playheadDrag=false;
   playhead.classList.remove('dragging');
-  endAudioScrub();
 });
 function isEmptyTimelineTarget(target){
   return target===combinedTimeline || target===wave || target===captionLane;
@@ -4679,6 +4466,15 @@ function hexToAssColor(hex,alpha=null){
     ? (255-cssAlpha).toString(16).padStart(2,'0').toUpperCase()
     : String(alpha).toUpperCase();
   return `&H${assAlpha}${blue}${green}${red}`;
+}
+
+
+function resolvedPreviewFontFamily(value){
+  const raw=String(value??'').trim();
+  if(!raw || raw==='-system-'){
+    return 'system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+  }
+  return raw;
 }
 
 function previewTextShadow(outline,shadow){
@@ -5968,29 +5764,10 @@ function updateTransport(){
   playPauseBtn.textContent=media.paused?'Play':'Pause';
 }
 playPauseBtn.onclick=()=>{if(media.paused)media.play();else media.pause();updateTransport();updatePreview()};
-scrubBar.oninput=()=>{
-  media.currentTime=Number(scrubBar.value)||0;
-  previewAudioScrub(media.currentTime);
-  syncPlayhead();
-  updateTransport();
-};
-scrubBar.addEventListener('pointerdown',()=>{if(scrubAudio.checked)beginAudioScrub()});
-scrubBar.addEventListener('pointerup',endAudioScrub);
-scrubBar.addEventListener('pointercancel',endAudioScrub);
-scrubBar.addEventListener('change',endAudioScrub);
+scrubBar.oninput=()=>{media.currentTime=Number(scrubBar.value)||0;syncPlayhead();updateTransport()};
 video.addEventListener('loadedmetadata',updateTransport);
 audio.addEventListener('loadedmetadata',updateTransport);
 video.addEventListener('play',updateTransport);video.addEventListener('pause',updateTransport);
-
-function holdScrubPlayhead(){
-  if(!audioScrubSession || scrubLastTarget<0)return;
-  if(Math.abs(media.currentTime-scrubLastTarget)>0.035){
-    try{media.currentTime=scrubLastTarget}catch(_){}
-  }
-}
-video.addEventListener('timeupdate',holdScrubPlayhead);
-audio.addEventListener('timeupdate',holdScrubPlayhead);
-
 audio.addEventListener('play',updateTransport);audio.addEventListener('pause',updateTransport);
 undoBtn.onclick=undo;redoBtn.onclick=redo;
 document.addEventListener('keydown',ev=>{
@@ -6052,7 +5829,6 @@ karaokeClearTiming.addEventListener('click',clearKaraokeWordTiming);
       timingMode:karaokeTimingMode.value
     };
   if(typeof project?.previewAnimations==='boolean')previewAnimations.checked=project.previewAnimations;
-  if(typeof project?.scrubAudio==='boolean')scrubAudio.checked=project.scrubAudio;
     renderKaraokeTimingStatus();
     updatePreview();
   };
