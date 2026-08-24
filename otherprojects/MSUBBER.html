@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="msubber_logo.png">
-<title>MSUBBER v1.0 RC3.9 CLEAN</title>
+<title>MSUBBER v1.0</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1404,6 +1404,26 @@ body.findActive .leftColumn{
   .aboutLogo{width:min(300px,90%)}
 }
 
+
+/* v1.0: clickable TO-DO link in the preview-animation disclaimer */
+.inlineTodoLink{
+  appearance:none;
+  border:0;
+  padding:0;
+  margin:0;
+  background:transparent;
+  color:var(--accent);
+  font:inherit;
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  cursor:pointer;
+}
+.inlineTodoLink:hover,
+.inlineTodoLink:focus-visible{
+  filter:brightness(1.15);
+}
+
 </style>
 </head>
 <body>
@@ -1597,8 +1617,8 @@ body.findActive .leftColumn{
         <div class="settingRow mode-all"><label>Hard maximum</label><input id="hardMax" type="number" value="50" min="25" max="80"></div>
         <div class="settingRow mode-tvroll"><label>Inactivity clear</label><input id="clearSeconds" type="number" value="3.5" min=".5" max="20" step=".1"></div>
         <label for="previewAnimations">Preview animations</label>
-        <label class="previewAnimationToggle"><input id="previewAnimations" type="checkbox"> <span>Show built-in animations</span></label>
-        <span></span><div class="small previewAnimationDisclaimer">* Animations (including slide-up) will only apply to the preview. Exportable animation support is on the TO-DO list.</div>
+        <label class="previewAnimationToggle"><input id="previewAnimations" type="checkbox"> <span>Show animations</span></label>
+        <span></span><div class="small previewAnimationDisclaimer">* Animations will only apply to the preview. Exportable animation support is on the <button id="previewTodoLink" class="inlineTodoLink" type="button">TO-DO list</button>.</div>
         <div class="settingRow mode-all"><label>Font</label><input id="fontName" value="-system-"></div>
         <div class="settingRow mode-all"><label>Font size</label><input id="fontSize" type="number" value="54" min="10" max="120"></div>
         <label>Customize</label>
@@ -1831,7 +1851,7 @@ _This is also italic_</div></div>
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent aboutContent">
     <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
-    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.9 CLEAN</strong></div>
+    <div class="aboutVersion"><strong>MSUBBER v1.0</strong></div>
     <div class="aboutSubtitle">Subtitle editor</div>
     <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
     <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
@@ -2008,6 +2028,7 @@ const karaokeTapWord=document.getElementById('karaokeTapWord');
 const karaokeClearTiming=document.getElementById('karaokeClearTiming');
 const karaokeTimingStatus=document.getElementById('karaokeTimingStatus');
 const previewAnimations=document.getElementById('previewAnimations');
+const previewTodoLink=document.getElementById('previewTodoLink');
 const transcript=document.getElementById('transcript'), wave=document.getElementById('wave');
 const combinedTimeline=document.getElementById('combinedTimeline'), captionLane=document.getElementById('captionLane');
 const timelineSelectionBox=document.getElementById('timelineSelectionBox');
@@ -5949,6 +5970,7 @@ function updateStyle(){
 
 styleMode.addEventListener('change',()=>{updateStyle();syncCustomizationControls()});
 previewAnimations.addEventListener('change',updatePreview);
+previewTodoLink.addEventListener('click',openTodoDialog);
 customizationTarget.addEventListener('change',syncCustomizationControls);
 karaokeStartSync.addEventListener('click',beginKaraokeWordSync);
 karaokeTapWord.addEventListener('click',tapNextKaraokeWord);
