@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="msubber_logo.png">
-<title>MSUBBER v1.0 RC3.7 CLEAN</title>
+<title>MSUBBER v1.0 RC3.7 CLEAN.1</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1189,7 +1189,7 @@ body.multiSelectMode .eventRow{cursor:pointer}
 }
 #todoBackdrop ol{padding-left:24px}
 #todoBackdrop li{margin:7px 0}
-#contactBackdrop a{color:inherit;text-decoration:underline}
+#aboutBackdrop a{color:inherit;text-decoration:underline}
 
 #status{display:none!important}
 
@@ -1395,6 +1395,9 @@ body.findActive .leftColumn{
   height:auto;
   margin:4px auto 18px;
 }
+.aboutContent{text-align:left}
+.aboutVersion,.aboutSubtitle{text-align:center}
+.aboutSubtitle{margin-bottom:18px}
 @media (max-width:700px){
   .msubberBrand{gap:7px}
   .msubberBrand img{height:26px;max-width:130px}
@@ -1478,9 +1481,7 @@ body.findActive .leftColumn{
       </div>
       <div class="desktopMenuSeparator"></div>
       <button class="desktopMenuItem" type="button" data-command="markdownHelp"><span>Markdown Guide</span></button>
-      <button class="desktopMenuItem" type="button" data-command="contact"><span>Contact</span></button>
-      <button class="desktopMenuItem" type="button" data-command="about"><span>About <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
-MSUBBER</span></button>
+            <button class="desktopMenuItem" type="button" data-command="about"><span>About MSUBBER</span></button>
     </div>
   </div>
 </nav>
@@ -1828,11 +1829,17 @@ _This is also italic_</div></div>
 
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
-  <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.7 CLEAN</strong></div>
-    <div>Subtitle editor</div>
+  <div class="appModalContent aboutContent">
+    <img class="aboutLogo" src="msubber_logo.png" alt="MSUBBER logo">
+    <div class="aboutVersion"><strong>MSUBBER v1.0 RC3.7 CLEAN.1</strong></div>
+    <div class="aboutSubtitle">Subtitle editor</div>
+    <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
+    <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
   </div>
-  <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
+  <div class="appModalFooter">
+    <button id="aboutTodo" class="secondary" type="button">TO-DO</button>
+    <button id="aboutClose" type="button">Close</button>
+  </div>
 </div></div>
 
 <div id="saveProjectBackdrop" class="saveProjectBackdrop" role="dialog" aria-modal="true" aria-labelledby="saveProjectTitle">
@@ -1892,17 +1899,6 @@ _This is also italic_</div></div>
   </div>
 </div>
 
-<div id="contactBackdrop" class="rcBackdrop">
-  <div class="rcDialog">
-    <h2>Contact</h2>
-    <p>This website was made by Mimi Cat. Feel free to make whatever subtitles you want to any video you want. If it’s not your own, make sure you have permission, though.</p>
-    <p>Report any bugs to <a href="https://CCShakeCat.carrd.co" target="_blank" rel="noopener noreferrer">@CCShakeCat</a>.</p>
-    <div class="rcFooter">
-      <button id="contactTodo" class="secondary" type="button">TO-DO</button>
-      <button id="contactClose" type="button">Close</button>
-    </div>
-  </div>
-</div>
 
 <div id="todoBackdrop" class="rcBackdrop">
   <div class="rcDialog">
@@ -1981,6 +1977,7 @@ const markdownHelpClose=document.getElementById('markdownHelpClose');
 const aboutBackdrop=document.getElementById('aboutBackdrop');
 const aboutX=document.getElementById('aboutX');
 const aboutClose=document.getElementById('aboutClose');
+const aboutTodo=document.getElementById('aboutTodo');
 const saveProjectBackdrop=document.getElementById('saveProjectBackdrop');
 const saveProjectName=document.getElementById('saveProjectName');
 const saveProjectFilename=document.getElementById('saveProjectFilename');
@@ -5286,7 +5283,6 @@ function openAppModal(backdrop){backdrop.classList.add('open');requestAnimationF
 function closeAppModal(backdrop){backdrop.classList.remove('open')}
 function closeAnyAppModal(){
   if(todoBackdrop.classList.contains('open')){closeTodoDialog();return true;}
-  if(contactBackdrop.classList.contains('open')){closeContactDialog();return true;}
   if(debugBackdrop.classList.contains('open')){closeDebugDialog();return true;}
   if(exportDialogBackdrop.classList.contains('open')){
     closeExportDialog();
@@ -5302,6 +5298,7 @@ function closeAnyAppModal(){
 }
 [markdownHelpX,markdownHelpClose].forEach(b=>b.addEventListener('click',()=>closeAppModal(markdownHelpBackdrop)));
 [aboutX,aboutClose].forEach(b=>b.addEventListener('click',()=>closeAppModal(aboutBackdrop)));
+aboutTodo.addEventListener('click',()=>{closeAppModal(aboutBackdrop);openTodoDialog();});
 markdownHelpBackdrop.addEventListener('click',e=>{if(e.target===markdownHelpBackdrop)closeAppModal(markdownHelpBackdrop)});
 aboutBackdrop.addEventListener('click',e=>{if(e.target===aboutBackdrop)closeAppModal(aboutBackdrop)});
 
@@ -5311,9 +5308,6 @@ const debugLog=document.getElementById('debugLog');
 const debugClear=document.getElementById('debugClear');
 const debugCopy=document.getElementById('debugCopy');
 const debugClose=document.getElementById('debugClose');
-const contactBackdrop=document.getElementById('contactBackdrop');
-const contactTodo=document.getElementById('contactTodo');
-const contactClose=document.getElementById('contactClose');
 const todoBackdrop=document.getElementById('todoBackdrop');
 const todoClose=document.getElementById('todoClose');
 
@@ -5332,8 +5326,6 @@ function addDebugMessage(message){
 }
 function openDebugDialog(){debugBackdrop.classList.add('open');renderDebugLog()}
 function closeDebugDialog(){debugBackdrop.classList.remove('open')}
-function openContactDialog(){contactBackdrop.classList.add('open')}
-function closeContactDialog(){contactBackdrop.classList.remove('open')}
 function openTodoDialog(){todoBackdrop.classList.add('open')}
 function closeTodoDialog(){todoBackdrop.classList.remove('open')}
 
@@ -5342,11 +5334,8 @@ debugCopy.addEventListener('click',async()=>{
   try{await navigator.clipboard.writeText(debugMessages.join('\n'))}catch{}
 });
 debugClose.addEventListener('click',closeDebugDialog);
-contactClose.addEventListener('click',closeContactDialog);
 todoClose.addEventListener('click',closeTodoDialog);
-contactTodo.addEventListener('click',()=>{closeContactDialog();openTodoDialog()});
 debugBackdrop.addEventListener('click',e=>{if(e.target===debugBackdrop)closeDebugDialog()});
-contactBackdrop.addEventListener('click',e=>{if(e.target===contactBackdrop)closeContactDialog()});
 todoBackdrop.addEventListener('click',e=>{if(e.target===todoBackdrop)closeTodoDialog()});
 
 /*
@@ -5413,9 +5402,6 @@ function executeCommand(id){
       break;
     case 'debug':
       openDebugDialog();
-      break;
-    case 'contact':
-      openContactDialog();
       break;
     case 'markdownHelp': openAppModal(markdownHelpBackdrop); break;
     case 'about': openAppModal(aboutBackdrop); break;
