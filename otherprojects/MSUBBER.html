@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MSUBBER v1.0 RC3.3</title>
+<title>MSUBBER v1.0 RC3.4 CLEAN</title>
 <style>
 :root{
   --bg:#141218;--panel:#201c26;--panel2:#2b2533;--field:#17131b;
@@ -1341,6 +1341,35 @@ body.findActive .leftColumn{
   .rgbaControl .rgbaAlphaValue{grid-area:percent}
 }
 
+
+/* RC3.4 CLEAN: preview-only animation toggle */
+.previewAnimationToggle{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:36px;
+  cursor:pointer;
+}
+.previewAnimationToggle input{
+  width:18px;
+  height:18px;
+  accent-color:var(--accent);
+}
+.previewAnimationDisclaimer{
+  margin-top:-2px;
+  line-height:1.35;
+}
+.previewLine{
+  transform-origin:center bottom;
+  will-change:transform,opacity;
+}
+.previewStackTop .previewLine{
+  transform-origin:center top;
+}
+@media(max-width:700px){
+  .previewAnimationToggle{min-height:42px}
+}
+
 </style>
 </head>
 <body>
@@ -1426,7 +1455,7 @@ body.findActive .leftColumn{
 
 <header class="desktopQuickBar">
   <button id="mobileMenuButton" class="mobileMenuButton" type="button" aria-label="Open menu">☰</button>
-  <h1>MSUBBER v1.0 RC3.3</h1>
+  <h1>MSUBBER v1.0 RC3.4 CLEAN</h1>
   <label class="file">Load video<input id="videoFile" type="file" accept="video/*"></label>
   <input id="mediaFile" type="file" accept="video/*,audio/*" hidden>
   <label class="file">Load audio<input id="audioFile" type="file" accept="audio/*"></label>
@@ -1497,7 +1526,7 @@ body.findActive .leftColumn{
       </div>
 
       <div class="small">
-        Press Play to preview the character reveal and rolling animation.
+        Press Play to preview subtitles. If Preview animations is enabled, TV Roll uses character reveal and rolling movement in the preview only.
         Each event is forced to one subtitle line. Drag empty timeline space to pan, tap it to seek, and drag captions or their edges to move and trim.
       </div>
     </section>
@@ -1534,6 +1563,9 @@ body.findActive .leftColumn{
         <div class="settingRow mode-all"><label>Preferred characters</label><input id="preferred" type="number" value="42" min="20" max="50"></div>
         <div class="settingRow mode-all"><label>Hard maximum</label><input id="hardMax" type="number" value="50" min="25" max="80"></div>
         <div class="settingRow mode-tvroll"><label>Inactivity clear</label><input id="clearSeconds" type="number" value="3.5" min=".5" max="20" step=".1"></div>
+        <label for="previewAnimations">Preview animations</label>
+        <label class="previewAnimationToggle"><input id="previewAnimations" type="checkbox"> <span>Show built-in animations</span></label>
+        <span></span><div class="small previewAnimationDisclaimer">* Animations will only apply to the preview. Exportable animation support is on the TO-DO list.</div>
         <div class="settingRow mode-all"><label>Font</label><input id="fontName" value="DIN 2014"></div>
         <div class="settingRow mode-all"><label>Font size</label><input id="fontSize" type="number" value="54" min="10" max="120"></div>
         <label>Customize</label>
@@ -1765,7 +1797,7 @@ _This is also italic_</div></div>
 <div id="aboutBackdrop" class="appModalBackdrop"><div class="appModal">
   <div class="appModalHeader"><h2>About MSUBBER</h2><button id="aboutX" class="secondary" type="button">✕</button></div>
   <div class="appModalContent">
-    <div><strong>MSUBBER v1.0 RC3.3</strong></div>
+    <div><strong>MSUBBER v1.0 RC3.4 CLEAN</strong></div>
     <div>Subtitle editor</div>
   </div>
   <div class="appModalFooter"><button id="aboutClose" type="button">Close</button></div>
@@ -1852,6 +1884,7 @@ _This is also italic_</div></div>
       <li>Add animations to the menus for mobile</li>
       <li>Per-speaker colour*</li>
       <li>Colour support for YouTube-compatible subtitle exports</li>
+      <li>Export preview animations to compatible subtitle formats/platforms</li>
       <li>Add Video URL to Import Media</li>
       <li>Save media to project file</li>
       <li>Autosave (Customize frequency in Preferences)</li>
@@ -1945,6 +1978,7 @@ const karaokeStartSync=document.getElementById('karaokeStartSync');
 const karaokeTapWord=document.getElementById('karaokeTapWord');
 const karaokeClearTiming=document.getElementById('karaokeClearTiming');
 const karaokeTimingStatus=document.getElementById('karaokeTimingStatus');
+const previewAnimations=document.getElementById('previewAnimations');
 const transcript=document.getElementById('transcript'), wave=document.getElementById('wave');
 const combinedTimeline=document.getElementById('combinedTimeline'), captionLane=document.getElementById('captionLane');
 const timelineSelectionBox=document.getElementById('timelineSelectionBox');
@@ -4591,10 +4625,43 @@ function updatePreview(){
 
     const raw=oneLineCaption(event.text);
     const transformed=broadcast?transformCase(raw):raw;
+    const previewAnimOn=previewAnimations.checked;
+    const elapsed=Math.max(0,now-event.start);
 
-    // TV Roll is now a static rolling-history style:
-    // no typewriter reveal and no sliding/entering animation.
-    appendStyledPreviewText(div,transformed,Infinity,style.textColor);
+    // Preview-only built-in animation:
+    // TV Roll gets a character reveal on the newest line plus a short rolling
+    // movement. Exported subtitle files remain static.
+    let visibleLimit=Infinity;
+    if(previewAnimOn && broadcast && event===newest){
+      const typingMs=24;
+      visibleLimit=Math.max(1,Math.floor((elapsed*1000)/typingMs));
+    }
+
+    appendStyledPreviewText(div,transformed,visibleLimit,style.textColor);
+
+    if(previewAnimOn){
+      const enterDuration=broadcast?0.20:0.14;
+      const p=Math.max(0,Math.min(1,elapsed/enterDuration));
+      const eased=1-Math.pow(1-p,3);
+
+      if(broadcast){
+        // Bottom TV Roll: new content arrives from below while existing lines
+        // settle upward. Top TV Roll mirrors that motion.
+        const top=style.position==='top';
+        const direction=top?-1:1;
+        const distance=(1-eased)*0.85*direction;
+        div.style.transform=`translateY(${distance}em)`;
+        div.style.opacity=String(0.45+0.55*eased);
+      }else{
+        // Standard captions get only a subtle preview entrance.
+        div.style.transform=`scale(${0.97+0.03*eased})`;
+        div.style.opacity=String(0.25+0.75*eased);
+      }
+    }else{
+      div.style.transform='';
+      div.style.opacity='';
+    }
+
     container.appendChild(div);
   }
 
@@ -4614,6 +4681,26 @@ function updatePreview(){
   // older on Line 1, newer on Line 2.
   topHistory.forEach(e=>appendEvent(e,overlayTop));
   bottomHistory.forEach(e=>appendEvent(e,overlayBottom));
+
+  // When TV Roll preview animation is enabled, all visible history lines take
+  // part in the short roll whenever the newest caption begins.
+  if(previewAnimations.checked && broadcast && newest){
+    const elapsed=Math.max(0,now-newest.start);
+    const p=Math.max(0,Math.min(1,elapsed/0.20));
+    const eased=1-Math.pow(1-p,3);
+    const newestStyle=resolvedCaptionStyle(newest);
+    const direction=newestStyle.position==='top'?-1:1;
+    const shift=(1-eased)*0.85*direction;
+
+    const activeContainer=newestStyle.position==='top'?overlayTop:overlayBottom;
+    [...activeContainer.children].forEach((line,index,all)=>{
+      // Newest line already has an entry transform; older lines receive the
+      // same translation so the stack visibly rolls as one unit.
+      if(index<all.length-1){
+        line.style.transform=`translateY(${shift}em)`;
+      }
+    });
+  }
   lastPreviewKey=key;
   lastPreviewCount=history.length;
 }
@@ -5644,6 +5731,7 @@ function updateStyle(){
 
 
 styleMode.addEventListener('change',()=>{updateStyle();syncCustomizationControls()});
+previewAnimations.addEventListener('change',updatePreview);
 customizationTarget.addEventListener('change',syncCustomizationControls);
 karaokeStartSync.addEventListener('click',beginKaraokeWordSync);
 karaokeTapWord.addEventListener('click',tapNextKaraokeWord);
@@ -5655,6 +5743,7 @@ karaokeClearTiming.addEventListener('click',clearKaraokeWordTiming);
       highlightColor:normalizeHexColor(karaokeHighlightColor.value,'#FFFFFFFF'),
       timingMode:karaokeTimingMode.value
     };
+  if(typeof project?.previewAnimations==='boolean')previewAnimations.checked=project.previewAnimations;
     renderKaraokeTimingStatus();
     updatePreview();
   };
