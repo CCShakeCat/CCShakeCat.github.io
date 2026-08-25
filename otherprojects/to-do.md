@@ -13,4 +13,5 @@
 11. Save media to project file
 12. Autosave (Customize frequency in Preferences)
 13. Apps?
+14. Fix Mobile functions and layouts
 -# _\* I already have an idea on how this will work_
