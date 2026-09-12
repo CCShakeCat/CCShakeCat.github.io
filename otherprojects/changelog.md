@@ -39,3 +39,7 @@ New Changelog and To-Do lists powered by markdown
 - Trimming subtitles have been massively improved
     - With mouse and keyboard, the playhead hitbox has been shortened
     - Subtitle edges now have higher dragging priority over the playhead 
+    
+## v1.2.1
+A hotfix has been released to adress some issue with the v1.2.0 update
+- Fixed broken \[\]\{#RRGGBB\} and \[\]\{rgba(RR, GG, BB, A)\} markdown for colour in subtitles  and UI elements
