@@ -17,7 +17,7 @@ New Changelog and To-Do lists powered by markdown
 - The **Follow Playhead** (CTRL+SHIFT+P) setting has been adjusted slightly 
 - Slightly modified Styling options to properly modify all selected subtitles at once
 
-## v1.1.1
+## v1.2 - )~The Speak and Seek Update~( 
 - Fixed keybinds from CTRL+SHIFT to CTRL+ALT due to browser limitations
   - Follow Playhead is now CTRL+ALT+P
   - Ruler Snapping is now CTRL+ALT+S
@@ -34,3 +34,8 @@ New Changelog and To-Do lists powered by markdown
     - Typing [???]{#FFFF00} or checking [Unknown Speaker]{#FFFF00} will display [>>]{#FFFF00}
     - The SPEAKER options will be included in the character counts for each subtitle
 - The SUBTITLE box is now empty for quicker editing
+- Increased Zoom limit from 40X to 80X 
+- Added a Zoom display to show how far in  the Timeline is zoomed
+- Trimming subtitles have been massively improved
+    - With mouse and keyboard, the playhead hitbox has been shortened
+    - Subtitle edges now have higher dragging priority over the playhead 
