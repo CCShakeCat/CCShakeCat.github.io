@@ -41,5 +41,9 @@ New Changelog and To-Do lists powered by markdown
     - Subtitle edges now have higher dragging priority over the playhead 
     
 ## v1.2.1
-A hotfix has been released to adress some issue with the v1.2.0 update
+A hotfix has been released to adress some issues with the v1.2.0 update
 - Fixed broken \[\]\{#RRGGBB\} and \[\]\{rgba(RR, GG, BB, A)\} markdown for colour in subtitles  and UI elements
+
+## v1.2.2
+A hotfix has been released to adress an issue with the v1.2.1 update
+- Bold text will now properly render in the preview
