@@ -47,3 +47,19 @@ A hotfix has been released to adress some issues with the v1.2.0 update
 ## v1.2.2
 A hotfix has been released to adress an issue with the v1.2.1 update
 - Bold text will now properly render in the preview
+
+## v1.3 - )~The Time and Space Update~(
+# **[KNOWN ISSUES]{#FF5555}**
+When you have more than 150 events at once, you may experience freezing or lag while editing. Optimization is in the works and will be available whenever it's ready
+
+- Subtitle edges now clear the current subtitles onscreen when using the [TV Roll]{#FFFF00} style
+- Added maximum [visible lines]{#FFFF00} setting in the Customization
+- Fixed an issue where creating a new subtitle and putting it on top or bottom does not restart the on-screen subtitles 
+- [Timeline rows]{#FFFF00} can now be used to create and customize up to three subtitles simultaneously
+- Subtitles in the [Standard]{#FFFF00} style can now have myltiple lines per event
+- Added subtitle splitting with [CTRL+Return]{#FFFF00}
+- Readded the feature to merge with the previous subtitle
+- Spacebar now consistenly plays and pauses the video instead of accidentally interacting with other objects onscreen
+- Resizing text fields can now be done by [dragging the bottom edge]{#00FFFF}
+- Added the ability to consistenly save your project to the same directory with [CTRL+S]{#FFFF00}, akin to other progeams with said feature
+    - **Note:** Firefox currently has a limitation over Chromium browsers. To combat this is, The file will just be downloaded to the system instead
