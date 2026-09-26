@@ -7965,52 +7965,68 @@ let experimentalMessages=["There's nothing here yet"];
 
 const minecraftCodeColors={
   '0':'#000000','1':'#0000AA','2':'#00AA00','3':'#00AAAA',
-  '4':'#AA0000','5':'#AA00AA','6':'#FFAA00','7':'#AAAAAA',
-  '8':'#555555','9':'#5555FF','a':'#55FF55','b':'#55FFFF',
-  'c':'#FF5555','d':'#FF55FF','e':'#FFFF55','f':'#FFFFFF',
-  'g':'#DDD605','h':'#E3D4D1','i':'#CECACA','j':'#443A3B',
-  'm':'#971607','n':'#B4684D','p':'#DEB12D','q':'#119F36',
-  's':'#2CBAA8','t':'#21497B','u':'#9A5CC6','v':'#EB7114',
-  'w':'#8CB3FF'
+  '4':'#AA0000','5':'#AA00AA','6':'#FFAA00','7':'#C5C5C5',
+  '8':'#545454','9':'#447FFF','a':'#54FF54','b':'#54FFFF',
+  'c':'#FF5454','d':'#FF54FF','e':'#FFFF54','f':'#FFFFFF',
+  'g':'#EFCE16','h':'#D9CCB8','i':'#A9B4B7','j':'#8F727D',
+  'm':'#EE222C','n':'#C87363','p':'#FFBF1E','q':'#13A045',
+  's':'#5FECFF','t':'#577BFF','u':'#B66CDD','v':'#FF6A00',
+  'w':'#8BB3FF'
 };
 
 function renderExperimentalMessage(raw){
   experimentalMessage.innerHTML='';
   const value=String(raw??'');
 
-  // The special showcase line is a sequence of §XY groups. The §X code token
-  // is half-opacity; Y is the full-opacity example rendered by that code.
-  if(/^((§.)(.))*$/s.test(value) && value.startsWith('§')){
-    for(let i=0;i+2<value.length;i+=3){
-      if(value[i]!=='§')break;
-      const code=value[i+1].toLowerCase();
-      const sample=value[i+2];
-      const pair=document.createElement('span');
-      pair.className='mcCodePair';
+  // Experimental Minecraft formatting showcase.
+  // Parse formatting codes as a stream so strings such as
+  // §00§11§22... render as 0 1 2... instead of showing the § codes.
+  if(value.includes('§')){
+    const state={color:'',bold:false,italic:false,obfuscated:false};
+    let sawCode=false;
 
-      const token=document.createElement('span');
-      token.className='mcCodeToken';
-      token.textContent='§'+value[i+1];
+    for(let i=0;i<value.length;){
+      if(value[i]==='§' && i+1<value.length){
+        const code=value[i+1].toLowerCase();
+
+        if(Object.prototype.hasOwnProperty.call(minecraftCodeColors,code)){
+          state.color=minecraftCodeColors[code];
+          // Minecraft color codes clear active formatting.
+          state.bold=false;
+          state.italic=false;
+          state.obfuscated=false;
+          sawCode=true;
+          i+=2;
+          continue;
+        }
+        if(code==='l'){state.bold=true;sawCode=true;i+=2;continue;}
+        if(code==='o'){state.italic=true;sawCode=true;i+=2;continue;}
+        if(code==='k'){state.obfuscated=true;sawCode=true;i+=2;continue;}
+        if(code==='r'){
+          state.color='';
+          state.bold=false;
+          state.italic=false;
+          state.obfuscated=false;
+          sawCode=true;
+          i+=2;
+          continue;
+        }
+      }
 
       const demo=document.createElement('span');
-      demo.textContent=sample;
-
-      const color=minecraftCodeColors[code];
-      if(color){token.style.color=color;demo.style.color=color}
-      if(code==='l'){token.classList.add('mcBold');demo.classList.add('mcBold')}
-      if(code==='o'){token.classList.add('mcItalic');demo.classList.add('mcItalic')}
-      if(code==='k'){token.classList.add('mcObfuscated');demo.classList.add('mcObfuscated')}
-      if(code==='r'){token.style.color='';demo.style.color='';demo.style.fontWeight='';demo.style.fontStyle=''}
-
-      pair.append(token,demo);
-      experimentalMessage.appendChild(pair);
+      demo.textContent=value[i];
+      if(state.color)demo.style.color=state.color;
+      if(state.bold)demo.classList.add('mcBold');
+      if(state.italic)demo.classList.add('mcItalic');
+      if(state.obfuscated)demo.classList.add('mcObfuscated');
+      experimentalMessage.appendChild(demo);
+      i++;
     }
-    return;
+    if(sawCode)return;
   }
 
   experimentalMessage.textContent=value;
 }
-
 function rerollExperimentalMessage(){
   const list=experimentalMessages.length?experimentalMessages:["There's nothing here yet"];
   const picked=list[Math.floor(Math.random()*list.length)];
