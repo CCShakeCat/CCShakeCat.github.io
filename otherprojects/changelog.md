@@ -63,3 +63,10 @@ When you have more than 150 events at once, you may experience freezing or lag w
 - Resizing text fields can now be done by [dragging the bottom edge]{#00FFFF}
 - Added the ability to consistenly save your project to the same directory with [CTRL+S]{#FFFF00}, akin to other progeams with said feature
     - **Note:** Firefox currently has a limitation over Chromium browsers. To combat this is, The file will just be downloaded to the system instead
+    
+## v1.3.1
+A hotfix has been released to address some issues with the v1.3.0 update
+<span style="color:#00FFFF">Developers note: In this update, we have made optimizations, and all lag has been reduced, if not removed</span>
+- Added a banner that gives a warning about VTTs' formatting being cleared in YouTube Studio
+- Fixed an issue where exported timing would be messed up and/or carried onto the next subtitle
+- Fixed the Zoom slider unintentionally displaying "1x" when the project was left zoomed in after loading.
