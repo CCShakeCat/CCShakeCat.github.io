@@ -7978,35 +7978,71 @@ function renderExperimentalMessage(raw){
   experimentalMessage.innerHTML='';
   const value=String(raw??'');
 
-  // Experimental Minecraft formatting showcase.
-  // Parse formatting codes as a stream so strings such as
-  // §00§11§22... render as 0 1 2... instead of showing the § codes.
   if(value.includes('§')){
-    const state={color:'',bold:false,italic:false,obfuscated:false};
+    const state={color:'',bold:false,italic:false,obfuscated:false,underline:false,strike:false};
     let sawCode=false;
+
+    const resetFormatting=()=>{
+      state.bold=false;
+      state.italic=false;
+      state.obfuscated=false;
+      state.underline=false;
+      state.strike=false;
+    };
+
+    const applyState=el=>{
+      if(state.color)el.style.color=state.color;
+      if(state.bold)el.style.fontWeight='700';
+      if(state.italic)el.style.fontStyle='italic';
+      if(state.obfuscated)el.classList.add('mcObfuscated');
+      if(state.underline || state.strike){
+        const lines=[];
+        if(state.underline)lines.push('underline');
+        if(state.strike)lines.push('line-through');
+        el.style.textDecoration=lines.join(' ');
+      }
+    };
 
     for(let i=0;i<value.length;){
       if(value[i]==='§' && i+1<value.length){
-        const code=value[i+1].toLowerCase();
+        const rawCode=value[i+1];
+        const code=rawCode.toLowerCase();
 
+        // Bedrock-style code token: show §x itself, tinted with the color
+        // that code establishes, but at half opacity.
         if(Object.prototype.hasOwnProperty.call(minecraftCodeColors,code)){
           state.color=minecraftCodeColors[code];
-          // Minecraft color codes clear active formatting.
-          state.bold=false;
-          state.italic=false;
-          state.obfuscated=false;
+          resetFormatting();
+
+          const token=document.createElement('span');
+          token.className='mcCodeToken';
+          token.textContent='§'+rawCode;
+          token.style.color=state.color;
+          experimentalMessage.appendChild(token);
+
           sawCode=true;
           i+=2;
           continue;
         }
-        if(code==='l'){state.bold=true;sawCode=true;i+=2;continue;}
-        if(code==='o'){state.italic=true;sawCode=true;i+=2;continue;}
-        if(code==='k'){state.obfuscated=true;sawCode=true;i+=2;continue;}
-        if(code==='r'){
+
+        // Non-color formatting codes reset the active color first.
+        // Their own token remains visible at half opacity using normal UI text.
+        if(['k','l','m','n','o','r'].includes(code)){
           state.color='';
-          state.bold=false;
-          state.italic=false;
-          state.obfuscated=false;
+          resetFormatting();
+
+          const token=document.createElement('span');
+          token.className='mcCodeToken';
+          token.textContent='§'+rawCode;
+          experimentalMessage.appendChild(token);
+
+          if(code==='k')state.obfuscated=true;
+          else if(code==='l')state.bold=true;
+          else if(code==='m')state.strike=true;
+          else if(code==='n')state.underline=true;
+          else if(code==='o')state.italic=true;
+          // §r intentionally leaves the complete state reset.
+
           sawCode=true;
           i+=2;
           continue;
@@ -8015,10 +8051,7 @@ function renderExperimentalMessage(raw){
 
       const demo=document.createElement('span');
       demo.textContent=value[i];
-      if(state.color)demo.style.color=state.color;
-      if(state.bold)demo.classList.add('mcBold');
-      if(state.italic)demo.classList.add('mcItalic');
-      if(state.obfuscated)demo.classList.add('mcObfuscated');
+      applyState(demo);
       experimentalMessage.appendChild(demo);
       i++;
     }
