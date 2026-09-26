@@ -7979,13 +7979,12 @@ function renderExperimentalMessage(raw){
   const value=String(raw??'');
 
   if(value.includes('§')){
-    const state={color:'',bold:false,italic:false,obfuscated:false,underline:false,strike:false};
+    const state={color:'',bold:false,italic:false,underline:false,strike:false};
     let sawCode=false;
 
     const resetFormatting=()=>{
       state.bold=false;
       state.italic=false;
-      state.obfuscated=false;
       state.underline=false;
       state.strike=false;
     };
@@ -7994,7 +7993,6 @@ function renderExperimentalMessage(raw){
       if(state.color)el.style.color=state.color;
       if(state.bold)el.style.fontWeight='700';
       if(state.italic)el.style.fontStyle='italic';
-      if(state.obfuscated)el.classList.add('mcObfuscated');
       if(state.underline || state.strike){
         const lines=[];
         if(state.underline)lines.push('underline');
@@ -8027,7 +8025,7 @@ function renderExperimentalMessage(raw){
 
         // Non-color formatting codes reset the active color first.
         // Their own token remains visible at half opacity using normal UI text.
-        if(['k','l','m','n','o','r'].includes(code)){
+        if(['l','m','n','o','r'].includes(code)){
           state.color='';
           resetFormatting();
 
@@ -8036,8 +8034,7 @@ function renderExperimentalMessage(raw){
           token.textContent='§'+rawCode;
           experimentalMessage.appendChild(token);
 
-          if(code==='k')state.obfuscated=true;
-          else if(code==='l')state.bold=true;
+          if(code==='l')state.bold=true;
           else if(code==='m')state.strike=true;
           else if(code==='n')state.underline=true;
           else if(code==='o')state.italic=true;
