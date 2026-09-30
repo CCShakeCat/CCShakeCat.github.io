@@ -70,3 +70,9 @@ A hotfix has been released to address some issues with the v1.3.0 update
 - Added a banner that gives a warning about VTTs' formatting being cleared in YouTube Studio
 - Fixed an issue where exported timing would be messed up and/or carried onto the next subtitle
 - Fixed the Zoom slider unintentionally displaying "1x" when the project was left zoomed in after loading.
+
+## v1.3.2
+A hotfix has been released to address some long existed issue:
+Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the following:
+- `>> Speaker:` will now input the correct Speaker settings
+- The lowest line will now be displayed in its proper event 
