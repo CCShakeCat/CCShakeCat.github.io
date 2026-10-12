@@ -82,3 +82,5 @@ Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the fol
 - The version number at the top has been updated
 - Audio and Video is now
 - Remove the Save Project, Undo, and Redo buttons at the top corner
+- Fixed an issue where subtitle edges didn't snap to the playhead
+- DUPLICATE HERE now properly duplicates the selected subtitle underneath it on the timeline

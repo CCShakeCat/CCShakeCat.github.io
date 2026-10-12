@@ -5330,6 +5330,8 @@ function beginEventDrag(ev,block,i){
     snapByLane:dragLaneEvents.map(list=>{
       const targets=[];
       for(const other of list){targets.push(other.start,other.end);}
+      // Keep the live playhead as a snap target during every drag.
+      // Ruler snapping remains an optional preference.
       return targets;
     })
   };
@@ -5412,10 +5414,18 @@ function startEventDrag(ev){
 }
 function moveEventDrag(ev){
   if(!drag)return;
+  invalidateTvRollOrderCache();
 
   const dx=(ev.clientX-drag.x)*drag.secPerPx;
   const e=events[drag.i];
   const threshold=SNAP_PIXELS*drag.secPerPx;
+  // Cached lane targets omit the playhead; add its current position live.
+  // This applies to moving blocks and trimming either edge.
+  const dragSnapTargets=lane=>[
+    ...(drag.snapByLane?.[lane]??snapTargets(drag.i,lane)),
+    Number(media.currentTime)||0,
+    ...(rulerSnappingEnabled?rulerTickSnapTargets():[])
+  ];
   let lane=drag.startLane;
 
   if(drag.target==='move'){
@@ -5425,7 +5435,7 @@ function moveEventDrag(ev){
     const len=drag.end-drag.start;
     let start=Math.max(0,drag.start+dx);
     let end=start+len;
-    const targets=drag.snapByLane?.[lane]??snapTargets(drag.i,lane);
+    const targets=dragSnapTargets(lane);
 
     let bestOffset=0;
     let bestDistance=threshold+1;
@@ -5476,7 +5486,7 @@ function moveEventDrag(ev){
     drag.block.style.background=drag.validLane?'var(--accent)':'var(--danger)';
   }else if(drag.target==='left'){
     lane=e.lane??0;
-    const targets=drag.snapByLane?.[lane]??snapTargets(drag.i,lane);
+    const targets=dragSnapTargets(lane);
     let start=snapValue(
       Math.max(0,Math.min(drag.end-.05,drag.start+dx)),
       targets,
@@ -5492,7 +5502,7 @@ function moveEventDrag(ev){
     e.start=Math.min(start,e.end-.05);
   }else{
     lane=e.lane??0;
-    const targets=drag.snapByLane?.[lane]??snapTargets(drag.i,lane);
+    const targets=dragSnapTargets(lane);
     let end=snapValue(
       Math.max(drag.start+.05,drag.end+dx),
       targets,
@@ -5526,6 +5536,7 @@ function moveEventDrag(ev){
   }
 }
 function endEventDrag(ev){
+  invalidateTvRollOrderCache();
   captionLane.querySelectorAll('.eventBlock.eventDragging').forEach(el=>el.classList.remove('eventDragging'));
   const block=drag?.block;
   if(drag && drag.target==='move'){
@@ -6517,10 +6528,14 @@ function normalizeTvRollLines(value){
   return n===1||n===2||n===3?n:3;
 }
 
+let tvRollOrderCache=null;
+function invalidateTvRollOrderCache(){tvRollOrderCache=null;}
 function tvRollOrderedEvents(){
-  return events
+  if(tvRollOrderCache && tvRollOrderCache.length===events.length)return tvRollOrderCache;
+  tvRollOrderCache=events
     .map((event,index)=>({event,index}))
     .sort((a,b)=>a.event.start-b.event.start||a.index-b.index);
+  return tvRollOrderCache;
 }
 
 function tvRollLinesBeforeEvent(targetIndex){
@@ -6551,10 +6566,11 @@ function migrateLegacyTvRollMaxLines(){
 }
 
 function currentHistory(t){
-  const started=tvRollOrderedEvents()
-    .filter(item=>item.event.start<=t)
-    .map(item=>item.event);
-
+  const started=[];
+  for(const item of tvRollOrderedEvents()){
+    if(item.event.start>t)break;
+    started.push(item.event);
+  }
   if(!started.length)return[];
 
   if(styleMode.value==='standard'){
@@ -7608,11 +7624,15 @@ function duplicateHere(){
   const originalIndex=selected;
   const copy=cloneEvent(events[originalIndex]);
 
-  // Insert directly after the selected event in the event list.
+  // Place the duplicate immediately BELOW the source in time, rather
+  // than directly on top of it (which also makes large projects harder to edit).
+  const duration=Math.max(.05,copy.end-copy.start);
+  copy.start=Number(events[originalIndex].end);
+  copy.end=copy.start+duration;
   events.splice(originalIndex+1,0,copy);
 
   revealDuplicatedEvent(originalIndex+1);
-  setStatus(`Duplicated Event ${originalIndex+1} here.`);
+  setStatus(`Duplicated Event ${originalIndex+1} below the original.`);
 }
 
 function duplicateToEnd(){
@@ -8590,6 +8610,7 @@ function runImporterSelfTests(){
 }
 
 function renderAll(){
+  invalidateTvRollOrderCache();
   drawWave();drawTimeline();renderList();syncPlayhead();updateUndoButtons();
   if(newlyAddedEventIndex>=0){
     const current=newlyAddedEventIndex;
@@ -8821,9 +8842,13 @@ function splitSubtitleAtPlayhead(){
 document.getElementById('splitBtn').onclick=splitSubtitleAtPlayhead;
 
 
+let lastPlaybackPreviewFrame=-Infinity;
 function previewAnimationLoop(timestamp=0){
   updatePlaybackMotion(timestamp);
-  updatePreview();
+  if(timestamp-lastPlaybackPreviewFrame>=33){
+    updatePreview();
+    lastPlaybackPreviewFrame=timestamp;
+  }
 
   if(!media.paused){
     maybeAutoFollowEventList();
