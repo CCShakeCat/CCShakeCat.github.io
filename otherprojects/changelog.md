@@ -76,3 +76,9 @@ A hotfix has been released to address some long existed issue:
 Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the following:
 - `>> Speaker:` will now input the correct Speaker settings
 - The lowest line will now be displayed in its proper event 
+
+## v1.3.3
+- All media, subtitle, AND project files can now be oppened from a drag and drop
+- The version number at the top has been updated
+- Audio and Video is now
+- Remove the Save Project, Undo, and Redo buttons at the top corner
