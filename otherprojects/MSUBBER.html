@@ -7624,15 +7624,22 @@ function duplicateHere(){
   const originalIndex=selected;
   const copy=cloneEvent(events[originalIndex]);
 
-  // Place the duplicate immediately BELOW the source in time, rather
-  // than directly on top of it (which also makes large projects harder to edit).
-  const duration=Math.max(.05,copy.end-copy.start);
-  copy.start=Number(events[originalIndex].end);
-  copy.end=copy.start+duration;
+  // Duplicate at the same timestamps, on the next free timeline row below.
+  // Do not append in time: that is Duplicate to End's job.
+  const sourceLane=Math.max(0,Math.min(LANE_COUNT-1,events[originalIndex].lane??0));
+  const candidates=[];
+  for(let lane=sourceLane+1;lane<LANE_COUNT;lane++)candidates.push(lane);
+  for(let lane=0;lane<=sourceLane;lane++)candidates.push(lane);
+  const freeLane=candidates.find(lane=>
+    !events.some((other,i)=>i!==originalIndex && (other.lane??0)===lane && overlaps(other,copy))
+  );
+  // If all three rows are occupied, use the next row anyway (overlap is
+  // preferable to silently changing the duplicate's timestamps).
+  copy.lane=freeLane??((sourceLane+1)%LANE_COUNT);
   events.splice(originalIndex+1,0,copy);
 
   revealDuplicatedEvent(originalIndex+1);
-  setStatus(`Duplicated Event ${originalIndex+1} below the original.`);
+  setStatus(`Duplicated Event ${originalIndex+1} on timeline row ${copy.lane+1}.`);
 }
 
 function duplicateToEnd(){
