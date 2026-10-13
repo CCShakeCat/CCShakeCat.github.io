@@ -76,3 +76,15 @@ A hotfix has been released to address some long existed issue:
 Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the following:
 - `>> Speaker:` will now input the correct Speaker settings
 - The lowest line will now be displayed in its proper event 
+
+## v1.3.30
+- All media, subtitle, AND project files can now be oppened from a drag and drop
+- The version number at the top has been updated
+- Audio and Video is now
+- Remove the Save Project, Undo, and Redo buttons at the top corner
+- Fixed an issue where subtitle edges didn't snap to the playhead
+- DUPLICATE HERE now properly duplicates the selected subtitle underneath it on the timeline
+**[EXPERIMENTAL FEATURES]{#55FF55}**
+- Added [Lightweight Typing Mode]{#FFFF00}, a setting that improves typing responsiveness.
+    - Lightweight Typing Mode can be toggled in [TOOLS / Experimental Features]{#FFFF00}
+    - Lightweight Typing Mode is enabled by default
