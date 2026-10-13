@@ -40,11 +40,11 @@ New Changelog and To-Do lists powered by markdown
     - With mouse and keyboard, the playhead hitbox has been shortened
     - Subtitle edges now have higher dragging priority over the playhead 
     
-## v1.2.1
+## v1.2.10
 A hotfix has been released to adress some issues with the v1.2.0 update
 - Fixed broken \[\]\{#RRGGBB\} and \[\]\{rgba(RR, GG, BB, A)\} markdown for colour in subtitles  and UI elements
 
-## v1.2.2
+## v1.2.20
 A hotfix has been released to adress an issue with the v1.2.1 update
 - Bold text will now properly render in the preview
 
@@ -64,23 +64,15 @@ When you have more than 150 events at once, you may experience freezing or lag w
 - Added the ability to consistenly save your project to the same directory with [CTRL+S]{#FFFF00}, akin to other progeams with said feature
     - **Note:** Firefox currently has a limitation over Chromium browsers. To combat this is, The file will just be downloaded to the system instead
     
-## v1.3.1
+## v1.3.10
 A hotfix has been released to address some issues with the v1.3.0 update
 [Developers note: In this update, we have made optimizations, and all lag has been reduced, if not removed]{#00FFFF}
 - Added a banner that gives a warning about VTTs' formatting being cleared in YouTube Studio
 - Fixed an issue where exported timing would be messed up and/or carried onto the next subtitle
 - Fixed the Zoom slider unintentionally displaying "1x" when the project was left zoomed in after loading.
 
-## v1.3.2
+## v1.3.20
 A hotfix has been released to address some long existed issue:
 Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the following:
 - `>> Speaker:` will now input the correct Speaker settings
 - The lowest line will now be displayed in its proper event 
-
-## v1.3.3
-- All media, subtitle, AND project files can now be oppened from a drag and drop
-- The version number at the top has been updated
-- Audio and Video is now
-- Remove the Save Project, Undo, and Redo buttons at the top corner
-- Fixed an issue where subtitle edges didn't snap to the playhead
-- DUPLICATE HERE now properly duplicates the selected subtitle underneath it on the timeline
