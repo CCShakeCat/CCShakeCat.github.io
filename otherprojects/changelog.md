@@ -88,3 +88,8 @@ Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the fol
 - Added [Lightweight Typing Mode]{#FFFF00}, a setting that improves typing responsiveness.
     - Lightweight Typing Mode can be toggled in [TOOLS / Experimental Features]{#FFFF00}
     - Lightweight Typing Mode is enabled by default
+    
+## v1.3.31
+- Fixed an issue where subtitle splitting would leave the rest of the text in the old subtitle
+- Removed the [Sort by time]{#FFFF00} button
+    - Each subtitle now correctly sorts the events crhronologically from start to finish
