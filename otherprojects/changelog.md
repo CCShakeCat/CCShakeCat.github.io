@@ -117,3 +117,11 @@ Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the fol
 - Added the ability to advance the playhead
     - Use `←` and `→` to nudge the playhead back and forth by one second
     - Use `,` and `.` to nudge the playhead back and forth by one frame
+
+## v1.4.10
+A hotfix has been released to address an issue with the 1.4.0 update
+- Fixed an issue where the character warning/limit highlight was not including the `>> Speaker: ` text 
+- New characters per line counter for standard mode
+    - New warning to encourage users to split their subtitles either by splitting the subtitle itself or by line breaking
+        - Pro Tip: Pressing the [Return]{#FFFF00} key alone breaks a line. Pressing [CTRL/COMMAND+Return]{#FFFF00} will split the current subtitle at the word and playhead position
+    
