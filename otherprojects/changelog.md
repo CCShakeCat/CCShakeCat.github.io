@@ -1,6 +1,6 @@
 # )~MSUBBER - Subtitle Editor Changelog~(
 
-## v1.0
+## v1.0.0
 First public release! Easy to use, but can do a lot
 
 ## v1.0.10
@@ -17,7 +17,7 @@ New Changelog and To-Do lists powered by markdown
 - The **Follow Playhead** (CTRL+SHIFT+P) setting has been adjusted slightly 
 - Slightly modified Styling options to properly modify all selected subtitles at once
 
-## v1.2 - )~The Speak and Seek Update~( 
+## v1.2.0 - )~The Speak and Seek Update~( 
 - Fixed keybinds from CTRL+SHIFT to CTRL+ALT due to browser limitations
   - Follow Playhead is now CTRL+ALT+P
   - Ruler Snapping is now CTRL+ALT+S
@@ -48,7 +48,7 @@ A hotfix has been released to adress some issues with the v1.2.0 update
 A hotfix has been released to adress an issue with the v1.2.1 update
 - Bold text will now properly render in the preview
 
-## v1.3 - )~The Time and Space Update~(
+## v1.3.0 - )~The Time and Space Update~(
 # **[KNOWN ISSUES]{#FF5555}**
 When you have more than 150 events at once, you may experience freezing or lag while editing. Optimization is in the works and will be available whenever it's ready
 
@@ -92,4 +92,28 @@ Importing a VTT that used the [TV Roll]{#FFFF00} style will now separate the fol
 ## v1.3.31
 - Fixed an issue where subtitle splitting would leave the rest of the text in the old subtitle
 - Removed the [Sort by time]{#FFFF00} button
-    - Each subtitle now correctly sorts the events crhronologically from start to finish
+    - Each subtitle now correctly sorts the events chronologically from start to finish
+    
+## v1.4.0 - )~The Step by Step Update ~(
+[Subtitle Exporting]{#55ff55}
+- Added a new keybind to allow the user to easily show the export dialogue
+- A new export option is available.
+    - Checking [Animate Captions (Experimental)]{#ffff00} will add a typewriter build-in effect seen on channels like news, sports, some shows, and more  
+[Developers note: Animated exporting is currently only compatible with WebVTT, which means text colours is still not compatible at this moment. We are working on adding support for a format that does support text colours.]{#00FFFF}
+
+[Timeline Controls]{#55ff55}
+- Added the ability to copy and paste subtitles
+- When selecting multiple subtitles, they can be edited on the timeline
+    - Dragging will now reorder all selected subtitles at once
+    - Duplicating subtitles will now duplicate all selected subtitles
+    - Trimming all selected subtitles will now trim them
+        - If there is a subtitle in the way, all will be adjusted, like in Excel or Google Sheets when multiple rows or columns are selected
+
+[Quality of Life Improvements]{#55ff55}
+- Added a highlight to when the character limit is almost up and/or exceeded
+- Reduced default character limit and warning to match with TV Roll standards
+[Developers note: Markdown such as `**bold**` or `*italic*` will not count toward the character limit.]{#00FFFF}
+- Importing all media has been flattened into one option for importing all types of media
+- Added the ability to advance the playhead
+    - Use `←` and `→` to nudge the playhead back and forth by one second
+    - Use `,` and `.` to nudge the playhead back and forth by one frame
