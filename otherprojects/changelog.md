@@ -124,4 +124,4 @@ A hotfix has been released to address an issue with the 1.4.0 update
 - New characters per line counter for standard mode
     - New warning to encourage users to split their subtitles either by splitting the subtitle itself or by line breaking
         - Pro Tip: Pressing the [Return]{#FFFF00} key alone breaks a line. Pressing [CTRL/COMMAND+Return]{#FFFF00} will split the current subtitle at the word and playhead position
-    
+- Fixed an issue where saving a project won't save line breaks in the subtitle events 

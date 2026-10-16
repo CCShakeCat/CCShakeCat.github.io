@@ -3969,7 +3969,9 @@ function normalizeEventSpeaker(event,{legacy=false}={}){
   return {
     speaker:normalizeSpeakerName(event?.speaker||''),
     unknownSpeaker:event?.unknownSpeaker===true,
-    text:oneLineCaption(event?.text)
+    // Preserve user-inserted line breaks when reopening .msub projects.
+    // TV Roll's one-line rendering is handled by eventDisplayText(broadcast).
+    text:String(event?.text??'').replace(/\r\n?/g,'\n')
   };
 }
 
