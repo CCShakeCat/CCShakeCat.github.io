@@ -125,3 +125,14 @@ A hotfix has been released to address an issue with the 1.4.0 update
     - New warning to encourage users to split their subtitles either by splitting the subtitle itself or by line breaking
         - Pro Tip: Pressing the [Return]{#FFFF00} key alone breaks a line. Pressing [CTRL/COMMAND+Return]{#FFFF00} will split the current subtitle at the word and playhead position
 - Fixed an issue where saving a project won't save line breaks in the subtitle events 
+
+## v1.5.0 - )~ The Oopsie-Proof Projects Update ~(
+- Added the option to add media via URL
+     - In [FILE / Import media from URL]{#FFFF00}, you now have the option to add your media with a link, no longer needing to download your large files
+     - Any supported links--whether from YouTube, Direct MP4, etc--can now be imported and subtitled with ease
+- Projects will now Auto Save after a certain period of time
+    - Autosaves will cache your project in the browser's local storage, so it's still best to save them to your computer before your browser's storage gets cleared
+    - [Autosave Frequency]{#FFFF00} can be adjusted in the preferences
+    - If a project is autosaved, returning to the page will now prompt you to recover your unsaved work
+- Media will now be saved to your projects as long as you still have the original file
+[Developers note: Be advised that this does not mean the site will save your media within the project. The media will simply have a reference to the file(s) that are needed for the project and will be needed to continue working on them.]{#00FFFF}

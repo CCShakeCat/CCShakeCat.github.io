@@ -9,9 +9,9 @@
 7. Per-speaker colour*
 8. Colour support for YouTube-compatible subtitle exports
 ~~9. Export preview animations to compatible subtitle formats/platforms~~
-10. Add Video URL to Import Media
-11. Save media to project file
-12. Autosave (Customize frequency in Preferences)
+~~10. Add Video URL to Import Media~~
+~~11. Save media to project file~~
+~~12. Autosave (Customize frequency in Preferences)~~
 13. Apps?
 ~~14. Fix Mobile functions and layouts~~
     
