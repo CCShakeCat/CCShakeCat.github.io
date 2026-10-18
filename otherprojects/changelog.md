@@ -136,3 +136,8 @@ A hotfix has been released to address an issue with the 1.4.0 update
     - If a project is autosaved, returning to the page will now prompt you to recover your unsaved work
 - Media will now be saved to your projects as long as you still have the original file
 [Developers note: Be advised that this does not mean the site will save your media within the project. The media will simply have a reference to the file(s) that are needed for the project and will be needed to continue working on them.]{#00FFFF}
+
+## v1.5.10
+A hotfix was released to adress issues in v1.5
+
+- The character counters should now reflect the correct amount characters in the event
