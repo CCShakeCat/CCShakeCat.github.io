@@ -141,3 +141,14 @@ A hotfix has been released to address an issue with the 1.4.0 update
 A hotfix was released to adress issues in v1.5
 
 - The character counters should now reflect the correct amount characters in the event
+
+## v1.5.11
+A hotfix was released to adress issues in v1.5.10
+
+- CTRL+S now properly allows the user to save their work to a directory on Chromium browsers
+[Developers note: Firefox is still limited on how the user can save their projects and will still download the file instead.]{#00FFFF}
+- `SHIFT+←` and `SHIFT+→` now nudges the playhead by five seconds when not focused inside a subtitle event
+- Added a new UI font to replace Arial
+- `-default-` will now take place of `-system-` in new projects' preview font, using the new UI font.
+    - The system font can still be used. Just replace `-default-` with `-system-` in the Customization
+- Removed `ASS` subtitle support for exporting
