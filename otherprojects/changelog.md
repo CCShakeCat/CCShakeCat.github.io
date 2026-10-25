@@ -152,3 +152,6 @@ A hotfix was released to adress issues in v1.5.10
 - `-default-` will now take place of `-system-` in new projects' preview font, using the new UI font.
     - The system font can still be used. Just replace `-default-` with `-system-` in the Customization
 - Removed `ASS` subtitle support for exporting
+
+## v1.5.12
+- Fixed an issue where using [\*Markdown\* syntaxes]{#FFFF00} did not **bold**, *italicize*, or __underline__ correctly when exported
