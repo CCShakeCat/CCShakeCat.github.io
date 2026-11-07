@@ -3,7 +3,7 @@
 ~~1. Add support for typing in effects~~
 2. Add colour theming for UI
 ~~3. Add Playhead Nudging (Back and forth frame-by-frame with **,** and **.** ; forward and back one second with **←** and **→**)~~
-4. Fullscreen preview rendering
+~~4. Fullscreen preview rendering~~
 ~~5. Proper layouts for Mobile and Foldables~~
 6. Add animations to the menus for mobile
 7. Per-speaker colour*
