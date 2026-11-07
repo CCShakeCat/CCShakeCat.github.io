@@ -155,28 +155,3 @@ A hotfix was released to adress issues in v1.5.10
 
 ## v1.5.12
 - Fixed an issue where using [\*Markdown\* syntaxes]{#FFFF00} did not **bold**, *italicize*, or __underline__ correctly when exported
-
-## v1.6.0 - )~ The Discovery Update ~(
-[Have you ever accidentally googled instead of trying to get to it, but ended up showing up in the results? Well, this update solves that!]{#00ffff}
-[That's right! If you ever accidentally googled "MSUBBER", you will now get a name and a description!]{#00ffff}
-
-Here is what it would look like
-> -# MSUBBER
-> -# [__https://ccshakecat.github.io/__]{#0000ff}
-> 
-> ## MSUBBER - The Simple Subtitle Editor
-> MSUBBER is a subtitle editor for YouTube bundled with lots of easy to use features, cool gimmicks, and more!
-
-[But that's not all!]{#00ffff}
-The playback controls have been redone for the next new feature!
-
-[Fullscreen preview]{#55ff55}
-FINALLY, you can see how the subtitles will look in fullscreen on YouTube!
-
-[Features and bug fixes]{#55ff55}
-- Fixed an animation issue where subtitles on top went the wrong way when Preview Animations was enabled
-- Fixed a positioning issue where the subtitles would go off the video in fullscreen when viewing on an ultra-wide monitor
-- Fixed Markdown headings appearing too small
-- Added missing Markdown formatting features and fixed existing rendering issues
-- [Lightweight Typing Mode]{#FFFF00} has graduated from Experimental to Stable!
-- Fixed the "nothing here" messages from showing up when there are experimental toggles
