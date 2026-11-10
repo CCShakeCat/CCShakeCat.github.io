@@ -41,11 +41,11 @@ New Changelog and To-Do lists powered by markdown
     - Subtitle edges now have higher dragging priority over the playhead 
     
 ## v1.2.10
-A hotfix has been released to adress some issues with the v1.2.0 update
+A hotfix has been released to address some issues with the v1.2.0 update
 - Fixed broken \[\]\{#RRGGBB\} and \[\]\{rgba(RR, GG, BB, A)\} markdown for colour in subtitles  and UI elements
 
 ## v1.2.20
-A hotfix has been released to adress an issue with the v1.2.1 update
+A hotfix has been released to address an issue with the v1.2.1 update
 - Bold text will now properly render in the preview
 
 ## v1.3.0 - )~The Time and Space Update~(
@@ -138,12 +138,12 @@ A hotfix has been released to address an issue with the 1.4.0 update
 [Developers note: Be advised that this does not mean the site will save your media within the project. The media will simply have a reference to the file(s) that are needed for the project and will be needed to continue working on them.]{#00FFFF}
 
 ## v1.5.10
-A hotfix was released to adress issues in v1.5
+A hotfix was released to address issues in v1.5
 
 - The character counters should now reflect the correct amount characters in the event
 
 ## v1.5.11
-A hotfix was released to adress issues in v1.5.10
+A hotfix was released to address issues in v1.5.10
 
 - CTRL+S now properly allows the user to save their work to a directory on Chromium browsers
 [Developers note: Firefox is still limited on how the user can save their projects and will still download the file instead.]{#00FFFF}
@@ -180,3 +180,8 @@ FINALLY, you can see how the subtitles will look in fullscreen on YouTube!
 - Added missing Markdown formatting features and fixed existing rendering issues
 - [Lightweight Typing Mode]{#FFFF00} has graduated from Experimental to Stable!
 - Fixed the "nothing here" messages from showing up when there are experimental toggles
+
+## v1.6.1
+A hotfix was released to address issues in v1.6.0
+
+- Fixed a bug where typing in the HEX would not make any changes from `#FFFFFFFF` unless one character was highlighted
