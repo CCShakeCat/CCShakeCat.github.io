@@ -185,3 +185,19 @@ FINALLY, you can see how the subtitles will look in fullscreen on YouTube!
 A hotfix was released to address issues in v1.6.0
 
 - Fixed a bug where typing in the HEX would not make any changes from `#FFFFFFFF` unless one character was highlighted
+
+## v1.7.0 -- )~ Titles of Color ~(
+A new subtitle format has been added that adds colour to spice up your subtitles!
+[As a reminder, you can colour specific parts of a subtitle by using]{#00ffff} `[text]{colour}` [at any point]{#00ffff}
+
+This also means that we've ticked off another thing on the To-Do list!
+- Added the ability to add a predefined list of speakers
+    - This new list also adds the ability to assign a colour to a speaker
+    - For example, let's say Mimi Cat is pink ([#FFAAFF]{#FFAAFF}), and BluCoolKnux is Orange ([#FF8000]{#FF8000})
+    - Mimi could be set as [#FFAAFF]{#FFAAFF} and BluCoolKnux would be set as [#FF8000]{#FF8000}.
+        - Every time their speaker is called in the subtitles, their colours will be applied automatically 
+
+[Features and bug fixes]{#55ff55}
+- Removed some unnecessary export formats
+- Removed the unnecessary [(Experimental)]{#FFFF00} from the Animate Captions toggle
+- Fixed all export format descriptions to show what they do
